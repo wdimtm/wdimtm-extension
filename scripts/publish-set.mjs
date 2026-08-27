@@ -33,6 +33,7 @@ export const INCLUDE = [
   "store-assets",
   "LICENSE",
   "README.md",
+  "README.zh-CN.md",
   ".gitignore",
   "package.json",
   "package-lock.json",
@@ -55,39 +56,48 @@ export const EXCLUDE = [
 /** npm scripts that only make sense with cloud/ present. */
 const DROP_SCRIPTS = ["cloud:mock", "cloud:dev", "cloud:deploy", "cloud:migrate", "cloud:migrate:remote"];
 
-if (process.argv.includes("--list")) {
-  console.log("include:");
-  for (const p of INCLUDE) console.log("   ", p);
-  console.log("exclude:");
-  for (const p of EXCLUDE) console.log("   ", p);
-  console.log("npm scripts dropped:", DROP_SCRIPTS.join(", "));
-  process.exit(0);
+/**
+ * The CLI half. Guarded so the set itself can be imported — a test that asks
+ * "is this file published?" should not have to shell out, and importing this
+ * module used to exit the process.
+ */
+async function main() {
+  if (process.argv.includes("--list")) {
+    console.log("include:");
+    for (const p of INCLUDE) console.log("   ", p);
+    console.log("exclude:");
+    for (const p of EXCLUDE) console.log("   ", p);
+    console.log("npm scripts dropped:", DROP_SCRIPTS.join(", "));
+    return;
+  }
+
+  const target = process.argv[2];
+  if (!target) {
+    console.error("usage: node scripts/publish-set.mjs <target-dir>");
+    process.exit(1);
+  }
+
+  for (const rel of INCLUDE) {
+    const from = path.join(root, rel);
+    if (!existsSync(from)) continue;
+    const to = path.join(target, rel);
+    await mkdir(path.dirname(to), { recursive: true });
+    await cp(from, to, { recursive: true });
+  }
+
+  for (const rel of EXCLUDE) {
+    await rm(path.join(target, rel), { recursive: true, force: true });
+  }
+
+  // package.json: drop the scripts that reference what is not published, and
+  // say plainly that this is a mirror.
+  const pkgPath = path.join(target, "package.json");
+  const pkg = JSON.parse(await readFile(pkgPath, "utf8"));
+  for (const name of DROP_SCRIPTS) delete pkg.scripts?.[name];
+  pkg.repository = { type: "git", url: "git+https://github.com/wdimtm/wdimtm-extension.git" };
+  await writeFile(pkgPath, JSON.stringify(pkg, null, 2) + "\n");
+
+  console.log(`publish set assembled → ${target}`);
 }
 
-const target = process.argv[2];
-if (!target) {
-  console.error("usage: node scripts/publish-set.mjs <target-dir>");
-  process.exit(1);
-}
-
-for (const rel of INCLUDE) {
-  const from = path.join(root, rel);
-  if (!existsSync(from)) continue;
-  const to = path.join(target, rel);
-  await mkdir(path.dirname(to), { recursive: true });
-  await cp(from, to, { recursive: true });
-}
-
-for (const rel of EXCLUDE) {
-  await rm(path.join(target, rel), { recursive: true, force: true });
-}
-
-// package.json: drop the scripts that reference what is not published, and say
-// plainly that this is a mirror.
-const pkgPath = path.join(target, "package.json");
-const pkg = JSON.parse(await readFile(pkgPath, "utf8"));
-for (const name of DROP_SCRIPTS) delete pkg.scripts?.[name];
-pkg.repository = { type: "git", url: "git+https://github.com/wdimtm/wdimtm-extension.git" };
-await writeFile(pkgPath, JSON.stringify(pkg, null, 2) + "\n");
-
-console.log(`publish set assembled → ${target}`);
+if (process.argv[1] === fileURLToPath(import.meta.url)) await main();

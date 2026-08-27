@@ -1,10 +1,23 @@
 # WDIMTM — What Does It Mean To Me?
 
+English · [简体中文](README.zh-CN.md)
+
 > Understand what you're looking at — and why it matters to you.
 
 WDIMTM is a browser-native AI assistant for the moments when you encounter something on the web and think: **“What does this mean to me?”**
 
 Instead of opening a chatbot, copying content, and writing a prompt, select something on the page and ask WDIMTM. It uses the selection, surrounding page context, your active **Lens**, and optional personal memories to produce a concise, relevant explanation.
+
+## What it looks like
+
+|  |  |
+|---|---|
+| ![Select text and get an explanation anchored to it](store-assets/screenshot-1-explain.png) | ![Switching the lens re-reads the same text](store-assets/screenshot-2-lenses.png) |
+| **Select → explain, in place.** The card is anchored to the selection and the page never reflows. Facts and hypotheses stay separated. | **Lenses, not prompts.** The same paragraph read as engineering or as investing. Pin one per site, or write your own in plain language. |
+| ![A page chat carrying the same selection](store-assets/screenshot-3-chat.png) | ![Reviewing memories distilled from a chat export](store-assets/screenshot-4-memory.png) |
+| **When one answer is not enough.** *Discuss further* expands the same card into a page chat that keeps the selection and page context. Screenshots can be pasted straight in. | **Memory you control.** Import a ChatGPT or Claude export and review every candidate before it is saved. Nothing is remembered without a click. |
+
+Screenshots are generated from the shipped stylesheets by `npm run store:assets`, so they go stale when the UI does.
 
 ## Why
 
@@ -63,12 +76,12 @@ Source: [`landing/`](landing/) — Cloudflare Worker static assets.
 ## Quick start
 
 ```bash
-# 1. Load the extension
+# 1. Build the extension — dist/ does not exist until you do
+npm install
 npm run build
 # chrome://extensions → Developer mode → Load unpacked → select dist/
 
 # 2. Optional: local demo page / landing
-npm install
 npm run demo          # http://127.0.0.1:4173/demo.html
 npm run landing       # http://127.0.0.1:4174/
 
@@ -117,7 +130,7 @@ Floating surface
 
 Contract details: [`docs/runtime-contract.md`](docs/runtime-contract.md)  
 Cloud API contract: `docs/internal/cloud-api-contract.md` (private working repo)  
-Cloud backend: [`cloud/README.md`](cloud/README.md)  
+Cloud backend: `cloud/README.md` (private working repo)  
 Store listing copy: `docs/internal/chrome-web-store.md` (private working repo)  
 Research AgentJob contract: `docs/internal/research-agent-contract.md` (private working repo)  
 Memory RFC: [`docs/memory-rfc.md`](docs/memory-rfc.md)  
@@ -202,7 +215,7 @@ interface ExplainRequest {
 - Mock (default, offline, stream-simulated)
 - OpenAI-compatible chat completions (+ SSE stream)
 - PromptaaS adapter (`POST /v1/agents/{id}/run`) + local mock server (`npm run promptaas:mock`)
-- WDIMTM Cloud adapter (`POST /v1/explain`, streaming) + the real backend in [`cloud/`](cloud/) (Cloudflare Worker + D1): Google sign-in, managed inference, capability-tiered credits, memory sync
+- WDIMTM Cloud adapter (`POST /v1/explain`, streaming) + the real backend in `cloud/` (private working repo; Cloudflare Worker + D1): Google sign-in, managed inference, capability-tiered credits, memory sync
 
 ### Research (WDIMTM Cloud)
 - **Research this** from any explanation → a durable server-side `AgentJob` that keeps running after the tab closes
