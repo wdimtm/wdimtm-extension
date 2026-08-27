@@ -4,9 +4,12 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 
 import {
+  FIELD_LIMIT,
   checkStoreListing,
   declaredPermissions,
   diffListing,
+  overLongFields,
+  quotedFields,
 } from "../../scripts/check-store-listing.mjs";
 
 const root = path.resolve(import.meta.dirname, "../..");
@@ -69,5 +72,32 @@ describe("store listing permission sync", () => {
         `${pattern} is redundant — a host match pattern already covers every port`
       );
     }
+  });
+});
+
+describe("dashboard field limits", () => {
+  it("reads a quoted field as the text that gets pasted, line breaks and all", () => {
+    const fields = quotedFields(
+      ["**`storage`**", "", "> Stores settings.", "> 1. one", "> 2. two", ""].join("\n")
+    );
+    assert.deepEqual(fields, [{ heading: "storage", body: "Stores settings.\n1. one\n2. two" }]);
+  });
+
+  it("flags a justification the dashboard would truncate", () => {
+    const listing = `**\`storage\`**\n\n> ${"x".repeat(FIELD_LIMIT + 1)}\n`;
+    assert.deepEqual(overLongFields(listing), [
+      { heading: "storage", length: FIELD_LIMIT + 1 },
+    ]);
+  });
+
+  it("leaves a field that exactly fills the field alone", () => {
+    const listing = `**\`storage\`**\n\n> ${"x".repeat(FIELD_LIMIT)}\n`;
+    assert.deepEqual(overLongFields(listing), []);
+  });
+
+  it("every field in the shipped listing fits the dashboard", async () => {
+    const result = await checkStoreListing();
+    if (result.skipped) return; // public mirror: the listing copy is not published
+    assert.deepEqual(result.tooLong, [], "fields the dashboard would cut off mid-sentence");
   });
 });

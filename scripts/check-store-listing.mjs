@@ -51,6 +51,53 @@ export function isJustified(listing, permission) {
 }
 
 /**
+ * The dashboard truncates rather than warns, and a justification that stops
+ * mid-sentence reads as a non-answer to a reviewer.
+ */
+export const FIELD_LIMIT = 1000;
+
+/**
+ * The blockquote bodies in the listing copy — the text that gets pasted into a
+ * dashboard field — with the "> " stripped and line breaks kept, because the
+ * numbered lists in the test instructions depend on them.
+ * @param {string} listing
+ * @returns {Array<{ heading: string, body: string }>}
+ */
+export function quotedFields(listing) {
+  /** @type {Array<{ heading: string, body: string }>} */
+  const out = [];
+  let heading = "";
+  /** @type {string[] | null} */
+  let buf = null;
+  const flush = () => {
+    if (buf && buf.join("\n").trim()) out.push({ heading, body: buf.join("\n").trim() });
+    buf = null;
+  };
+  for (const line of listing.split("\n")) {
+    if (line.startsWith(">")) {
+      if (!buf) buf = [];
+      buf.push(line === ">" ? "" : line.replace(/^>\s?/, ""));
+      continue;
+    }
+    flush();
+    const h = line.match(/^\*\*(.+?)\*\*\s*$/) || line.match(/^#{2,3}\s+(.+?)\s*$/);
+    if (h) heading = h[1].replace(/`/g, "");
+  }
+  flush();
+  return out;
+}
+
+/**
+ * @param {string} listing
+ * @returns {Array<{ heading: string, length: number }>}
+ */
+export function overLongFields(listing) {
+  return quotedFields(listing)
+    .filter((f) => f.body.length > FIELD_LIMIT)
+    .map((f) => ({ heading: f.heading, length: f.body.length }));
+}
+
+/**
  * @param {{ manifest: Record<string, any>, listing: string }} input
  * @returns {{ missing: string[], stale: string[] }}
  */
@@ -72,10 +119,14 @@ export function diffListing({ manifest, listing }) {
  * @returns {Promise<{ skipped: boolean, missing: string[], stale: string[] }>}
  */
 export async function checkStoreListing() {
-  if (!existsSync(LISTING)) return { skipped: true, missing: [], stale: [] };
+  if (!existsSync(LISTING)) return { skipped: true, missing: [], stale: [], tooLong: [] };
   const manifest = JSON.parse(await readFile(MANIFEST, "utf8"));
   const listing = await readFile(LISTING, "utf8");
-  return { skipped: false, ...diffListing({ manifest, listing }) };
+  return {
+    skipped: false,
+    ...diffListing({ manifest, listing }),
+    tooLong: overLongFields(listing),
+  };
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
@@ -90,7 +141,12 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   for (const p of result.stale) {
     console.error(`listing justifies a host the manifest no longer declares: ${p}`);
   }
-  if (result.missing.length || result.stale.length) {
+  for (const f of result.tooLong || []) {
+    console.error(
+      `"${f.heading}" is ${f.length} characters; the dashboard field holds ${FIELD_LIMIT}`
+    );
+  }
+  if (result.missing.length || result.stale.length || (result.tooLong || []).length) {
     console.error("\nFix docs/internal/chrome-web-store.md before submitting.");
     process.exit(1);
   }
