@@ -19,7 +19,8 @@
     "landing": "node scripts/serve-landing.mjs",
     "promptaas:mock": "node scripts/promptaas-mock-server.mjs",
     "build:css": "node scripts/build-inline-css.mjs",
-    "deploy:landing": "wrangler deploy --config landing/wrangler.jsonc"
+    "deploy:landing": "wrangler deploy --config landing/wrangler.jsonc",
+    "icons": "node scripts/make-icons.mjs"
   },
   "repository": {
     "type": "git",
