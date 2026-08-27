@@ -1,0 +1,133 @@
+[
+  {
+    "uuid": "conv-uniswap",
+    "name": "Uniswap v4 hooks",
+    "created_at": "2026-02-01T10:00:00.000000Z",
+    "chat_messages": [
+      {
+        "uuid": "msg-1",
+        "sender": "human",
+        "created_at": "2026-02-01T10:00:01.000000Z",
+        "content": [
+          {
+            "type": "text",
+            "text": "What can hooks change about pool behaviour?"
+          }
+        ]
+      },
+      {
+        "uuid": "msg-2",
+        "sender": "assistant",
+        "created_at": "2026-02-01T10:00:05.000000Z",
+        "content": [
+          {
+            "type": "text",
+            "text": "Hooks run at defined points in the pool lifecycle."
+          },
+          {
+            "type": "tool_use",
+            "name": "search"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "uuid": "conv-legacy",
+    "name": "Older export shape",
+    "created_at": "2026-01-15T08:30:00.000000Z",
+    "chat_messages": [
+      {
+        "uuid": "msg-3",
+        "sender": "human",
+        "text": "Summarize this paper for me."
+      },
+      {
+        "uuid": "msg-4",
+        "sender": "assistant",
+        "text": "Here is the summary."
+      }
+    ]
+  },
+  {
+    "uuid": "conv-assistant-only",
+    "name": "No user turn",
+    "created_at": "2026-01-20T08:30:00.000000Z",
+    "chat_messages": [
+      {
+        "uuid": "msg-5",
+        "sender": "assistant",
+        "text": "Unprompted assistant message."
+      }
+    ]
+  },
+  {
+    "uuid": "conv-thinking",
+    "name": "Extended thinking and tools",
+    "created_at": "2026-03-01T09:00:00.000000Z",
+    "chat_messages": [
+      {
+        "uuid": "tm1",
+        "sender": "human",
+        "created_at": "2026-03-01T09:00:01.000000Z",
+        "text": "",
+        "content": [
+          {
+            "type": "text",
+            "text": "Which exchange has the deepest order book?"
+          }
+        ],
+        "attachments": [],
+        "files": [],
+        "parent_message_uuid": "00000000-0000-4000-8000-000000000000"
+      },
+      {
+        "uuid": "tm2",
+        "sender": "assistant",
+        "created_at": "2026-03-01T09:00:05.000000Z",
+        "text": "",
+        "content": [
+          {
+            "type": "thinking",
+            "thinking": "INTERNAL EXTENDED THINKING"
+          },
+          {
+            "type": "tool_use",
+            "name": "web_search",
+            "input": {
+              "query": "order book depth"
+            }
+          },
+          {
+            "type": "tool_result",
+            "content": "RAW TOOL OUTPUT"
+          },
+          {
+            "type": "text",
+            "text": "Depth varies by pair rather than by venue."
+          }
+        ],
+        "attachments": [],
+        "files": [],
+        "parent_message_uuid": "tm1"
+      }
+    ]
+  },
+  {
+    "uuid": "conv-blank",
+    "name": "",
+    "created_at": "2024-08-05T10:09:57.299229Z",
+    "chat_messages": [
+      {
+        "uuid": "bm1",
+        "sender": "human",
+        "created_at": "2024-08-05T10:09:57.299229Z",
+        "text": "",
+        "content": [],
+        "attachments": [],
+        "files": [],
+        "parent_message_uuid": "00000000-0000-4000-8000-000000000000"
+      }
+    ]
+  }
+]

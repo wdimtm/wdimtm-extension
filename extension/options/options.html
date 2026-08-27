@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WDIMTM Settings</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <main class="page">
+      <header class="header">
+        <div class="brand">
+          <span class="mark">?</span>
+          <div>
+            <h1>WDIMTM</h1>
+            <p class="tagline" data-i18n="tagline">What Does It Mean To Me?</p>
+          </div>
+        </div>
+        <p class="lede" data-i18n="lede">
+          Select text on any page → pick a Lens → get a short, personalized explanation without
+          leaving the flow.
+        </p>
+      </header>
+
+      <div class="layout">
+        <nav class="rail" aria-label="Contents">
+          <p class="rail-label" data-i18n="navContents">Contents</p>
+          <a href="#account-card" data-i18n="navAccount">Account</a>
+          <a href="#sec-product" data-i18n="navProduct">Product</a>
+          <a href="#sec-ai-access" data-i18n="navAiAccess">AI access</a>
+          <a href="#sec-web-search" data-i18n="navWebSearch">Web search</a>
+          <a href="#sec-language" data-i18n="navLanguage">Language</a>
+          <a href="#sec-default-lens" data-i18n="navDefaultLens">Default lens</a>
+          <a href="#lenses-card" data-i18n="navLenses">Lenses</a>
+          <a href="#profile-card" data-i18n="navProfile">Profile</a>
+          <a href="#memory-card" data-i18n="navMemory">Memory</a>
+          <a href="#data-card" data-i18n="navData">Data</a>
+          <a href="#privacy-card" data-i18n="navPrivacy">Privacy</a>
+          <a href="#howto-card" data-i18n="navHowTo">How to use</a>
+          <hr class="rail-rule" />
+          <p class="rail-note" data-i18n="navFootnote">
+            Selections are never retained. Only explicit memories and settings are stored locally.
+          </p>
+        </nav>
+
+        <div class="panels">
+      <section class="card" id="account-card">
+        <h2 data-i18n="accountTitle">Account</h2>
+        <p class="hint" data-i18n="accountHint">
+          Local mode (default) keeps preferences and memories on this browser.
+        </p>
+        <label class="field">
+          <span data-i18n="accountMode">Mode</span>
+          <select id="accountMode">
+            <option value="local" data-i18n-option="accountModeLocal">Local only — no account</option>
+            <option value="cloud" data-i18n-option="accountModeCloud">Sign in to sync (opt-in)</option>
+          </select>
+        </label>
+        <div
+          id="balance-banner"
+          class="onboarding-banner"
+          role="status"
+          aria-live="polite"
+          hidden
+        ></div>
+        <div id="cloud-account-fields" class="llm-fields" hidden>
+          <p class="hint" id="account-status-line" data-i18n="accountStatusDefault">
+            Not signed in. Cloud backend not configured yet.
+          </p>
+          <label class="field row">
+            <input type="checkbox" id="syncPreferences" checked />
+            <span data-i18n="syncPreferences">Sync preferences, lenses &amp; memories</span>
+          </label>
+          <label class="field row">
+            <input type="checkbox" id="syncChatHistory" />
+            <span data-i18n="syncChatHistory">Sync page-chat history</span>
+          </label>
+          <label class="field row">
+            <input type="checkbox" id="syncSecrets" />
+            <span data-i18n="syncSecrets">Sync API keys (not recommended)</span>
+          </label>
+          <div class="actions">
+            <button type="button" id="account-sign-in" class="btn" data-i18n="signIn">Sign in</button>
+            <button type="button" id="account-sign-out" class="btn ghost" data-i18n="signOut">
+              Sign out
+            </button>
+            <button type="button" id="account-sync-now" class="btn ghost" data-i18n="syncNow">
+              Sync now
+            </button>
+          </div>
+          <p class="hint" id="account-sync-meta"></p>
+        </div>
+        <p class="hint" data-i18n="accountExportHint">
+          Until cloud sync ships, use Export / Import below to move data between devices.
+        </p>
+      </section>
+
+      <section class="card" id="research-card" hidden>
+        <h2 data-i18n="researchJobsTitle">Research jobs</h2>
+        <p class="hint" data-i18n="researchJobsHint">
+          Research runs in WDIMTM Cloud, so a job you started on another tab — or another
+          device — is still here.
+        </p>
+        <div id="research-jobs"></div>
+        <div class="actions">
+          <button type="button" id="research-refresh" class="btn ghost" data-i18n="refresh">
+            Refresh
+          </button>
+        </div>
+      </section>
+
+      <form id="settings-form" class="card">
+        <h2 id="sec-product" data-i18n="productTitle">Product</h2>
+        <label class="field row">
+          <input type="checkbox" name="enabled" id="enabled" checked />
+          <span data-i18n="enableGlobal">Enable WDIMTM globally</span>
+        </label>
+        <label class="field">
+          <span data-i18n="denylist">Site denylist (one hostname per line)</span>
+          <textarea
+            id="denylist"
+            name="denylist"
+            rows="3"
+            data-i18n-placeholder="denylistPlaceholder"
+            placeholder="mail.google.com&#10;docs.google.com"
+          ></textarea>
+        </label>
+        <p class="hint" data-i18n="denylistHint">
+          Subdomains are covered too, so example.com also turns off blog.example.com. The
+          toolbar popup has a switch for the site you are on — it writes to this same list.
+        </p>
+        <label class="field">
+          <span data-i18n="answerDepth">Answer depth</span>
+          <select name="answerDepth" id="answerDepth">
+            <option value="short" data-i18n-option="depthShort">Short</option>
+            <option value="normal" data-i18n-option="depthNormal">Normal</option>
+            <option value="detailed" data-i18n-option="depthDetailed">Detailed</option>
+          </select>
+        </label>
+        <label class="field">
+          <span data-i18n="theme">Theme</span>
+          <select name="theme" id="theme">
+            <option value="system" data-i18n-option="themeSystem">System</option>
+            <option value="dark" data-i18n-option="themeDark">Dark</option>
+            <option value="light" data-i18n-option="themeLight">Light</option>
+          </select>
+        </label>
+
+        <h2 id="sec-ai-access" data-i18n="aiAccessTitle">AI access</h2>
+        <p class="hint" data-i18n="aiAccessHint">
+          Three ways in: your own API key (pick a provider inside), WDIMTM Cloud (hosted — Agentaab
+          is how Cloud is built, not a separate option), or Mock for offline demos.
+        </p>
+
+        <div
+          id="ai-status-banner"
+          class="onboarding-banner"
+          role="status"
+          aria-live="polite"
+          hidden
+        ></div>
+
+        <div class="access-modes" role="radiogroup" aria-labelledby="ai-access-label">
+          <span id="ai-access-label" class="sr-only" data-i18n="aiAccessTitle">AI access</span>
+
+          <label class="access-card">
+            <input type="radio" name="accessMode" id="access-byok" value="byok" />
+            <div class="access-card-body">
+              <strong data-i18n="accessByokTitle">Use my own API key</strong>
+              <p data-i18n="accessByokDesc">
+                Pick a provider (OpenAI, OpenRouter, Anthropic, Ollama, or custom). You pay that
+                provider directly.
+              </p>
+            </div>
+          </label>
+
+          <label class="access-card">
+            <input type="radio" name="accessMode" id="access-cloud" value="cloud" />
+            <div class="access-card-body">
+              <strong data-i18n="accessCloudTitle">WDIMTM Cloud (in development)</strong>
+              <p data-i18n="accessCloudDesc">
+                Hosted path — still under development. Target: sign in, pick a package, pay. Prefer
+                BYOK for daily use until packages and checkout ship.
+              </p>
+            </div>
+          </label>
+
+          <label class="access-card">
+            <input type="radio" name="accessMode" id="access-mock" value="mock" />
+            <div class="access-card-body">
+              <strong data-i18n="accessMockTitle">Mock (offline demo)</strong>
+              <p data-i18n="accessMockDesc">
+                Fake answers for development and screenshots. Not real model intelligence.
+              </p>
+            </div>
+          </label>
+        </div>
+
+        <!-- Hidden runtime field kept for form serialization / tests -->
+        <input type="hidden" name="runtime" id="runtime" value="mock" />
+
+        <!-- BYOK: provider picker is shared; openai-compatible vs Anthropic field sets swap below -->
+        <div id="byok-fields" class="llm-fields" hidden>
+          <label class="field">
+            <span data-i18n="byokPreset">Provider</span>
+            <select id="byokPreset" name="byokPreset">
+              <option value="openai">OpenAI</option>
+              <option value="openrouter">OpenRouter</option>
+              <option value="anthropic">Anthropic (Claude)</option>
+              <option value="ollama">Ollama (local)</option>
+              <option value="custom" data-i18n-option="byokPresetCustom">Custom…</option>
+            </select>
+          </label>
+
+          <div id="openai-fields">
+            <label class="field">
+              <span data-i18n="apiBaseUrl">API base URL</span>
+              <input
+                type="url"
+                name="apiBaseUrl"
+                id="apiBaseUrl"
+                placeholder="https://api.openai.com/v1"
+                autocomplete="off"
+              />
+            </label>
+            <label class="field">
+              <span data-i18n="apiKey">API key</span>
+              <input
+                type="password"
+                name="apiKey"
+                id="apiKey"
+                placeholder="sk-…"
+                autocomplete="off"
+              />
+            </label>
+            <label class="field">
+              <span data-i18n="model">Model</span>
+              <input type="text" name="model" id="model" placeholder="gpt-4o-mini" />
+            </label>
+            <div class="actions">
+              <button type="button" id="test-byok" class="btn" data-i18n="testConnection">
+                Test connection
+              </button>
+              <span id="test-byok-status" class="status" role="status" aria-live="polite"></span>
+            </div>
+          </div>
+
+          <div id="anthropic-fields" hidden>
+            <p class="hint" data-i18n="anthropicHint">
+              Native Anthropic Messages API (POST /v1/messages). Sampling parameters are not sent —
+              current Claude models reject them.
+            </p>
+            <label class="field">
+              <span data-i18n="anthropicBaseUrl">Anthropic base URL</span>
+              <input
+                type="url"
+                name="anthropicBaseUrl"
+                id="anthropicBaseUrl"
+                placeholder="https://api.anthropic.com/v1"
+                autocomplete="off"
+              />
+            </label>
+            <label class="field">
+              <span data-i18n="anthropicApiKey">Anthropic API key</span>
+              <input
+                type="password"
+                name="anthropicApiKey"
+                id="anthropicApiKey"
+                placeholder="sk-ant-…"
+                autocomplete="off"
+              />
+            </label>
+            <label class="field">
+              <span data-i18n="anthropicModel">Model</span>
+              <input
+                type="text"
+                name="anthropicModel"
+                id="anthropicModel"
+                list="anthropic-models"
+                placeholder="claude-opus-5"
+              />
+              <datalist id="anthropic-models"></datalist>
+            </label>
+            <div class="actions">
+              <button type="button" id="test-anthropic" class="btn" data-i18n="testConnection">
+                Test connection
+              </button>
+              <span id="test-anthropic-status" class="status" role="status" aria-live="polite"></span>
+            </div>
+          </div>
+        </div>
+
+        <div id="cloud-fields" class="llm-fields" hidden>
+          <div id="cloud-dev-banner" class="onboarding-banner" role="status" data-i18n="cloudDevBanner">
+            WDIMTM Cloud is under development. You can preview the package UI, but buying and hosted
+            inference are not ready for daily use yet. Use your own API key (BYOK) for real answers.
+          </div>
+          <p class="hint" data-i18n="cloudProductHint">
+            In development: package list + checkout will come from Agentaab via WDIMTM Cloud. Prefer
+            BYOK until checkout is live.
+          </p>
+
+          <div id="cloud-session-row" class="actions" style="margin-bottom: 12px">
+            <button type="button" id="cloud-sign-in" class="btn" data-i18n="cloudSignIn">
+              Sign in with Google
+            </button>
+            <span id="cloud-session-status" class="status" role="status" aria-live="polite"></span>
+          </div>
+
+          <div id="cloud-packages" class="cloud-packages" aria-live="polite"></div>
+          <p id="cloud-packages-meta" class="hint" hidden></p>
+
+          <details id="cloud-advanced" class="cloud-advanced">
+            <summary data-i18n="cloudAdvanced">Advanced / self-hosted</summary>
+            <p class="hint" data-i18n="cloudSelfHosted">
+              Only for self-hosting a backend that implements docs/cloud-api-contract.md. Production
+              users leave these alone.
+            </p>
+            <label class="field">
+              <span data-i18n="cloudBaseUrl">Cloud base URL</span>
+              <input
+                type="url"
+                name="cloudBaseUrl"
+                id="cloudBaseUrl"
+                placeholder="https://cloud.wdimtm.com"
+              />
+            </label>
+            <label class="field">
+              <span data-i18n="cloudAccessToken">Access token (filled by sign-in)</span>
+              <input
+                type="password"
+                name="cloudAccessToken"
+                id="cloudAccessToken"
+                data-i18n-placeholder="cloudTokenPlaceholder"
+                placeholder="filled by Google sign-in"
+                autocomplete="off"
+              />
+            </label>
+            <label class="field">
+              <span data-i18n="cloudSignUpUrl">Manage / top-up URL (optional)</span>
+              <input
+                type="url"
+                name="cloudSignUpUrl"
+                id="cloudSignUpUrl"
+                data-i18n-placeholder="cloudSignUpPlaceholder"
+                placeholder="https://…/cloud"
+                autocomplete="off"
+              />
+            </label>
+            <div class="actions">
+              <button type="button" id="test-cloud" class="btn ghost" data-i18n="testConnection">
+                Test connection
+              </button>
+              <span id="test-cloud-status" class="status" role="status" aria-live="polite"></span>
+            </div>
+          </details>
+        </div>
+
+        <div id="mock-fields" class="llm-fields" hidden>
+          <p class="hint" data-i18n="mockFieldsHint">
+            Mock invents short explanations without calling a model. Switch to BYOK or WDIMTM Cloud
+            for real answers — then use Test connection.
+          </p>
+        </div>
+
+        <label class="field row">
+          <input type="checkbox" name="stream" id="stream" checked />
+          <span data-i18n="streamResponses">Stream responses (popover + page chat)</span>
+        </label>
+
+        <h2 id="sec-web-search" data-i18n="webSearchTitle">Web search (Verify / Research / Chat)</h2>
+        <p class="hint" data-i18n="webSearchHint">
+          Optional. When enabled, Verify, Research, and page chat fetch live snippets and inject them as WEB
+          EVIDENCE. Normal Explain stays offline single-shot.
+        </p>
+        <label class="field row">
+          <input type="checkbox" name="webSearchEnabled" id="webSearchEnabled" />
+          <span data-i18n="webSearchEnabled">Enable web search for Verify / Research / Chat</span>
+        </label>
+        <label class="field">
+          <span data-i18n="webSearchProvider">Provider</span>
+          <select name="webSearchProvider" id="webSearchProvider">
+            <option value="none" data-i18n-option="webSearchNone">None</option>
+            <option value="tavily">Tavily</option>
+            <option value="brave">Brave Search</option>
+            <option value="serper">Serper (Google)</option>
+          </select>
+        </label>
+        <label class="field">
+          <span data-i18n="webSearchApiKey">Search API key</span>
+          <input
+            type="password"
+            name="webSearchApiKey"
+            id="webSearchApiKey"
+            autocomplete="off"
+            data-i18n-placeholder="webSearchApiKeyPlaceholder"
+            placeholder="provider API key"
+          />
+        </label>
+        <label class="field">
+          <span data-i18n="webSearchMaxResults">Max results</span>
+          <input
+            type="number"
+            name="webSearchMaxResults"
+            id="webSearchMaxResults"
+            min="1"
+            max="8"
+            value="5"
+          />
+        </label>
+
+        <h2 id="sec-language" data-i18n="languageTitle">Language</h2>
+        <p class="hint" data-i18n="languageHint">
+          UI language is separate from answer language.
+        </p>
+        <label class="field">
+          <span data-i18n="uiLanguage">UI language</span>
+          <select name="uiLocale" id="uiLocale">
+            <option value="auto" data-i18n-option="uiAuto">Auto (browser)</option>
+            <option value="en" data-i18n-option="uiEn">English</option>
+            <option value="zh_CN" data-i18n-option="uiZh">简体中文</option>
+          </select>
+        </label>
+        <label class="field">
+          <span data-i18n="answerLanguage">Answer language</span>
+          <select name="answerLanguage" id="answerLanguage">
+            <option value="auto" data-i18n-option="answerAuto">Auto (UI + selection signal)</option>
+            <option value="match-selection" data-i18n-option="answerMatch">
+              Match selection language
+            </option>
+            <option value="en" data-i18n-option="answerEn">English</option>
+            <option value="zh_CN" data-i18n-option="answerZh">简体中文</option>
+          </select>
+        </label>
+
+        <h2 id="sec-default-lens" data-i18n="defaultLensTitle">Default Lens</h2>
+        <p class="hint" data-i18n="defaultLensHint">
+          Choose automatic smart lens (optional) or a fixed default. You can always pick an
+          explicit lens from the selection bubble.
+        </p>
+        <label class="field">
+          <span data-i18n="lensMode">Lens selection</span>
+          <select name="lensMode" id="lensMode">
+            <option value="auto" data-i18n-option="lensModeAuto">
+              Automatic — suggest from selection
+            </option>
+            <option value="manual" data-i18n-option="lensModeManual">
+              Manual — always use the default below
+            </option>
+          </select>
+        </label>
+        <label class="field">
+          <span data-i18n="defaultLens">Default / fallback lens</span>
+          <select name="defaultLensId" id="defaultLensId"></select>
+        </label>
+        <p class="hint" data-i18n="lensModeHint">
+          Automatic uses page content and your profile to pick Engineering, Investing, etc.
+          Low confidence falls back to the default. Manual never auto-switches.
+        </p>
+
+        <label class="field">
+          <span data-i18n="domainLenses">Per-site default lens (one per line)</span>
+          <textarea
+            id="domainLenses"
+            name="domainLenses"
+            rows="4"
+            data-i18n-placeholder="domainLensesPlaceholder"
+            placeholder="x.com = sanity&#10;github.com = engineering"
+          ></textarea>
+        </label>
+        <p class="hint" data-i18n="domainLensesHint">
+          Applies on that site and its subdomains, ahead of the default above. The bubble still
+          overrides it for a single selection.
+        </p>
+        <div class="actions">
+          <button type="button" id="domain-lens-presets" class="btn ghost" data-i18n="addPresets">
+            Add suggested sites
+          </button>
+        </div>
+
+        <div class="actions">
+          <button type="submit" class="btn primary" data-i18n="saveSettings">Save settings</button>
+          <span id="status" class="status" role="status" aria-live="polite"></span>
+        </div>
+      </form>
+
+      <section class="card" id="lenses-card">
+        <h2 data-i18n="manageLensesTitle">Lenses</h2>
+        <p class="hint" data-i18n="manageLensesHint">
+          Built-in lenses can be fine-tuned (override instructions). Custom lenses can be fully
+          edited or removed. The bubble dropdown uses these definitions.
+        </p>
+        <div id="lens-list" class="list"></div>
+
+        <form id="lens-edit-form" class="subform lens-editor" hidden>
+          <input type="hidden" id="lens-edit-id" />
+          <input type="hidden" id="lens-edit-kind" />
+          <p class="hint" id="lens-edit-title"></p>
+          <label class="field">
+            <span data-i18n="lensName">Name</span>
+            <input type="text" id="lens-name" required />
+          </label>
+          <label class="field">
+            <span data-i18n="lensNameZh">Chinese name (optional)</span>
+            <input
+              type="text"
+              id="lens-name-zh"
+              data-i18n-placeholder="lensNameZhPlaceholder"
+              placeholder="e.g. 招聘"
+            />
+          </label>
+          <label class="field">
+            <span data-i18n="lensHint">Hint (optional)</span>
+            <input
+              type="text"
+              id="lens-hint"
+              data-i18n-placeholder="lensHintPlaceholder"
+              placeholder="One-line description"
+            />
+          </label>
+          <label class="field">
+            <span data-i18n="lensInstructions">Instructions</span>
+            <textarea
+              id="lens-instructions"
+              rows="6"
+              data-i18n-placeholder="lensInstructionsPlaceholder"
+              placeholder="Focus on signal for evaluating candidates…"
+              required
+            ></textarea>
+          </label>
+          <div class="actions">
+            <button type="submit" class="btn primary" id="lens-save-btn" data-i18n="saveLens">
+              Save lens
+            </button>
+            <button type="button" class="btn ghost" id="lens-cancel-btn" data-i18n="cancelEdit">
+              Cancel
+            </button>
+            <button type="button" class="btn ghost" id="lens-reset-btn" data-i18n="resetLens" hidden>
+              Reset to default
+            </button>
+          </div>
+        </form>
+
+        <form id="custom-lens-form" class="subform">
+          <h3 class="subhead" data-i18n="addCustomLensTitle">Add custom lens</h3>
+          <label class="field">
+            <span data-i18n="lensName">Name</span>
+            <input
+              type="text"
+              id="new-lens-name"
+              data-i18n-placeholder="lensNamePlaceholder"
+              placeholder="e.g. Hiring"
+              required
+            />
+          </label>
+          <label class="field">
+            <span data-i18n="lensInstructions">Instructions</span>
+            <textarea
+              id="new-lens-instructions"
+              rows="3"
+              data-i18n-placeholder="lensInstructionsPlaceholder"
+              placeholder="Focus on signal for evaluating candidates…"
+              required
+            ></textarea>
+          </label>
+          <button type="submit" class="btn" data-i18n="addLens">Add lens</button>
+        </form>
+      </section>
+
+      <section class="card" id="profile-card">
+        <h2 data-i18n="profileTitle">Profile</h2>
+        <p class="hint" data-i18n="profileHint">
+          Stable expertise, preferred depth/language, domains you already know.
+        </p>
+        <label class="field">
+          <span data-i18n="aboutYou">About you</span>
+          <textarea
+            id="profileText"
+            rows="4"
+            data-i18n-placeholder="profilePlaceholder"
+            placeholder="e.g. Staff engineer…"
+          ></textarea>
+        </label>
+        <button type="button" id="save-profile" class="btn" data-i18n="saveProfile">Save profile</button>
+      </section>
+
+      <section class="card" id="memory-card">
+        <h2 data-i18n="memoryTitle">Memory</h2>
+        <p class="hint" data-i18n="memoryHint">
+          Explicit memories only by default.
+        </p>
+        <label class="field">
+          <span data-i18n="memoryProvider">Memory provider</span>
+          <select id="memoryProvider">
+            <option value="local" data-i18n-option="memoryLocal">Local (chrome.storage)</option>
+            <option value="none" data-i18n-option="memoryNone">None</option>
+          </select>
+        </label>
+        <div id="memory-list" class="list"></div>
+        <form id="memory-form" class="subform">
+          <label class="field">
+            <span data-i18n="memType">Type</span>
+            <select id="mem-type">
+              <option value="interest" data-i18n-option="memInterest">Interest</option>
+              <option value="goal" data-i18n-option="memGoal">Goal</option>
+              <option value="knowledge" data-i18n-option="memKnowledge">Knowledge</option>
+              <option value="preference" data-i18n-option="memPreference">Preference</option>
+              <option value="note" data-i18n-option="memNote">Note</option>
+              <option value="profile" data-i18n-option="memProfile">Profile</option>
+            </select>
+          </label>
+          <label class="field">
+            <span data-i18n="memText">Text</span>
+            <textarea
+              id="mem-text"
+              rows="2"
+              data-i18n-placeholder="memTextPlaceholder"
+              placeholder="I care about early liquidity incentives"
+              required
+            ></textarea>
+          </label>
+          <div class="actions">
+            <button type="submit" class="btn" data-i18n="addMemory">Add memory</button>
+            <button type="button" id="clear-memories" class="btn ghost" data-i18n="clearAll">
+              Clear all
+            </button>
+          </div>
+        </form>
+
+        <p class="hint" data-i18n="importEntryHint">
+          Distil durable memories from an existing ChatGPT or Claude export. You review everything
+          before anything is saved.
+        </p>
+        <div class="actions">
+          <a class="btn" href="import.html" data-i18n="importEntry">Import from AI chat history</a>
+        </div>
+      </section>
+
+      <section class="card" id="data-card">
+        <h2 data-i18n="dataTitle">Data</h2>
+        <p class="hint" data-i18n="dataHint">
+          Export preferences (API keys are never exported). Reset clears sync + local memory.
+        </p>
+        <div class="actions">
+          <button type="button" id="export-settings" class="btn" data-i18n="exportSettings">
+            Export settings
+          </button>
+          <button type="button" id="import-settings" class="btn ghost" data-i18n="importSettings">
+            Import settings
+          </button>
+          <button type="button" id="reset-all" class="btn ghost" data-i18n="resetAll">
+            Reset all data
+          </button>
+        </div>
+        <input type="file" id="import-file" accept="application/json,.json" hidden />
+      </section>
+
+      <section class="card privacy" id="privacy-card">
+        <h2 data-i18n="privacyTitle">Privacy</h2>
+        <ul>
+          <li data-i18n="privacy1">
+            Only selected text, page title/URL, and a bounded neighborhood leave the content script.
+          </li>
+          <li data-i18n="privacy2">The full page DOM is never uploaded.</li>
+          <li data-i18n="privacy3">Mock: explain payloads stay in the browser.</li>
+          <li data-i18n="privacy4">
+            BYOK: the explain payload is sent to your configured OpenAI-compatible endpoint. Keys
+            stay in chrome.storage (not product cloud unless you opt in).
+          </li>
+          <li data-i18n="privacy4b">
+            Agentaab: the explain payload is sent to the Agentaab app endpoint under your
+            subscription token.
+          </li>
+          <li data-i18n="privacy5">
+            Local memories live in chrome.storage.local. Nothing is auto-remembered.
+          </li>
+          <li data-i18n="privacy6">
+            Images you attach in chat — including a system screenshot you paste in — are sent
+            to the same AI endpoint as the text, and only when you send that message. Full-size
+            image data stays in the tab; only a small thumbnail is kept, in session storage.
+          </li>
+        </ul>
+      </section>
+
+      <section class="card" id="howto-card">
+        <h2 data-i18n="howToTitle">How to use</h2>
+        <ol>
+          <li data-i18n="howTo1">Select text on a page.</li>
+          <li data-i18n="howTo2">Optionally change the Lens on the bubble.</li>
+          <li data-i18n="howTo3">Click WDIMTM.</li>
+          <li data-i18n="howTo4">
+            Use Explain more, Why it matters, Verify, Discuss further, or Remember this.
+          </li>
+          <li data-i18n="howTo5">Press Esc or click outside to dismiss.</li>
+        </ol>
+      </section>
+        </div>
+      </div>
+    </main>
+    <script type="module" src="options.js"></script>
+  </body>
+</html>

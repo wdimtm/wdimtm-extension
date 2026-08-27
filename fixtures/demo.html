@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WDIMTM demo — bonding curve launch notes</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: ui-sans-serif, system-ui, sans-serif;
+        line-height: 1.55;
+      }
+      body {
+        max-width: 42rem;
+        margin: 2rem auto;
+        padding: 0 1.25rem 6rem;
+      }
+      h1 {
+        font-size: 1.5rem;
+        letter-spacing: -0.02em;
+      }
+      .meta {
+        color: #71717a;
+        font-size: 0.9rem;
+      }
+      article p {
+        margin: 1rem 0;
+      }
+      #target-claim {
+        background: rgba(99, 102, 241, 0.12);
+        padding: 0.15em 0.2em;
+        border-radius: 4px;
+      }
+      .pad {
+        height: 120vh;
+        margin-top: 2rem;
+        border-top: 1px dashed #a1a1aa;
+        color: #a1a1aa;
+        font-size: 0.85rem;
+      }
+      code {
+        font-size: 0.9em;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <p class="meta">Local fixture for WDIMTM Phase 0 E2E</p>
+      <h1>Notes from a chain launch thread</h1>
+    </header>
+    <article id="article">
+      <p>
+        Traders are arguing about whether early volume on a new L2 is organic or
+        incentive-driven. Fee switch debates keep showing up next to claims about
+        sticky liquidity.
+      </p>
+      <p>
+        One post says the
+        <span id="target-claim"
+          >bonding curve launch cleared $2M notional volume in under 48 hours</span
+        >
+        while emissions were still front-loaded. That might be a real demand signal,
+        or it might just be mercenary capital rotating through the curve.
+      </p>
+      <p>
+        Separately, someone mentioned fragmented pools across two DEXes with a
+        temporary basis that looked tradeable if gas stayed cheap. No one posted a
+        clean PnL trail.
+      </p>
+      <p id="jargon">
+        TVL climbed after the points program announcement; MEV searchers appeared on
+        the mempool within minutes of the public RPC endpoint going live.
+      </p>
+    </article>
+    <div class="pad">
+      Scroll space for bubble reposition tests. Select text above, then scroll.
+    </div>
+  </body>
+</html>

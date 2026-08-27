@@ -1,0 +1,74 @@
+{
+  "extName": {
+    "message": "WDIMTM — What Does It Mean To Me?"
+  },
+  "extDescription": {
+    "message": "Select text on any page and get a concise, context-aware explanation without leaving the flow."
+  },
+  "actionTitle": {
+    "message": "WDIMTM"
+  },
+  "popoverTitle": {
+    "message": "What does it mean to me?"
+  },
+  "loadingExplain": {
+    "message": "Understanding selection…"
+  },
+  "loadingMore": {
+    "message": "Going deeper…"
+  },
+  "loadingWhy": {
+    "message": "Why it matters…"
+  },
+  "loadingVerify": {
+    "message": "Checking claims…"
+  },
+  "loadingSimplify": {
+    "message": "Simplifying…"
+  },
+  "retry": {
+    "message": "Retry"
+  },
+  "settings": {
+    "message": "Settings"
+  },
+  "remembered": {
+    "message": "Saved to local memory."
+  },
+  "rememberPromptTitle": {
+    "message": "Remember this?"
+  },
+  "rememberAccept": {
+    "message": "Remember"
+  },
+  "rememberDismiss": {
+    "message": "Not now"
+  },
+  "streaming": {
+    "message": "Streaming…"
+  },
+  "close": {
+    "message": "Close"
+  },
+  "lensAria": {
+    "message": "How to read this"
+  },
+  "fuMore": {
+    "message": "Explain more"
+  },
+  "fuWhy": {
+    "message": "Why it matters"
+  },
+  "fuVerify": {
+    "message": "Verify"
+  },
+  "fuRemember": {
+    "message": "Remember this"
+  },
+  "fuSimplify": {
+    "message": "Explain simpler"
+  },
+  "fuOpportunity": {
+    "message": "Any opportunity?"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "wdimtm",
+  "compatibility_date": "2026-08-10",
+  "assets": {
+    "directory": ".",
+    "not_found_handling": "404-page",
+    "html_handling": "auto-trailing-slash"
+  },
+  "workers_dev": true,
+  "routes": [
+    { "pattern": "wdimtm.com", "custom_domain": true },
+    { "pattern": "www.wdimtm.com", "custom_domain": true }
+  ]
+}

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Import chat history — WDIMTM</title>
+    <link rel="stylesheet" href="options.css" />
+    <link rel="stylesheet" href="import.css" />
+  </head>
+  <body class="import-page">
+    <main class="page">
+      <header class="header">
+        <div class="brand">
+          <span class="mark">?</span>
+          <div>
+            <h1 data-i18n="importTitle">Import from AI chat history</h1>
+            <p class="tagline" data-i18n="tagline">What Does It Mean To Me?</p>
+          </div>
+        </div>
+        <p class="lede" data-i18n="importLede">
+          Turn an existing ChatGPT or Claude export into memories WDIMTM can use — reviewed by you,
+          stored on this device.
+        </p>
+      </header>
+
+      <p class="status" id="status" role="status" aria-live="polite"></p>
+
+      <!-- ① Choose file -->
+      <section class="card step" id="step-choose">
+        <h2 data-i18n="importChooseTitle">Choose your export</h2>
+        <p class="hint" data-i18n="importChooseHint">
+          Request your data export from ChatGPT or Claude, then hand the whole thing over — the
+          .zip as downloaded, the unzipped folder, or individual files. WDIMTM reads only the
+          conversation data and works out what each file is.
+        </p>
+        <p class="hint privacy-note" data-i18n="importPrivacyNote">
+          Your conversations are read in this page only.
+        </p>
+
+        <div class="resume-box" id="resume-box" hidden>
+          <h3 data-i18n="importResumeTitle">Unfinished import</h3>
+          <p class="hint" id="resume-body"></p>
+          <div class="actions">
+            <button type="button" class="btn ghost" id="resume-discard" data-i18n="importResumeDiscard">
+              Discard it
+            </button>
+          </div>
+        </div>
+
+        <div class="drop-zone" id="drop-zone">
+          <p class="drop-hint" data-i18n="importDropHint">
+            Drop the .zip here — or the unzipped folder
+          </p>
+          <div class="actions">
+            <button type="button" class="btn primary" id="choose-file" data-i18n="importChooseButton">
+              Choose a .zip or files
+            </button>
+            <button type="button" class="btn ghost" id="choose-folder" data-i18n="importChooseFolder">
+              Choose a folder
+            </button>
+          </div>
+        </div>
+        <input
+          type="file"
+          id="file-input"
+          accept="application/zip,application/x-zip-compressed,.zip,application/json,.json"
+          multiple
+          hidden
+        />
+        <input type="file" id="folder-input" webkitdirectory directory hidden />
+      </section>
+
+      <!-- ② Scale disclosure -->
+      <section class="card step" id="step-disclose" hidden>
+        <h2 data-i18n="importDiscloseTitle">Before anything is sent</h2>
+
+        <div id="disclose-ready" hidden>
+          <ul class="ledger" id="disclose-ledger"></ul>
+          <p class="hint safety" data-i18n="importDiscloseSafety">
+            Raw conversations are not written to disk and are never sent to a WDIMTM server.
+          </p>
+          <div class="actions">
+            <button type="button" class="btn primary" id="start-distill" data-i18n="importStart">
+              Start distilling
+            </button>
+            <button type="button" class="btn ghost" id="disclose-back" data-i18n="importBack">
+              Back
+            </button>
+          </div>
+        </div>
+
+        <div id="disclose-blocked" hidden>
+          <h3 data-i18n="importNeedsModelTitle">Configure a model first</h3>
+          <p class="hint" id="blocked-reason"></p>
+          <div class="actions">
+            <a class="btn" id="open-settings" href="options.html#sec-ai-access" target="_blank"
+               rel="noopener" data-i18n="importOpenSettings">Open AI access settings</a>
+            <button type="button" class="btn ghost" id="recheck-runtime" data-i18n="importRecheck">
+              I have configured it
+            </button>
+          </div>
+          <p class="hint" data-i18n="importKeepThisTab">
+            Opens in a new tab so this page keeps what it already parsed.
+          </p>
+        </div>
+      </section>
+
+      <!-- ③ Running -->
+      <section class="card step" id="step-running" hidden>
+        <h2 data-i18n="importRunningTitle">Distilling</h2>
+        <div class="progress" aria-hidden="true"><div class="progress-fill" id="progress-fill"></div></div>
+        <p class="hint" id="progress-text" role="status" aria-live="polite"></p>
+        <p class="hint backoff" id="backoff-note" hidden data-i18n="importBackingOff">
+          Rate limited — waiting before retrying.
+        </p>
+        <p class="hint keep-open" data-i18n="importRunningKeepOpen">
+          Keep this page open. Closing it pauses the import.
+        </p>
+        <div class="actions">
+          <button type="button" class="btn ghost" id="stop-distill" data-i18n="importStop">Stop</button>
+        </div>
+      </section>
+
+      <!-- ④ Review -->
+      <section class="card step" id="step-review" hidden>
+        <h2 data-i18n="importReviewTitle">Review before saving</h2>
+        <p class="hint" id="review-summary"></p>
+        <p class="hint warn" id="review-warnings" hidden></p>
+
+        <div class="actions review-actions">
+          <button type="button" class="btn ghost" id="select-all" data-i18n="importSelectAll">
+            Select all
+          </button>
+          <button type="button" class="btn ghost" id="select-none" data-i18n="importSelectNone">
+            Select none
+          </button>
+        </div>
+
+        <div id="review-groups"></div>
+
+        <div class="actions sticky-accept">
+          <button type="button" class="btn primary" id="accept-selected"></button>
+        </div>
+      </section>
+
+      <!-- ⑤ Done -->
+      <section class="card step" id="step-done" hidden>
+        <h2 data-i18n="importDoneTitle">Saved</h2>
+        <p class="hint" id="done-body"></p>
+        <div class="actions">
+          <a class="btn" href="options.html#memory-card" data-i18n="importBackToSettings">
+            Back to settings
+          </a>
+          <button type="button" class="btn ghost" id="run-again" data-i18n="importRunAgain">
+            Import another export
+          </button>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="import.js"></script>
+  </body>
+</html>

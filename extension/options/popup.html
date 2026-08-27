@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WDIMTM</title>
+    <style>
+      /* "Classical" system — paper ground, ink text, gold as stroke. */
+      :root {
+        color-scheme: light;
+        --paper: #f3f2f2;
+        --ink: #201f1d;
+        --divider: color-mix(in srgb, #201f1d 16%, transparent);
+        --muted: color-mix(in srgb, #201f1d 62%, transparent);
+        --faint: color-mix(in srgb, #201f1d 45%, transparent);
+        --accent: #b68235;
+        --accent-700: #7d5411;
+        --ok: #4a6b34;
+        --warn: #8a6a1f;
+        --danger: #8a2f2f;
+        --font-heading: "Cormorant Garamond", "Iowan Old Style", "Palatino Linotype", Palatino,
+          "Songti SC", Georgia, serif;
+        --font-body: "Lora", Georgia, Cambria, "Songti SC", "Times New Roman", serif;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        width: 300px;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: var(--font-body);
+        font-size: 12.5px;
+        line-height: 1.6;
+      }
+      .head {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 13px 16px;
+        border-bottom: 1px solid var(--divider);
+      }
+      .mark {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 20px;
+        height: 20px;
+        flex: none;
+        border: 1px solid var(--accent);
+        border-radius: 50%;
+        color: var(--accent);
+        font-family: var(--font-heading);
+        font-size: 11px;
+        font-weight: 600;
+      }
+      h1 {
+        margin: 0 auto 0 0;
+        font-family: var(--font-heading);
+        font-size: 16px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+      }
+      .version {
+        font-size: 10.5px;
+        color: var(--faint);
+        font-variant-numeric: tabular-nums;
+      }
+      .wrap {
+        padding: 14px 16px 16px;
+      }
+      p {
+        margin: 0 0 12px;
+        color: color-mix(in srgb, var(--ink) 76%, transparent);
+        text-align: justify;
+      }
+      ol {
+        margin: 0;
+        padding-left: 1.2em;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.6;
+      }
+      li {
+        margin-bottom: 0.35em;
+      }
+      .facts {
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+        margin: 14px 0;
+        padding: 12px 0;
+        border-top: 1px solid var(--divider);
+        border-bottom: 1px solid var(--divider);
+      }
+      .fact {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        font-size: 12px;
+      }
+      .fact dt {
+        color: var(--muted);
+      }
+      .fact dd {
+        margin: 0;
+        text-align: right;
+      }
+      .fact dd.accent {
+        color: var(--accent-700);
+      }
+      /* Per-site switch — the one control in the popup, so it reads as a row
+         rather than a form field. */
+      .site {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 0 0 12px;
+        padding: 10px 12px;
+        border: 1px solid var(--divider);
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .site:hover {
+        border-color: color-mix(in srgb, var(--accent) 55%, var(--divider));
+      }
+      .site input {
+        flex: none;
+        width: 15px;
+        height: 15px;
+        margin: 0;
+        accent-color: var(--accent);
+        cursor: pointer;
+      }
+      .site-text {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+      .site-title {
+        font-size: 12px;
+      }
+      .site-host {
+        font-size: 11px;
+        color: var(--faint);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .site.is-off .site-title {
+        color: var(--muted);
+      }
+      .site:focus-within {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+      .note {
+        margin: 0 0 12px;
+        font-size: 11px;
+        line-height: 1.55;
+        color: var(--faint);
+        text-align: left;
+      }
+      .note.is-ok {
+        color: var(--ok);
+      }
+      .note.is-warn {
+        color: var(--warn);
+      }
+      .note.is-error {
+        color: var(--danger);
+      }
+      a {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 32px;
+        border: 1px solid var(--accent);
+        border-radius: 4px;
+        color: var(--accent-700);
+        font-family: var(--font-heading);
+        font-size: 13.5px;
+        font-weight: 600;
+        text-decoration: none;
+      }
+      a:hover {
+        background: color-mix(in srgb, var(--accent) 12%, transparent);
+      }
+      a:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="head">
+      <span class="mark">?</span>
+      <h1>WDIMTM</h1>
+      <span class="version" id="popup-version"></span>
+    </div>
+    <div class="wrap">
+      <p id="popup-lede">Select text → pick a Lens → understand it in place.</p>
+      <ol>
+        <li id="popup-s1">Select text on the page</li>
+        <li id="popup-s2">Click the WDIMTM bubble (or press ⌥⇧W)</li>
+        <li id="popup-s3">Use Explain more / Why it matters / Verify</li>
+      </ol>
+      <label class="site" id="popup-site" hidden>
+        <input type="checkbox" id="popup-site-enabled" />
+        <span class="site-text">
+          <span class="site-title" id="popup-site-title">Active on this site</span>
+          <span class="site-host" id="popup-site-host"></span>
+        </span>
+      </label>
+      <dl class="facts" id="popup-facts">
+        <div class="fact">
+          <dt id="popup-runtime-label">Runtime</dt>
+          <dd class="accent" id="popup-runtime"></dd>
+        </div>
+        <div class="fact">
+          <dt id="popup-lens-label">Default lens</dt>
+          <dd id="popup-lens"></dd>
+        </div>
+        <div class="fact">
+          <dt id="popup-memory-label">Memory</dt>
+          <dd id="popup-memory"></dd>
+        </div>
+      </dl>
+      <p class="note" id="popup-ai"></p>
+      <p class="note" id="popup-note">
+        If another translate extension (e.g. Trancy) steals selection UI, use ⌥⇧W or turn off its
+        selection popup.
+      </p>
+      <a id="popup-settings" href="options.html" target="_blank">Open settings</a>
+    </div>
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

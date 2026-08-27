@@ -1,0 +1,23 @@
+[
+  {
+    "account_uuid": "00000000-0000-0000-0000-000000000000",
+    "conversations_memory": "**Work context**\n\nSam is a backend engineer of about ten years, currently working on transaction monitoring at a payments company. Their background is distributed systems and query engines.\n\n**Personal context**\n\nBased in Singapore. Reads Chinese and English comfortably.\n\n**Top of mind**\n\nEvaluating whether to move into a research-heavy role.",
+    "memory_files": [
+      {
+        "path": "/preferences.md",
+        "updated_at": "2026-03-01T00:00:00.000000Z",
+        "content": "---\nname: preferences\ndescription: How Sam likes answers\n---\n- [stated] Prefers short answers with the conclusion first.\n- [stated] Dislikes being asked clarifying questions before a first attempt."
+      },
+      {
+        "path": "/topics/investing.md",
+        "updated_at": "2026-03-01T00:00:00.000000Z",
+        "content": "---\nname: investing\ndescription: Investing interests\n---\n- [stated] Follows AI infrastructure markets, especially memory and networking."
+      },
+      {
+        "path": "/topics/empty.md",
+        "updated_at": "2026-03-01T00:00:00.000000Z",
+        "content": ""
+      }
+    ]
+  }
+]

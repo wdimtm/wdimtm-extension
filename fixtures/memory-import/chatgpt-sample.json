@@ -1,0 +1,401 @@
+[
+  {
+    "title": "DeFi liquidation mechanics",
+    "create_time": 1699999999.123,
+    "conversation_id": "conv-defi",
+    "current_node": "n3b",
+    "mapping": {
+      "root": {
+        "id": "root",
+        "message": null,
+        "parent": null,
+        "children": [
+          "n1"
+        ]
+      },
+      "n1": {
+        "id": "n1",
+        "parent": "root",
+        "children": [
+          "n2"
+        ],
+        "message": {
+          "id": "m1",
+          "author": {
+            "role": "system"
+          },
+          "create_time": 1699999990.0,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "You are a helpful assistant."
+            ]
+          }
+        }
+      },
+      "n2": {
+        "id": "n2",
+        "parent": "n1",
+        "children": [
+          "n3a",
+          "n3b"
+        ],
+        "message": {
+          "id": "m2",
+          "author": {
+            "role": "user"
+          },
+          "create_time": 1699999991.0,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "How do liquidation incentives work in lending protocols?"
+            ]
+          }
+        }
+      },
+      "n3a": {
+        "id": "n3a",
+        "parent": "n2",
+        "children": [],
+        "message": {
+          "id": "m3a",
+          "author": {
+            "role": "assistant"
+          },
+          "create_time": 1699999992.0,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "ABANDONED REGENERATION"
+            ]
+          }
+        }
+      },
+      "n3b": {
+        "id": "n3b",
+        "parent": "n2",
+        "children": [],
+        "message": {
+          "id": "m3b",
+          "author": {
+            "role": "assistant"
+          },
+          "create_time": 1699999993.0,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "Liquidators repay part of the debt in exchange for a bonus."
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "title": "Rust ownership",
+    "create_time": 1700000500.0,
+    "conversation_id": "conv-rust",
+    "current_node": "r3",
+    "mapping": {
+      "r0": {
+        "id": "r0",
+        "message": null,
+        "parent": null,
+        "children": [
+          "r1"
+        ]
+      },
+      "r1": {
+        "id": "r1",
+        "parent": "r0",
+        "children": [
+          "r2"
+        ],
+        "message": {
+          "id": "rm1",
+          "author": {
+            "role": "user"
+          },
+          "create_time": 1700000501.0,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "Why does the borrow checker reject this?"
+            ]
+          }
+        }
+      },
+      "r2": {
+        "id": "r2",
+        "parent": "r1",
+        "children": [
+          "r3"
+        ],
+        "message": {
+          "id": "rm2",
+          "author": {
+            "role": "assistant"
+          },
+          "create_time": 1700000502.0,
+          "metadata": {
+            "is_visually_hidden_from_conversation": true
+          },
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "HIDDEN SCRATCHPAD"
+            ]
+          }
+        }
+      },
+      "r3": {
+        "id": "r3",
+        "parent": "r2",
+        "children": [],
+        "message": {
+          "id": "rm3",
+          "author": {
+            "role": "assistant"
+          },
+          "create_time": 1700000503.0,
+          "content": {
+            "content_type": "code",
+            "text": "fn main() { println!(\"ok\"); }"
+          }
+        }
+      }
+    }
+  },
+  {
+    "title": "Malformed entry with no mapping"
+  },
+  {
+    "title": "Reasoning model conversation",
+    "create_time": 1700001000.0,
+    "conversation_id": "conv-reasoning",
+    "current_node": "t4",
+    "mapping": {
+      "t0": {
+        "id": "t0",
+        "message": null,
+        "parent": null
+      },
+      "t1": {
+        "id": "t1",
+        "parent": "t0",
+        "message": {
+          "id": "tm1",
+          "author": {
+            "role": "user"
+          },
+          "create_time": 1700001001.0,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "Which fund should I look at?"
+            ]
+          }
+        }
+      },
+      "t2": {
+        "id": "t2",
+        "parent": "t1",
+        "message": {
+          "id": "tm2",
+          "author": {
+            "role": "assistant"
+          },
+          "create_time": 1700001002.0,
+          "content": {
+            "content_type": "thoughts",
+            "source_analysis_msg_id": "x",
+            "thoughts": [
+              {
+                "chunks": [],
+                "content": "INTERNAL REASONING TRACE"
+              }
+            ]
+          }
+        }
+      },
+      "t3": {
+        "id": "t3",
+        "parent": "t2",
+        "message": {
+          "id": "tm3",
+          "author": {
+            "role": "assistant"
+          },
+          "create_time": 1700001003.0,
+          "content": {
+            "content_type": "reasoning_recap",
+            "content": "Thought for a few seconds"
+          }
+        }
+      },
+      "t4": {
+        "id": "t4",
+        "parent": "t3",
+        "message": {
+          "id": "tm4",
+          "author": {
+            "role": "assistant"
+          },
+          "create_time": 1700001004.0,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "Here is the actual answer."
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "title": "Voice conversation",
+    "create_time": 1700002000.0,
+    "conversation_id": "conv-voice",
+    "current_node": "v2",
+    "mapping": {
+      "v0": {
+        "id": "v0",
+        "message": null,
+        "parent": null
+      },
+      "v1": {
+        "id": "v1",
+        "parent": "v0",
+        "message": {
+          "id": "vm1",
+          "author": {
+            "role": "user"
+          },
+          "create_time": 1700002001.0,
+          "content": {
+            "content_type": "multimodal_text",
+            "parts": [
+              {
+                "content_type": "audio_transcription",
+                "direction": "in",
+                "text": "Is building a liquidation bot still profitable?"
+              },
+              {
+                "content_type": "real_time_user_audio_video_asset_pointer",
+                "audio_asset_pointer": {}
+              }
+            ]
+          }
+        }
+      },
+      "v2": {
+        "id": "v2",
+        "parent": "v1",
+        "message": {
+          "id": "vm2",
+          "author": {
+            "role": "assistant"
+          },
+          "create_time": 1700002002.0,
+          "content": {
+            "content_type": "multimodal_text",
+            "parts": [
+              {
+                "content_type": "audio_transcription",
+                "direction": "out",
+                "text": "Margins are thinner than they were."
+              },
+              {
+                "content_type": "audio_asset_pointer",
+                "asset_pointer": "sediment://x"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "title": "Conversation carrying custom instructions",
+    "create_time": 1700003000.0,
+    "conversation_id": "conv-context",
+    "current_node": "u2",
+    "mapping": {
+      "u0": {
+        "id": "u0",
+        "message": null,
+        "parent": null
+      },
+      "u1": {
+        "id": "u1",
+        "parent": "u0",
+        "message": {
+          "id": "um1",
+          "author": {
+            "role": "user"
+          },
+          "create_time": 1700003001.0,
+          "content": {
+            "content_type": "user_editable_context",
+            "user_profile": "I am a backend engineer working on payments.",
+            "user_instructions": "Answer concisely and skip pleasantries."
+          }
+        }
+      },
+      "u2": {
+        "id": "u2",
+        "parent": "u1",
+        "message": {
+          "id": "um2",
+          "author": {
+            "role": "user"
+          },
+          "create_time": 1700003002.0,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "How do idempotency keys work?"
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "title": "Screenshot question",
+    "create_time": 1700004000.0,
+    "conversation_id": "conv-image",
+    "current_node": "i1",
+    "mapping": {
+      "i0": {
+        "id": "i0",
+        "message": null,
+        "parent": null
+      },
+      "i1": {
+        "id": "i1",
+        "parent": "i0",
+        "message": {
+          "id": "im1",
+          "author": {
+            "role": "user"
+          },
+          "create_time": 1700004001.0,
+          "content": {
+            "content_type": "multimodal_text",
+            "parts": [
+              {
+                "content_type": "image_asset_pointer",
+                "asset_pointer": "file-service://file-abc",
+                "width": 100,
+                "height": 100
+              },
+              "What is wrong with this chart?"
+            ]
+          }
+        }
+      }
+    }
+  }
+]

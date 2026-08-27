@@ -1,0 +1,529 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WDIMTM — What Does It Mean To Me?</title>
+    <meta
+      name="description"
+      content="Browser-native AI for the moment you see something on the web and think: what does this mean to me? Select text. Stay on the page. Understand."
+    />
+    <meta name="theme-color" content="#f3f2f2" />
+    <link rel="icon" href="./favicon.png" type="image/png" />
+    <link rel="apple-touch-icon" href="./icon.png" />
+    <meta property="og:title" content="WDIMTM — What Does It Mean To Me?" />
+    <meta
+      property="og:description"
+      content="Select anything on a page. Get a concise, personal explanation — without leaving the tab."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://wdimtm.com/" />
+    <meta property="og:image" content="https://wdimtm.com/icon.png" />
+    <link rel="canonical" href="https://wdimtm.com/" />
+    <link rel="alternate" hreflang="en" href="https://wdimtm.com/?lang=en" />
+    <link rel="alternate" hreflang="zh-CN" href="https://wdimtm.com/?lang=zh" />
+    <link rel="alternate" hreflang="x-default" href="https://wdimtm.com/" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Lora:ital,wght@0,400;0,600;1,400&family=Noto+Serif+SC:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <script>
+      // Reduce language FOUC: set html lang before first paint when possible
+      (function () {
+        try {
+          var q = new URLSearchParams(location.search).get("lang");
+          var stored = localStorage.getItem("wdimtm-landing-lang");
+          var nav = (navigator.languages && navigator.languages[0]) || navigator.language || "en";
+          var raw = q || stored || nav || "en";
+          var zh = /^zh/i.test(String(raw).replace(/_/g, "-"));
+          document.documentElement.lang = zh ? "zh-CN" : "en";
+          document.documentElement.dataset.lang = zh ? "zh_CN" : "en";
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <header class="site-header" id="top">
+      <div class="wrap nav">
+        <a class="brand" href="#top" data-i18n-aria="nav.homeAria" aria-label="WDIMTM home">
+          <span>WDIMTM</span>
+        </a>
+        <nav class="nav-links" data-i18n-aria="nav.aria" aria-label="Primary">
+          <a href="#why" data-i18n="nav.why">Why</a>
+          <a href="#how" data-i18n="nav.how">How</a>
+          <a href="#lenses" data-i18n="nav.lenses">Lenses</a>
+          <a href="#access" data-i18n="nav.access">Access</a>
+          <a href="#install" data-i18n="nav.install">Install</a>
+        </nav>
+        <div class="nav-cta">
+          <div class="lang-switch" role="group" data-i18n-aria="lang.aria" aria-label="Language">
+            <button type="button" class="lang-btn" data-lang-option="en" aria-pressed="true">
+              <span data-i18n="lang.en">EN</span>
+            </button>
+            <button type="button" class="lang-btn" data-lang-option="zh_CN" aria-pressed="false">
+              <span data-i18n="lang.zh">中文</span>
+            </button>
+          </div>
+          <a
+            class="btn btn-ghost nav-github"
+            href="https://github.com/wdimtm/wdimtm-extension"
+            target="_blank"
+            rel="noopener"
+            data-i18n="nav.github"
+            >GitHub</a
+          >
+          <a class="btn btn-primary" href="#install" data-i18n="nav.cta">Get the extension</a>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="wrap hero">
+        <div>
+          <p class="eyebrow" data-i18n="hero.eyebrow">Browser-native · select → understand</p>
+          <h1 data-i18n-html="hero.titleHtml">
+            What does it<br />
+            <em>mean to me?</em>
+          </h1>
+          <p class="lede" data-i18n-html="hero.ledeHtml">
+            WDIMTM is an AI explainer for the moment you hit something confusing on the web. Stay
+            on the page. Select the text. Get a short answer that respects
+            <em>your</em> context — not a generic chatbot dump.
+          </p>
+          <div class="hero-actions">
+            <a class="btn btn-primary btn-lg" href="#install" data-i18n="hero.install"
+              >Install the extension</a
+            >
+            <a
+              class="btn btn-ghost btn-lg"
+              href="https://github.com/wdimtm/wdimtm-extension"
+              target="_blank"
+              rel="noopener"
+              data-i18n="hero.source"
+              >View source</a
+            >
+          </div>
+          <div class="hero-meta">
+            <span data-i18n-html="hero.meta1Html"><strong>Chrome MV3</strong> extension</span>
+            <span data-i18n-html="hero.meta2Html"
+              ><strong>BYOK</strong> OpenAI-compatible or Claude</span
+            >
+            <span data-i18n-html="hero.meta3Html"><strong>No prompt</strong> required</span>
+          </div>
+        </div>
+
+        <div class="stage" aria-hidden="true">
+          <div class="page-card">
+            <div class="page-card-bar">
+              <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+              <span class="url-chip">docs.example.com/caching</span>
+            </div>
+            <div class="page-body">
+              <h3 data-i18n="mock.pageTitle">Hot keys &amp; distributed caches</h3>
+              <p data-i18n="mock.p1">
+                Memcached is another distributed, in-memory key–value cache, often used as a
+                simpler alternative to Redis.
+              </p>
+              <p>
+                <span class="sel" data-i18n="mock.sel"
+                  >Switching from Redis to Memcached does not automatically solve a hot-key
+                  problem: a single extremely popular key can overload the one cache node
+                  responsible for it.</span
+                >
+              </p>
+              <p data-i18n="mock.p3">
+                Typical mitigations include replicating the value across nodes, splitting one
+                logical key into multiple keys, client-side caching, or request coalescing.
+              </p>
+
+              <div class="bubble-float">
+                <span class="bubble-mark">?</span>
+                <span data-i18n="mock.explain">Explain</span>
+                <span class="bubble-sep"></span>
+                <span class="bubble-lens" data-i18n="mock.lens">Engineering</span>
+                <span class="bubble-caret">▾</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="popover-mock">
+            <div class="popover-head">
+              <span
+                ><span class="bubble-mark">?</span>
+                <span data-i18n="mock.popoverTitle">What does it mean to me?</span></span
+              >
+              <span style="color: var(--faint)">×</span>
+            </div>
+            <div class="popover-body">
+              <div class="answer-label" data-i18n="mock.groundingLabel">Grounding</div>
+              <p data-i18n="mock.grounding">
+                Sharding by key still pins one hot key to a single node — changing cache product
+                doesn’t remove that load concentration.
+              </p>
+              <div class="for-you">
+                <div class="answer-label" data-i18n="mock.forYouLabel">For you</div>
+                <p data-i18n="mock.forYou">
+                  You own session-cache infra: treat “hot key” as an architecture smell, not a
+                  Redis-vs-Memcached debate.
+                </p>
+              </div>
+              <div class="chips">
+                <span class="chip accent" data-i18n="mock.chip1">What is a hot key?</span>
+                <span class="chip" data-i18n="mock.chip2">Implementation trade-offs?</span>
+                <span class="chip" data-i18n="mock.chip3">Remember this</span>
+              </div>
+              <div class="meta-line" data-i18n="mock.meta">via openai-compatible · engineering</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="why">
+        <div class="wrap">
+          <div class="section-head">
+            <p class="kicker" data-i18n="why.kicker">The problem</p>
+            <h2 data-i18n="why.title">Chatbots make you leave the moment</h2>
+            <p data-i18n="why.body">
+              Most AI tools force a detour: copy, switch app, invent a prompt, paste, wait.
+              WDIMTM is built for the opposite — stay in the flow of reading.
+            </p>
+          </div>
+          <div class="compare">
+            <article class="flow-card bad">
+              <h3 data-i18n="why.badTitle">Typical AI workflow</h3>
+              <ol class="flow-steps">
+                <li><span class="n">1</span> <span data-i18n="why.bad1">See something confusing</span></li>
+                <li><span class="n">2</span> <span data-i18n="why.bad2">Copy text</span></li>
+                <li>
+                  <span class="n">3</span>
+                  <span data-i18n="why.bad3">Switch to ChatGPT / Claude</span>
+                </li>
+                <li><span class="n">4</span> <span data-i18n="why.bad4">Write a prompt</span></li>
+                <li>
+                  <span class="n">5</span> <span data-i18n="why.bad5">Paste context again…</span>
+                </li>
+              </ol>
+            </article>
+            <article class="flow-card good">
+              <h3 data-i18n="why.goodTitle">WDIMTM</h3>
+              <ol class="flow-steps">
+                <li>
+                  <span class="n">1</span> <span data-i18n="why.good1">See something confusing</span>
+                </li>
+                <li>
+                  <span class="n">2</span> <span data-i18n="why.good2">Select it on the page</span>
+                </li>
+                <li>
+                  <span class="n">3</span>
+                  <span data-i18n-html="why.good3Html"
+                    >Understand — with your lens &amp; memory</span
+                  >
+                </li>
+              </ol>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="how">
+        <div class="wrap">
+          <div class="section-head">
+            <p class="kicker" data-i18n="how.kicker">How it works</p>
+            <h2 data-i18n="how.title">One selection. Your lens. Personal relevance.</h2>
+            <p data-i18n="how.body">
+              Page facts, your profile, relevant memories and the active lens compose into one
+              OpenAI-compatible request — returning a concise explanation, predicted follow-ups,
+              and an optional memory suggestion. When a short answer is not enough, the same
+              context escalates into a conversation.
+            </p>
+          </div>
+          <div class="grid-3">
+            <article class="feature">
+              <div class="icon" aria-hidden="true">◎</div>
+              <h3 data-i18n="how.f1.title">Bounded page context</h3>
+              <p data-i18n="how.f1.body">
+                Uses the selection and nearby text — never the full DOM. Fast, private, and
+                grounded in what you’re actually reading.
+              </p>
+            </article>
+            <article class="feature">
+              <div class="icon" aria-hidden="true">◇</div>
+              <h3 data-i18n="how.f2.title">Lenses, not prompts</h3>
+              <p data-i18n="how.f2.body">
+                Explain, Sanity check, Fact check, Opportunities, Engineering, Investing. WDIMTM
+                can suggest the lens from the selection, or you pin one and it stops guessing.
+              </p>
+            </article>
+            <article class="feature">
+              <div class="icon" aria-hidden="true">▹</div>
+              <h3 data-i18n-html="how.f3.titleHtml">What it means <em>to you</em></h3>
+              <p data-i18n="how.f3.body">
+                Optional profile + memories shape implications. No forced personalization — if
+                nothing personal applies, you still get a clean explanation.
+              </p>
+            </article>
+            <article class="feature">
+              <div class="icon" aria-hidden="true">⇄</div>
+              <h3 data-i18n="how.f4.title">From answer to conversation</h3>
+              <p data-i18n="how.f4.body">
+                Follow-up chips are derived from the content, not the same three buttons forever.
+                When one tap isn’t enough, Discuss further opens a page chat carrying the same
+                selection and context.
+              </p>
+            </article>
+            <article class="feature">
+              <div class="icon" aria-hidden="true">⌕</div>
+              <h3 data-i18n="how.f5.title">Live evidence, only when asked</h3>
+              <p data-i18n="how.f5.body">
+                Verify, Research and page chat can pull fresh web snippets through your own Tavily,
+                Brave or Serper key. Ordinary Explain stays offline and single-shot.
+              </p>
+            </article>
+            <article class="feature">
+              <div class="icon" aria-hidden="true">※</div>
+              <h3 data-i18n="how.f6.title">User-controlled memory</h3>
+              <p data-i18n="how.f6.body">
+                Suggestions only. Nothing is saved until you confirm. Inspect, edit, forget, or
+                switch memory off entirely.
+              </p>
+            </article>
+            <article class="feature">
+              <div class="icon" aria-hidden="true">⇪</div>
+              <h3 data-i18n="how.f7.title">Start from what you already said</h3>
+              <p data-i18n="how.f7.body">
+                Import a ChatGPT or Claude export and WDIMTM distills it into candidate memories.
+                Reviewed one by one before anything is saved, read in the page only, never
+                written to disk, never sent to a server of ours.
+              </p>
+            </article>
+            <article class="feature">
+              <div class="icon" aria-hidden="true">▤</div>
+              <h3 data-i18n="how.f8.title">Screenshots are questions too</h3>
+              <p data-i18n="how.f8.body">
+                Take a system screenshot and paste it straight into the page chat — or upload, or
+                drag it in. No text prompt required, and no screen-capture permission: the
+                extension never records your screen itself.
+              </p>
+            </article>
+            <article class="feature">
+              <div class="icon" aria-hidden="true">◑</div>
+              <h3 data-i18n="how.f9.title">Off where you want it off</h3>
+              <p data-i18n="how.f9.body">
+                One switch in the toolbar turns WDIMTM off for the site you are on, and the
+                denylist keeps it off. Nothing is read on a site you excluded — the content
+                script never activates there.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="lenses">
+        <div class="wrap">
+          <div class="section-head">
+            <p class="kicker" data-i18n="lenses.kicker">Lenses</p>
+            <h2 data-i18n="lenses.title">Same text. Different questions.</h2>
+            <p data-i18n="lenses.body">
+              A fee switch headline means one thing to an engineer and another to an investor.
+              Lenses encode that without making you prompt-engineer.
+            </p>
+          </div>
+          <div class="lens-row">
+            <span class="lens-pill"
+              ><b data-i18n="lenses.general">Explain</b>
+              <span data-i18n="lenses.generalDesc">Plain-language unpacking</span></span
+            >
+            <span class="lens-pill"
+              ><b data-i18n="lenses.sanity">Sanity check</b>
+              <span data-i18n="lenses.sanityDesc">Logic, plausibility, missing pieces</span></span
+            >
+            <span class="lens-pill"
+              ><b data-i18n="lenses.fact">Fact check</b>
+              <span data-i18n="lenses.factDesc"
+                >Checkable claims and what would verify them</span
+              ></span
+            >
+            <span class="lens-pill"
+              ><b data-i18n="lenses.opp">Opportunities</b>
+              <span data-i18n="lenses.oppDesc">Incentives, mispricing, monetisation</span></span
+            >
+            <span class="lens-pill"
+              ><b data-i18n="lenses.eng">Engineering</b>
+              <span data-i18n="lenses.engDesc">Architecture, trade-offs, failure modes</span></span
+            >
+            <span class="lens-pill"
+              ><b data-i18n="lenses.invest">Investing</b>
+              <span data-i18n="lenses.investDesc">Risk, thesis, competitive dynamics</span></span
+            >
+          </div>
+          <p class="lens-note" data-i18n="lenses.note">
+            …plus custom lenses written in your own words.
+          </p>
+        </div>
+      </section>
+
+      <section id="access">
+        <div class="wrap">
+          <div class="section-head">
+            <p class="kicker" data-i18n="access.kicker">Access</p>
+            <h2 data-i18n="access.title">You bring the model. We bring the moment.</h2>
+            <p data-i18n="access.body">
+              WDIMTM owns context and personalization — not your GPU bill. Choose how inference is
+              paid for.
+            </p>
+          </div>
+          <div class="access">
+            <article class="access-card">
+              <span class="tag" data-i18n="access.byok.tag">Recommended</span>
+              <h3 data-i18n="access.byok.title">Bring your own key</h3>
+              <p data-i18n="access.byok.body">
+                Any OpenAI-compatible API — OpenAI, OpenRouter, a local model, your own gateway —
+                or Anthropic directly with a Claude key. One request per explain, streaming
+                supported, and you pay the provider rather than us.
+              </p>
+              <p class="runtime-id">
+                <span data-i18n="access.byok.runtime">Runtime ids:</span>
+                <code>openai-compatible</code> · <code>anthropic</code>
+              </p>
+            </article>
+            <article class="access-card">
+              <span class="tag muted" data-i18n="access.cloud.tag">Not open yet</span>
+              <h3 data-i18n="access.cloud.title">WDIMTM Cloud</h3>
+              <p data-i18n="access.cloud.body">
+                An optional hosted mode for people who would rather not hold a key: managed
+                inference, memory that syncs across devices, and research that keeps running
+                after the tab closes. Same extension, same answers — it changes who pays and
+                where the key lives. Local and bring-your-own-key stay free, permanently.
+              </p>
+              <p class="runtime-id">
+                <span data-i18n="access.cloud.runtime">Runtime id:</span>
+                <code>wdimtm-cloud</code>
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="install">
+        <div class="wrap">
+          <div class="section-head">
+            <p class="kicker" data-i18n="install.kicker">Install</p>
+            <h2 data-i18n="install.title">Build it and load it</h2>
+            <p data-i18n="install.body">
+              Not on the Chrome Web Store yet. Install from source — Chrome or any Chromium,
+              developer mode, about three minutes.
+            </p>
+          </div>
+          <div class="steps">
+            <div class="step">
+              <div>
+                <h4 data-i18n="install.s1.title">Clone and build</h4>
+                <p>
+                  <code>git clone https://github.com/wdimtm/wdimtm-extension.git</code>
+                </p>
+                <p data-i18n-html="install.s1.bodyHtml">
+                  Then <code>npm install &amp;&amp; npm run build</code>. The loadable extension is
+                  <code>dist/</code>, which the build produces — there is nothing to load before
+                  you run it.
+                </p>
+              </div>
+            </div>
+            <div class="step">
+              <div>
+                <h4 data-i18n="install.s2.title">Load the extension</h4>
+                <p data-i18n-html="install.s2.bodyHtml">
+                  Open <code>chrome://extensions</code> → enable Developer mode →
+                  <strong>Load unpacked</strong> → select the <code>dist/</code> folder.
+                </p>
+              </div>
+            </div>
+            <div class="step">
+              <div>
+                <h4 data-i18n="install.s3.title">Add your key</h4>
+                <p data-i18n-html="install.s3.bodyHtml">
+                  Open WDIMTM Options → <strong>AI access</strong> → <strong>Use my own API
+                  key</strong>, and pick an OpenAI-compatible endpoint or Anthropic. Hit
+                  <strong>Test connection</strong>, save, then select text on any page. Until you
+                  do this you get sample answers, clearly labelled as such.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="wrap">
+        <div class="cta-band">
+          <p class="kicker" data-i18n="install.kicker">Install</p>
+          <h2 data-i18n="cta.title">Stop translating confusion into prompts</h2>
+          <p data-i18n="cta.body">
+            Select what you don’t understand. Get a short, personal explanation — without leaving
+            the tab.
+          </p>
+          <div class="cta-actions">
+            <a class="btn btn-primary btn-lg" href="#install" data-i18n="cta.install"
+              >Install the extension</a
+            >
+            <a
+              class="btn btn-ghost btn-lg"
+              href="https://github.com/wdimtm/wdimtm-extension"
+              target="_blank"
+              rel="noopener"
+              data-i18n="cta.star"
+              >Star on GitHub</a
+            >
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap footer-row">
+        <div class="brand">
+          WDIMTM
+        </div>
+        <div class="footer-links">
+          <a
+            href="https://github.com/wdimtm/wdimtm-extension"
+            target="_blank"
+            rel="noopener"
+            data-i18n="nav.github"
+            >GitHub</a
+          >
+          <a
+            href="https://github.com/wdimtm/wdimtm-extension/blob/main/docs/runtime-contract.md"
+            target="_blank"
+            rel="noopener"
+            data-i18n="footer.contract"
+            >Runtime contract</a
+          >
+          <a
+            href="https://github.com/wdimtm/wdimtm-extension/blob/main/docs/ai-access-modes.md"
+            target="_blank"
+            rel="noopener"
+            data-i18n="footer.access"
+            >Access modes</a
+          >
+          <a href="./privacy" data-i18n="footer.privacy">Privacy</a>
+        </div>
+        <div class="footer-tagline" data-i18n="footer.tagline">What does it mean to me?</div>
+      </div>
+    </footer>
+
+    <script src="./i18n.js"></script>
+    <script>
+      (function () {
+        const header = document.querySelector(".site-header");
+        const onScroll = () => {
+          if (!header) return;
+          header.classList.toggle("is-scrolled", window.scrollY > 8);
+        };
+        onScroll();
+        window.addEventListener("scroll", onScroll, { passive: true });
+      })();
+    </script>
+  </body>
+</html>

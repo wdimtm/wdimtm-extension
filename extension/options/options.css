@@ -1,0 +1,817 @@
+/* WDIMTM options — "Classical" system: paper ground, ink text, gold as stroke,
+   hairline rules. No web fonts are fetched; the serif stacks fall back to
+   whatever classical faces the OS already has. */
+
+:root {
+  color-scheme: light;
+
+  --paper: #f3f2f2;
+  --surface: #eae9e9;
+  --ink: #201f1d;
+  --divider: color-mix(in srgb, #201f1d 16%, transparent);
+  --muted: color-mix(in srgb, #201f1d 62%, transparent);
+  --faint: color-mix(in srgb, #201f1d 45%, transparent);
+
+  --accent: #b68235;
+  --accent-700: #7d5411;
+  --accent-800: #5a3b0a;
+  --accent-100: #fff3e4;
+  --neutral-100: #f8f4f4;
+  --neutral-800: #444141;
+
+  --ok: #4a6b34;
+  --warn: #8a6a1f;
+  --danger: #8a2f2f;
+
+  --radius-sm: 2px;
+  --radius: 4px;
+
+  --font-heading: "Cormorant Garamond", "Iowan Old Style", "Palatino Linotype", Palatino,
+    "Songti SC", Georgia, serif;
+  --font-body: "Lora", Georgia, Cambria, "Songti SC", "Times New Roman", serif;
+
+  font-family: var(--font-body);
+}
+
+/* ── Dark ────────────────────────────────────────────
+   The popover has honoured the theme setting since it shipped; these pages
+   did not, so choosing Dark produced a dark popover and a white settings
+   page. Tokens are redefined twice on purpose: once behind the media query so
+   a system-dark user sees no white flash before the script runs, and once
+   behind the explicit attribute so an explicit choice beats the OS in both
+   directions. */
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --paper: #1a1917;
+    --surface: #232220;
+    --ink: #e9e6e0;
+    --divider: color-mix(in srgb, #e9e6e0 18%, transparent);
+    --muted: color-mix(in srgb, #e9e6e0 66%, transparent);
+    --faint: color-mix(in srgb, #e9e6e0 42%, transparent);
+
+    --accent: #c99a4e;
+    --accent-700: #dcae66;
+    --accent-800: #ecc98d;
+    --accent-100: color-mix(in srgb, #c99a4e 15%, transparent);
+    --neutral-100: #2a2825;
+    --neutral-800: #d6d2cb;
+
+    --ok: #8fb36b;
+    --warn: #d2a94e;
+    --danger: #d97b7b;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --paper: #1a1917;
+  --surface: #232220;
+  --ink: #e9e6e0;
+  --divider: color-mix(in srgb, #e9e6e0 18%, transparent);
+  --muted: color-mix(in srgb, #e9e6e0 66%, transparent);
+  --faint: color-mix(in srgb, #e9e6e0 42%, transparent);
+
+  --accent: #c99a4e;
+  --accent-700: #dcae66;
+  --accent-800: #ecc98d;
+  --accent-100: color-mix(in srgb, #c99a4e 15%, transparent);
+  --neutral-100: #2a2825;
+  --neutral-800: #d6d2cb;
+
+  --ok: #8fb36b;
+  --warn: #d2a94e;
+  --danger: #d97b7b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-heading);
+  font-weight: 400;
+  letter-spacing: -0.015em;
+  line-height: 1.1;
+}
+
+a {
+  color: var(--accent-700);
+  text-underline-offset: 3px;
+}
+
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.page {
+  max-width: 1060px;
+  margin: 0 auto;
+  padding: 40px 28px 72px;
+}
+
+/* ── Header ─────────────────────────────────────────── */
+
+.header {
+  padding-bottom: 22px;
+  border-bottom: 1px solid var(--divider);
+  margin-bottom: 32px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.brand h1 {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 600;
+}
+
+.tagline {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border: 1px solid var(--accent);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--accent);
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 17px;
+}
+
+.lede {
+  margin: 0;
+  max-width: 62ch;
+  color: color-mix(in srgb, var(--ink) 78%, transparent);
+  font-size: 14px;
+  text-align: justify;
+}
+
+/* ── Layout: contents rail + panels ─────────────────── */
+
+.layout {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 0;
+  align-items: start;
+}
+
+@media (max-width: 860px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .rail {
+    display: none;
+  }
+}
+
+.rail {
+  position: sticky;
+  top: 24px;
+  display: flex;
+  flex-direction: column;
+  padding-right: 24px;
+  border-right: 1px solid var(--divider);
+}
+
+.rail-label {
+  margin: 0 0 8px;
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.rail a {
+  padding: 7px 0 7px 12px;
+  font-family: var(--font-heading);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  text-decoration: none;
+  box-shadow: inset 2px 0 0 transparent;
+}
+
+.rail a:hover {
+  color: var(--accent);
+}
+
+.rail a.is-current {
+  color: var(--accent-700);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.rail-rule {
+  height: 1px;
+  border: 0;
+  margin: 16px 0;
+  background: var(--divider);
+}
+
+.rail-note {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--faint);
+}
+
+.panels {
+  counter-reset: sec;
+  min-width: 0;
+  padding-left: 32px;
+}
+
+@media (max-width: 860px) {
+  .panels {
+    padding-left: 0;
+  }
+}
+
+/* ── Sections ───────────────────────────────────────── */
+
+.card {
+  display: block;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin-bottom: 40px;
+}
+
+.card h2 {
+  margin: 0 0 4px;
+  font-size: 28px;
+  scroll-margin-top: 20px;
+}
+
+.card h2::before {
+  counter-increment: sec;
+  content: "Section " counter(sec, decimal-leading-zero);
+  display: block;
+  margin-bottom: 8px;
+  font-family: var(--font-body);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.card h2:not(:first-child) {
+  margin-top: 40px;
+  padding-top: 34px;
+  border-top: 1px solid var(--divider);
+}
+
+.hint {
+  margin: 8px 0 0;
+  max-width: 62ch;
+  color: color-mix(in srgb, var(--ink) 76%, transparent);
+  font-size: 13.5px;
+  line-height: 1.68;
+  text-align: justify;
+}
+
+.hint + .field,
+.hint + .access-modes,
+.hint + .list,
+.hint + .actions,
+.hint + .llm-fields,
+.hint + .subform,
+.card h2 + .field,
+.card h2 + .list,
+.card h2 + .actions,
+.card ul,
+.card ol {
+  margin-top: 18px;
+}
+
+.card h2 + .hint {
+  margin-top: 10px;
+}
+
+/* ── Fields ─────────────────────────────────────────── */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 16px;
+  max-width: 62ch;
+}
+
+.field span {
+  font-size: 12px;
+  font-weight: 400;
+  color: color-mix(in srgb, var(--ink) 70%, transparent);
+}
+
+.field input,
+.field select,
+.field textarea {
+  min-height: 36px;
+  border-radius: var(--radius);
+  border: 1px solid var(--divider);
+  background: transparent;
+  color: var(--ink);
+  caret-color: var(--accent);
+  padding: 6px 10px;
+  font: inherit;
+  font-size: 14px;
+}
+
+.field textarea {
+  min-height: 90px;
+  resize: vertical;
+  line-height: 1.6;
+}
+
+.field input:hover,
+.field select:hover,
+.field textarea:hover {
+  border-color: color-mix(in srgb, var(--ink) 45%, transparent);
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.field.row {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+
+.field.row input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  min-height: 0;
+  accent-color: var(--accent);
+}
+
+.llm-fields {
+  padding: 16px 18px;
+  border-radius: var(--radius);
+  background: transparent;
+  border: 1px dashed color-mix(in srgb, var(--accent) 45%, transparent);
+  margin-bottom: 8px;
+}
+
+.subform {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--divider);
+}
+
+.subhead {
+  margin: 0 0 12px;
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* ── Buttons ────────────────────────────────────────── */
+
+.actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.btn,
+a.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 34px;
+  padding: 0 16px;
+  border: 1px solid var(--divider);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.btn:hover,
+a.btn:hover {
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
+  color: var(--ink);
+}
+
+.btn.primary {
+  border-color: var(--accent);
+  color: var(--accent-700);
+}
+
+.btn.primary:hover {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent-700);
+}
+
+.btn.ghost {
+  border-color: transparent;
+  color: var(--accent-700);
+  padding-inline: 8px;
+}
+
+.btn.ghost:hover {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--accent-700);
+}
+
+.btn.small {
+  height: 27px;
+  padding: 0 10px;
+  font-size: 12.5px;
+  flex-shrink: 0;
+}
+
+.status {
+  font-size: 13px;
+  color: var(--ok);
+  min-height: 1.2em;
+}
+
+/* ── Toast ───────────────────────────────────────────
+   The page-level status line lives at the bottom of a long form, so "Saved"
+   appeared wherever the Save button happened to be — off screen for anyone who
+   had scrolled. Same element, same aria-live semantics; it just floats now, so
+   the confirmation is visible from anywhere on the page. The per-field
+   `.status` spans (connection tests) keep the inline treatment above. */
+
+#status {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  z-index: 50;
+  min-height: 0;
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 11px 20px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 8px 28px color-mix(in srgb, #000 22%, transparent);
+  text-align: center;
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(-50%, 8px);
+  pointer-events: none;
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease,
+    visibility 160ms;
+}
+
+#status.is-visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0);
+}
+
+#status.is-error {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #status {
+    transition: none;
+  }
+}
+
+/* ── Lists & cards ──────────────────────────────────── */
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 14px 0;
+}
+
+.list-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--divider);
+  background: transparent;
+}
+
+.list-item p {
+  margin: 6px 0 0;
+  color: color-mix(in srgb, var(--ink) 74%, transparent);
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.list-item .meta {
+  margin-left: 8px;
+  color: var(--faint);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.empty {
+  color: var(--muted);
+  font-size: 13.5px;
+  margin: 10px 0;
+}
+
+.privacy ul,
+.card ol {
+  margin: 12px 0 0;
+  padding-left: 1.2em;
+  color: color-mix(in srgb, var(--ink) 76%, transparent);
+  font-size: 13.5px;
+  line-height: 1.7;
+}
+
+.privacy li,
+.card ol li {
+  margin-bottom: 0.5em;
+}
+
+code,
+kbd {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.85em;
+  background: color-mix(in srgb, var(--ink) 5%, transparent);
+  padding: 0.1em 0.35em;
+  border-radius: var(--radius-sm);
+  color: var(--accent-700);
+}
+
+kbd {
+  border: 1px solid var(--divider);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── Banners ────────────────────────────────────────── */
+
+.onboarding-banner {
+  margin: 18px 0 0;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  font-size: 13.5px;
+  line-height: 1.6;
+  border: 1px solid color-mix(in srgb, var(--warn) 40%, transparent);
+  background: transparent;
+  color: var(--warn);
+}
+
+.onboarding-banner.ok {
+  border-color: color-mix(in srgb, var(--ok) 40%, transparent);
+  color: var(--ok);
+}
+
+.onboarding-banner.error {
+  border-color: color-mix(in srgb, var(--danger) 40%, transparent);
+  color: var(--danger);
+}
+
+/* ── Access mode cards ──────────────────────────────── */
+
+.access-modes {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.access-card {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--divider);
+  background: transparent;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.access-card:hover {
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+}
+
+.access-card:has(input:checked) {
+  border-color: var(--accent);
+  background: transparent;
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.access-card input[type="radio"] {
+  margin-top: 4px;
+  width: 15px;
+  height: 15px;
+  accent-color: var(--accent);
+  flex-shrink: 0;
+}
+
+.access-card-body strong {
+  display: block;
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.access-card:has(input:checked) .access-card-body strong {
+  color: var(--accent-700);
+}
+
+.access-card-body p {
+  margin: 3px 0 0;
+  font-size: 13px;
+  color: color-mix(in srgb, var(--ink) 74%, transparent);
+  line-height: 1.6;
+}
+
+/* ── Lens editor ────────────────────────────────────── */
+
+.lens-editor {
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 18px;
+  background: transparent;
+  margin-bottom: 18px;
+}
+
+.list-item.lens-item {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.list-item.lens-item .lens-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.list-item.lens-item .lens-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.list-item.lens-item.editing {
+  border-color: var(--accent);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  vertical-align: middle;
+  background: var(--neutral-100);
+  color: var(--neutral-800);
+  border: 1px solid transparent;
+}
+
+.badge.override {
+  background: var(--accent-100);
+  color: var(--accent-800);
+}
+
+.badge.custom {
+  background: transparent;
+  border-color: var(--accent);
+  color: var(--accent-700);
+}
+
+.lens-instructions-preview {
+  margin: 0;
+  color: color-mix(in srgb, var(--ink) 70%, transparent);
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── Cloud packages ─────────────────────────────────────────── */
+
+.cloud-packages {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 8px 0 14px;
+}
+
+.cloud-package {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  border-radius: 4px;
+  background: transparent;
+}
+
+.cloud-package-title {
+  font-family: var(--font-heading, inherit);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.cloud-package-meta {
+  font-size: 12.5px;
+  color: color-mix(in srgb, var(--ink) 62%, transparent);
+  margin-top: 3px;
+}
+
+.cloud-package-price {
+  font-variant-numeric: tabular-nums;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent-700, var(--accent));
+  margin-right: 8px;
+}
+
+.cloud-advanced {
+  margin-top: 12px;
+  border-top: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+  padding-top: 10px;
+}
+
+.cloud-advanced summary {
+  cursor: pointer;
+  font-size: 12.5px;
+  color: color-mix(in srgb, var(--ink) 70%, transparent);
+  margin-bottom: 10px;
+}

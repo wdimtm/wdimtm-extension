@@ -1,0 +1,32 @@
+{
+  "name": "wdimtm",
+  "version": "0.5.0",
+  "private": true,
+  "description": "WDIMTM — What Does It Mean To Me? Browser extension for in-page explanations.",
+  "type": "module",
+  "scripts": {
+    "test": "npm run test:unit && npm run test:e2e",
+    "test:unit": "node --test tests/unit/**/*.test.mjs",
+    "build": "node scripts/build.mjs",
+    "check:boundary": "node scripts/check-boundary.mjs --check",
+    "check:store": "node scripts/check-store-listing.mjs",
+    "package": "node scripts/package.mjs",
+    "test:e2e": "npm run build && node tests/e2e/extension.e2e.mjs",
+    "test:e2e:headless": "echo 'Note: MV3 extensions need headed Chrome; headless is best-effort' && WDIMTM_E2E_HEADLESS=1 npm run build && node tests/e2e/extension.e2e.mjs",
+    "sync:css": "node scripts/sync-content-css.mjs",
+    "store:assets": "node scripts/make-store-assets.mjs",
+    "demo": "node scripts/serve-demo.mjs",
+    "landing": "node scripts/serve-landing.mjs",
+    "promptaas:mock": "node scripts/promptaas-mock-server.mjs",
+    "build:css": "node scripts/build-inline-css.mjs",
+    "deploy:landing": "wrangler deploy --config landing/wrangler.jsonc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wdimtm/wdimtm-extension.git"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "playwright": "^1.49.1"
+  }
+}

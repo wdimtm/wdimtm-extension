@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Privacy Policy — WDIMTM</title>
+    <meta
+      name="description"
+      content="What WDIMTM does and does not do with your data. There is no WDIMTM server: explain requests go directly from your browser to the AI endpoint you configure."
+    />
+    <meta name="theme-color" content="#f3f2f2" />
+    <link rel="icon" href="./favicon.png" type="image/png" />
+    <link rel="canonical" href="https://wdimtm.com/privacy" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Lora:ital,wght@0,400;0,600;1,400&family=Noto+Serif+SC:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <script>
+      (function () {
+        try {
+          var q = new URLSearchParams(location.search).get("lang");
+          var stored = localStorage.getItem("wdimtm-landing-lang");
+          var nav = (navigator.languages && navigator.languages[0]) || navigator.language || "en";
+          var raw = q || stored || nav || "en";
+          var zh = /^zh/i.test(String(raw).replace(/_/g, "-"));
+          document.documentElement.lang = zh ? "zh-CN" : "en";
+          document.documentElement.dataset.lang = zh ? "zh_CN" : "en";
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <header class="site-header" id="top">
+      <div class="wrap nav">
+        <a class="brand" href="./" aria-label="WDIMTM home"><span>WDIMTM</span></a>
+        <div class="nav-cta">
+          <div class="lang-switch" role="group" aria-label="Language">
+            <button type="button" class="lang-btn" data-lang-option="en">EN</button>
+            <button type="button" class="lang-btn" data-lang-option="zh_CN">中文</button>
+          </div>
+          <a class="btn btn-ghost" href="./">← Home</a>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="wrap legal">
+        <p class="kicker" data-en="Privacy" data-zh="隐私">Privacy</p>
+        <h1 data-en="Privacy Policy" data-zh="隐私政策">Privacy Policy</h1>
+        <p class="legal-meta">
+          <span data-en="Last updated" data-zh="最后更新">Last updated</span>: 2026-08-19
+        </p>
+
+        <p
+          class="lede"
+          data-en="By default WDIMTM has no server: it is a browser extension that talks directly to an AI endpoint you choose and pay for, and we do not receive, store, or see anything you select, read, or ask. WDIMTM Cloud is a separate, opt-in mode — if you sign in and use it, your requests do pass through our backend, and this page says exactly what that means."
+          data-zh="默认情况下 WDIMTM 没有服务器：它是一个浏览器扩展，直接与你自己选择并付费的 AI 端点通信；你选中的内容、阅读的页面、提出的问题，我们既不接收、不存储，也看不到。WDIMTM Cloud 是一个独立的、需要你主动选择的模式 —— 如果你登录并使用它，请求确实会经过我们的后端，本页会明确说明那意味着什么。"
+        >
+          WDIMTM has no server.
+        </p>
+
+        <h2 data-en="What leaves your device" data-zh="哪些数据会离开你的设备">
+          What leaves your device
+        </h2>
+        <p
+          data-en="When you ask for an explanation, the extension sends the following to the AI endpoint configured in its settings — and nowhere else:"
+          data-zh="当你请求一次解释时，扩展会把以下内容发送到你在设置中配置的 AI 端点 —— 不会发往任何其他地方："
+        >
+          When you ask for an explanation, the extension sends the following to the AI endpoint
+          configured in its settings — and nowhere else:
+        </p>
+        <ul>
+          <li data-en="The text you selected." data-zh="你选中的文字。">The text you selected.</li>
+          <li
+            data-en="A bounded amount of surrounding page text. The full page is never sent."
+            data-zh="选区周围有限范围内的页面文字。整页内容从不发送。"
+          >
+            A bounded amount of surrounding page text. The full page is never sent.
+          </li>
+          <li data-en="The page title and URL." data-zh="页面标题与网址。">
+            The page title and URL.
+          </li>
+          <li
+            data-en="The instructions of the lens you are using."
+            data-zh="你当前所用镜头的指令。"
+          >
+            The instructions of the lens you are using.
+          </li>
+          <li
+            data-en="Your profile text and any saved memories judged relevant to the selection — only if you wrote them."
+            data-zh="你的个人画像文字，以及被判定与当前选区相关的已保存记忆 —— 仅当这些内容由你亲自写下时。"
+          >
+            Your profile text and any saved memories judged relevant to the selection.
+          </li>
+        </ul>
+        <p
+          data-en="That endpoint is whichever provider you point the extension at — OpenAI, OpenRouter, a gateway, or a model running on your own machine. Your data is then subject to that provider's privacy policy, not ours. Choose a provider you trust."
+          data-zh="这个端点是你让扩展指向的任何服务商 —— OpenAI、OpenRouter、某个网关，或是跑在你自己机器上的模型。你的数据随后适用该服务商的隐私政策，而非本政策。请选择你信任的服务商。"
+        >
+          That endpoint is whichever provider you point the extension at.
+        </p>
+        <p
+          data-en="If you attach an image in page chat — a screenshot you took with your operating system and pasted in, or a file you uploaded or dragged in — it is sent to that same AI endpoint, and only when you send that message. The extension cannot and does not capture your screen itself; an image reaches it only because you put it there."
+          data-zh="如果你在页面对话里附加图片 —— 无论是你用系统截图后粘贴进来的，还是上传、拖拽的文件 —— 它都会发往同一个 AI 端点，且只在你发送那条消息时发送。扩展本身无法也不会截取你的屏幕；图片进入对话，只因为是你放进去的。"
+        >
+          Images you attach in page chat are sent to that same AI endpoint, only when you send that
+          message. The extension never captures your screen itself.
+        </p>
+        <p
+          data-en="If you turn on web search, the search query derived from your selection is additionally sent to the search provider you configured (Tavily, Brave, or Serper) using your own key. Web search is off by default, and ordinary explanations never use it."
+          data-zh="如果你开启了网页搜索，由选区生成的搜索词还会用你自己的密钥发送给你配置的搜索服务商（Tavily、Brave 或 Serper）。网页搜索默认关闭，普通的「解释」从不使用它。"
+        >
+          If you turn on web search, the search query is additionally sent to your search provider.
+        </p>
+
+        <h2 data-en="What stays on your device" data-zh="哪些数据留在你的设备上">
+          What stays on your device
+        </h2>
+        <ul>
+          <li
+            data-en="Memories and your profile text are stored in extension local storage. Nothing is remembered automatically — a memory exists only because you confirmed it."
+            data-zh="记忆与个人画像文字存放在扩展的本地存储中。任何内容都不会被自动记住 —— 一条记忆之所以存在，是因为你确认过它。"
+          >
+            Memories and your profile text are stored in extension local storage.
+          </li>
+          <li
+            data-en="Page chat threads are stored in session storage and are discarded when you close the browser."
+            data-zh="页面对话的会话记录存放在 session storage 中，浏览器关闭时即被丢弃。"
+          >
+            Page chat threads are stored in session storage.
+          </li>
+          <li
+            data-en="Selections themselves are never retained. Once an answer is rendered, the selected text is not written to storage."
+            data-zh="选中的文字本身从不被保留。答案渲染完成后，选区文字不会写入任何存储。"
+          >
+            Selections themselves are never retained.
+          </li>
+          <li
+            data-en="Images you attach are held in the tab while you are chatting. Only a small thumbnail is written to session storage, so a reopened thread still shows what you sent; the full-size image is not stored."
+            data-zh="你附加的图片只在对话期间保存在当前标签页内。仅有一张小缩略图会写入 session storage，以便重新打开会话时仍能看到你发过什么；原图不会被存储。"
+          >
+            Images you attach are held in the tab; only a small thumbnail is stored.
+          </li>
+        </ul>
+
+        <h2 data-en="Settings sync. API keys do not." data-zh="设置会同步，API 密钥不会。">
+          Settings sync. API keys do not.
+        </h2>
+        <p
+          data-en="Your preferences — lenses, language, answer depth, the site denylist — are stored in Chrome's synced extension storage. If you have Chrome Sync enabled, Chrome mirrors them to your other signed-in Chrome installations through your Google account. That is Chrome's own mechanism; the data goes to Google, not to us, and we cannot read it."
+          data-zh="你的偏好设置 —— 镜头、语言、回答详细程度、站点黑名单 —— 存放在 Chrome 的同步扩展存储中。如果你启用了 Chrome 同步，Chrome 会通过你的 Google 账户把它们镜像到其他已登录的 Chrome 上。这是 Chrome 自身的机制，数据流向 Google，不流向我们，我们也无法读取。"
+        >
+          Your preferences are stored in Chrome's synced extension storage.
+        </p>
+        <p
+          data-en="API keys are deliberately excluded from that. Every credential you enter — your model API key, and your web search key if you set one — is written to device-local extension storage instead, so it is never uploaded and never mirrored to another machine. A key typed on one computer stays on that computer. Exports never contain keys either; an export records only whether a key was present."
+          data-zh="API 密钥被刻意排除在同步之外。你填入的每一个凭据 —— 模型 API 密钥，以及你若设置了的网页搜索密钥 —— 都改写入设备本地的扩展存储，因此永不上传、也永不镜像到另一台机器。在哪台电脑上输入的密钥，就留在哪台电脑上。导出文件同样不含密钥，只记录密钥是否存在。"
+        >
+          API keys are deliberately excluded from that.
+        </p>
+
+        <h2 data-en="Importing your chat history" data-zh="导入你的聊天记录">
+          Importing your chat history
+        </h2>
+        <p
+          data-en="WDIMTM can read a ChatGPT or Claude data export to learn about you. This only ever happens when you start it yourself, and before a single byte is sent you are shown an itemized summary: how many conversations were parsed, how many batches will be sent, the estimated token count, and exactly which model and host they go to. You can cancel there."
+          data-zh="WDIMTM 可以读取 ChatGPT 或 Claude 的数据导出来了解你。这只会在你主动发起时发生，而且在发送任何一个字节之前，你会看到一份逐项清单：解析了多少段对话、将分几批发送、预计多少 token、发往哪个模型和哪个主机。你可以在那一步取消。"
+        >
+          Importing your chat history is always something you start.
+        </p>
+        <ul>
+          <li
+            data-en="Your conversations are read inside the import page only. They are never written to disk and never sent to a WDIMTM server."
+            data-zh="对话内容只在导入页面内读取，不会写入磁盘，也不会发送到 WDIMTM 的服务器。"
+          >
+            Read in the page only, never written to disk.
+          </li>
+          <li
+            data-en="Batches go to the same AI endpoint you configured for everything else, under your own key."
+            data-zh="分批发送的目标就是你为其他功能配置的那个 AI 端点，用的是你自己的密钥。"
+          >
+            Sent to the endpoint you configured, under your key.
+          </li>
+          <li
+            data-en="Nothing is saved until you review it. The distilled memories are shown to you one by one, and only the ones you tick are stored."
+            data-zh="在你审阅之前不会保存任何东西。提炼出的记忆会逐条展示，只有你勾选的才会被存下来。"
+          >
+            Nothing is saved until you review and tick it.
+          </li>
+          <li
+            data-en="Closing the page discards the raw conversations entirely. Only the distilled candidates you have not yet reviewed are kept, so an interrupted import can resume."
+            data-zh="关闭页面会把原始对话完全丢弃。只有你尚未审阅的提炼结果会保留，以便中断的导入可以续跑。"
+          >
+            Closing the page discards the raw conversations.
+          </li>
+        </ul>
+
+        <h2 data-en="WDIMTM Cloud (opt-in)" data-zh="WDIMTM Cloud（需主动选择）">
+          WDIMTM Cloud (opt-in)
+        </h2>
+        <p
+          data-en="WDIMTM Cloud is an optional hosted mode, still under development. It is off unless you choose it. If you do: you sign in with Google so a credit balance can be attached to an account, and your requests pass through the WDIMTM Cloud backend on their way to a model provider. The default local and bring-your-own-key modes never contact it, and remain available."
+          data-zh="WDIMTM Cloud 是一个可选的托管模式，目前仍在开发中。除非你主动选择，否则它不会启用。如果你选择了：你会用 Google 登录，以便把额度绑定到账户上；你的请求会经过 WDIMTM Cloud 后端再转发给模型商。默认的本地模式和自带密钥模式从不与它通信，并且始终可用。"
+        >
+          WDIMTM Cloud is optional and off by default.
+        </p>
+
+        <h2 data-en="What we do not do" data-zh="我们不做什么">What we do not do</h2>
+        <ul>
+          <li
+            data-en="We operate no server and receive no data from the extension."
+            data-zh="我们不运营任何服务器，也不从扩展接收任何数据。"
+          >
+            We operate no server and receive no data from the extension.
+          </li>
+          <li
+            data-en="No analytics, no telemetry, no crash reporting, no tracking pixels, no cookies set by the extension."
+            data-zh="没有分析统计、没有遥测、没有崩溃上报、没有追踪像素，扩展也不设置任何 Cookie。"
+          >
+            No analytics, no telemetry, no crash reporting, no tracking.
+          </li>
+          <li
+            data-en="We do not sell, rent, or share your data. There is nothing for us to sell."
+            data-zh="我们不出售、不出租、不共享你的数据。我们手上没有任何可以出售的东西。"
+          >
+            We do not sell, rent, or share your data.
+          </li>
+          <li
+            data-en="Your data is never used for advertising or for training any model of ours."
+            data-zh="你的数据绝不会用于广告，也不会用于训练我们的任何模型。"
+          >
+            Your data is never used for advertising or model training.
+          </li>
+          <li
+            data-en="The extension reads page content only when you select text and ask. It does not run in the background collecting browsing history."
+            data-zh="只有当你选中文字并主动发起请求时，扩展才会读取页面内容。它不会在后台运行收集浏览历史。"
+          >
+            The extension reads page content only when you select text and ask.
+          </li>
+        </ul>
+
+        <h2 data-en="Your controls" data-zh="你的控制权">Your controls</h2>
+        <ul>
+          <li
+            data-en="View, edit, or delete any memory in Settings → Memory, or erase all of them at once."
+            data-zh="在「设置 → 记忆」中查看、编辑或删除任意一条记忆，也可以一次性全部清除。"
+          >
+            View, edit, or delete any memory in Settings → Memory.
+          </li>
+          <li
+            data-en="Set the memory provider to “none” to stop storing memories entirely."
+            data-zh="把记忆提供方设为「none」，即可完全停止存储记忆。"
+          >
+            Set the memory provider to “none” to stop storing memories entirely.
+          </li>
+          <li
+            data-en="Turn WDIMTM off for the site you are on from the toolbar popup, or add hostnames to the site denylist in Settings — the extension never activates there."
+            data-zh="在工具栏弹窗中一键关闭当前站点，或在设置里把主机名加入站点黑名单 —— 扩展在这些站点上永不激活。"
+          >
+            Turn WDIMTM off for the site you are on, or add hostnames to the site denylist.
+          </li>
+          <li
+            data-en="Turn the extension off globally with one switch, or uninstall it — uninstalling removes all local data."
+            data-zh="用一个开关全局关闭扩展，或直接卸载 —— 卸载会移除全部本地数据。"
+          >
+            Turn the extension off globally, or uninstall it.
+          </li>
+          <li
+            data-en="Export your settings and memories at any time from Settings → Data. Exports never include API keys."
+            data-zh="随时从「设置 → 数据」导出你的设置与记忆。导出内容从不包含 API 密钥。"
+          >
+            Export your settings and memories at any time.
+          </li>
+        </ul>
+
+        <h2 data-en="Children" data-zh="儿童">Children</h2>
+        <p
+          data-en="WDIMTM is not directed at children under 13 and we do not knowingly handle their data. Since we collect nothing, there is nothing for us to delete — but the controls above remove everything held locally."
+          data-zh="WDIMTM 不面向 13 岁以下儿童，我们也不会有意处理他们的数据。由于我们不收集任何内容，也就没有需要我们删除的东西 —— 但上述控制项可以清除本地保存的一切。"
+        >
+          WDIMTM is not directed at children under 13.
+        </p>
+
+        <h2 data-en="Changes" data-zh="政策变更">Changes</h2>
+        <p
+          data-en="If this policy changes in a way that affects what leaves your device, the date at the top will change and the change will be visible in the public repository's commit history."
+          data-zh="如果本政策发生影响「哪些数据离开你的设备」的变更，页首的日期会更新，且该变更会体现在公开仓库的提交历史中。"
+        >
+          If this policy changes, the date at the top will change.
+        </p>
+
+        <h2 data-en="Contact" data-zh="联系方式">Contact</h2>
+        <p
+          data-en="Questions or corrections: open an issue on the public repository."
+          data-zh="有疑问或需要指正：请在公开仓库提交 issue。"
+        >
+          Questions or corrections: open an issue on the public repository.
+        </p>
+        <p>
+          <a href="https://github.com/wdimtm/wdimtm-extension" target="_blank" rel="noopener"
+            >github.com/wdimtm/wdimtm-extension</a
+          >
+        </p>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap footer-row">
+        <div class="brand">WDIMTM</div>
+        <div class="footer-links">
+          <a href="./">Home</a>
+          <a href="https://github.com/wdimtm/wdimtm-extension" target="_blank" rel="noopener">GitHub</a>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      (function () {
+        const KEY = "wdimtm-landing-lang";
+        function apply(lang) {
+          const zh = lang === "zh_CN";
+          document.documentElement.lang = zh ? "zh-CN" : "en";
+          document.documentElement.dataset.lang = lang;
+          document.querySelectorAll("[data-en]").forEach((el) => {
+            const next = zh ? el.getAttribute("data-zh") : el.getAttribute("data-en");
+            if (next) el.textContent = next;
+          });
+          document.querySelectorAll("[data-lang-option]").forEach((b) => {
+            const on = b.getAttribute("data-lang-option") === lang;
+            b.classList.toggle("is-active", on);
+            b.setAttribute("aria-pressed", on ? "true" : "false");
+          });
+          try {
+            localStorage.setItem(KEY, lang);
+          } catch (e) {}
+        }
+        document.querySelectorAll("[data-lang-option]").forEach((b) => {
+          b.addEventListener("click", () => apply(b.getAttribute("data-lang-option")));
+        });
+        apply(document.documentElement.dataset.lang === "zh_CN" ? "zh_CN" : "en");
+      })();
+    </script>
+  </body>
+</html>

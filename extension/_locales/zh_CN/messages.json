@@ -1,0 +1,74 @@
+{
+  "extName": {
+    "message": "WDIMTM — 于我何意"
+  },
+  "extDescription": {
+    "message": "在网页上选中文字，无需离开当前页面即可获得简洁、贴合语境的解释。"
+  },
+  "actionTitle": {
+    "message": "WDIMTM"
+  },
+  "popoverTitle": {
+    "message": "于我何意"
+  },
+  "loadingExplain": {
+    "message": "正在理解选区…"
+  },
+  "loadingMore": {
+    "message": "正在展开说明…"
+  },
+  "loadingWhy": {
+    "message": "正在分析相关性…"
+  },
+  "loadingVerify": {
+    "message": "正在核实主张…"
+  },
+  "loadingSimplify": {
+    "message": "正在简化说明…"
+  },
+  "retry": {
+    "message": "重试"
+  },
+  "settings": {
+    "message": "设置"
+  },
+  "remembered": {
+    "message": "已保存到本地记忆。"
+  },
+  "rememberPromptTitle": {
+    "message": "记住这个吗？"
+  },
+  "rememberAccept": {
+    "message": "记住"
+  },
+  "rememberDismiss": {
+    "message": "暂不"
+  },
+  "streaming": {
+    "message": "生成中…"
+  },
+  "close": {
+    "message": "关闭"
+  },
+  "lensAria": {
+    "message": "解读方式"
+  },
+  "fuMore": {
+    "message": "展开说明"
+  },
+  "fuWhy": {
+    "message": "为什么重要"
+  },
+  "fuVerify": {
+    "message": "核实主张"
+  },
+  "fuRemember": {
+    "message": "记住这个"
+  },
+  "fuSimplify": {
+    "message": "讲简单点"
+  },
+  "fuOpportunity": {
+    "message": "有没有机会"
+  }
+}

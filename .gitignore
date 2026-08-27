@@ -1,0 +1,17 @@
+.DS_Store
+node_modules/
+dist/
+dist-package/
+*.log
+.env
+.env.*
+.idea/
+.vscode/
+*.pem
+.tmp/
+tests/e2e/output/
+.worktrees/
+
+# Cloudflare / Wrangler local state (never commit)
+.wrangler/
+**/.wrangler/
