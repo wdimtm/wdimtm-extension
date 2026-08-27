@@ -5,6 +5,9 @@ import path from "node:path";
 
 import {
   FIELD_LIMIT,
+  TEST_INSTRUCTIONS_LIMIT,
+  limitFor,
+  submittedLength,
   checkStoreListing,
   declaredPermissions,
   diffListing,
@@ -86,7 +89,7 @@ describe("dashboard field limits", () => {
   it("flags a justification the dashboard would truncate", () => {
     const listing = `**\`storage\`**\n\n> ${"x".repeat(FIELD_LIMIT + 1)}\n`;
     assert.deepEqual(overLongFields(listing), [
-      { heading: "storage", length: FIELD_LIMIT + 1 },
+      { heading: "storage", length: FIELD_LIMIT + 1, limit: FIELD_LIMIT },
     ]);
   });
 
@@ -99,5 +102,30 @@ describe("dashboard field limits", () => {
     const result = await checkStoreListing();
     if (result.skipped) return; // public mirror: the listing copy is not published
     assert.deepEqual(result.tooLong, [], "fields the dashboard would cut off mid-sentence");
+  });
+});
+
+describe("the two limits, and the key that grows", () => {
+  it("holds test instructions to half what a permission box gets", () => {
+    assert.equal(limitFor("Test instructions"), TEST_INSTRUCTIONS_LIMIT);
+    assert.equal(limitFor("storage"), FIELD_LIMIT);
+    assert.ok(TEST_INSTRUCTIONS_LIMIT < FIELD_LIMIT);
+  });
+
+  it("measures what gets submitted, not what is on disk", () => {
+    // The placeholder is replaced by a real key before submission, and a real
+    // key is longer — so text that fits on disk can still overflow the field.
+    const body = "Key: <PASTE TEST KEY HERE>";
+    assert.ok(submittedLength(body) > body.length);
+  });
+
+  it("leaves text without a placeholder measured as written", () => {
+    assert.equal(submittedLength("no key here"), "no key here".length);
+  });
+
+  it("catches test instructions that only fit before the key is pasted in", () => {
+    const body = "x".repeat(TEST_INSTRUCTIONS_LIMIT - 5) + "<PASTE TEST KEY HERE>";
+    assert.ok(body.length + 16 > TEST_INSTRUCTIONS_LIMIT);
+    assert.ok(submittedLength(body) > TEST_INSTRUCTIONS_LIMIT);
   });
 });

@@ -52,9 +52,37 @@ export function isJustified(listing, permission) {
 
 /**
  * The dashboard truncates rather than warns, and a justification that stops
- * mid-sentence reads as a non-answer to a reviewer.
+ * mid-sentence reads as a non-answer to a reviewer. Test instructions get half
+ * of what the permission boxes get.
  */
 export const FIELD_LIMIT = 1000;
+export const TEST_INSTRUCTIONS_LIMIT = 500;
+
+/**
+ * A real key is pasted over the placeholder before submission, and it is longer
+ * than the placeholder — so the text that must fit is not the text on disk.
+ * `sk-proj-…` keys run about 56 characters.
+ */
+export const KEY_PLACEHOLDER = "<PASTE TEST KEY HERE>";
+export const REAL_KEY_LENGTH = 56;
+
+/**
+ * What this field will actually contain when it is submitted.
+ * @param {string} body
+ */
+export function submittedLength(body) {
+  const withKey = body.includes(KEY_PLACEHOLDER)
+    ? body.length - KEY_PLACEHOLDER.length + REAL_KEY_LENGTH
+    : body.length;
+  return withKey;
+}
+
+/**
+ * @param {string} heading
+ */
+export function limitFor(heading) {
+  return /test instructions/i.test(heading) ? TEST_INSTRUCTIONS_LIMIT : FIELD_LIMIT;
+}
 
 /**
  * The blockquote bodies in the listing copy — the text that gets pasted into a
@@ -93,8 +121,12 @@ export function quotedFields(listing) {
  */
 export function overLongFields(listing) {
   return quotedFields(listing)
-    .filter((f) => f.body.length > FIELD_LIMIT)
-    .map((f) => ({ heading: f.heading, length: f.body.length }));
+    .map((f) => ({
+      heading: f.heading,
+      length: submittedLength(f.body),
+      limit: limitFor(f.heading),
+    }))
+    .filter((f) => f.length > f.limit);
 }
 
 /**
@@ -143,7 +175,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   }
   for (const f of result.tooLong || []) {
     console.error(
-      `"${f.heading}" is ${f.length} characters; the dashboard field holds ${FIELD_LIMIT}`
+      `"${f.heading}" submits ${f.length} characters; the dashboard field holds ${f.limit}`
     );
   }
   if (result.missing.length || result.stale.length || (result.tooLong || []).length) {
