@@ -9,6 +9,7 @@
  */
 
 import { classifyRuntimeError } from "../runtime-errors.js";
+import { completionSupportOf } from "./registry.js";
 
 /**
  * @param {{ system: string, user: string }} prompt
@@ -70,12 +71,17 @@ export async function complete(prompt, config) {
  * defaults to `mock`, which makes this a routine path rather than an edge case:
  * the UI sends the user to configure a model and keeps their parsed file.
  *
+ * Which runtimes can serve this, and which key they need, is declared once on
+ * the registry entry (`completion`) rather than re-derived here.
+ *
  * @param {{ runtime: string, apiKey: string }} settings
  * @returns {{ ready: boolean, reason?: 'mock' | 'promptaas' | 'missing_key' }}
  */
 export function importRuntimeStatus(settings) {
-  if (settings.runtime === "mock") return { ready: false, reason: "mock" };
-  if (settings.runtime === "promptaas") return { ready: false, reason: "promptaas" };
-  if (!String(settings.apiKey || "").trim()) return { ready: false, reason: "missing_key" };
+  const support = completionSupportOf(settings?.runtime);
+  if (!support.ok) return { ready: false, reason: support.reason };
+  if (!String(settings?.[support.keyField] || "").trim()) {
+    return { ready: false, reason: support.missingReason };
+  }
   return { ready: true };
 }

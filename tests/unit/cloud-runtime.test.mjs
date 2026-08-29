@@ -15,7 +15,7 @@ import {
   isRuntimeReady,
   runtimeToAccessMode,
 } from "../../core/runtime-presets.js";
-import { testCloudConnection } from "../../core/runtime-test.js";
+import { testRuntimeConnection } from "../../core/runtime-test.js";
 import { explainWithWdimtmCloud } from "../../core/runtime/wdimtm-cloud.js";
 
 /**
@@ -325,7 +325,7 @@ describe("cloud access mode wiring", () => {
 
   it("testCloudConnection reports plan and quota", async () => {
     // Empty base uses the product default; missing token is the usual failure.
-    const missing = await testCloudConnection({ cloudBaseUrl: "", cloudAccessToken: "" });
+    const missing = await testRuntimeConnection("cloud", { cloudBaseUrl: "", cloudAccessToken: "" });
     assert.equal(missing.ok, false);
 
     const result = await withServer(
@@ -336,7 +336,7 @@ describe("cloud access mode wiring", () => {
           JSON.stringify({ userId: "u1", plan: "cloud", quota: { used: 3, limit: 100 } })
         );
       },
-      (baseUrl) => testCloudConnection({ cloudBaseUrl: baseUrl, cloudAccessToken: "tok" })
+      (baseUrl) => testRuntimeConnection("cloud", { cloudBaseUrl: baseUrl, cloudAccessToken: "tok" })
     );
     assert.equal(result.ok, true);
     assert.match(result.message, /cloud/i);

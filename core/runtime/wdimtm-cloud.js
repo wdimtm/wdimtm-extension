@@ -10,8 +10,9 @@
  *           POST {cloudBaseUrl}/v1/chat     { input: ChatRequest, stream }
  */
 
-import { cloudFetch } from "../cloud.js";
+import { DEFAULT_CLOUD_BASE_URL, cloudFetch, fetchCloudAccount } from "../cloud.js";
 import { createRequestTimeout, describeAbort } from "../request-timeout.js";
+import { classifyRuntimeError } from "../runtime-errors.js";
 
 /**
  * @param {import('../lib/types.js').ExplainRequest & { mode?: string }} request
@@ -127,6 +128,45 @@ export async function chatWithWdimtmCloud(request, config) {
   const reply = data.reply || data.explanation || data.content || "";
   if (!reply) throw new Error("WDIMTM Cloud chat response was empty.");
   return { reply, runtime: "wdimtm-cloud" };
+}
+
+/**
+ * Connectivity probe (#51). Uses the entitlement endpoint rather than burning
+ * an inference call, so "Test connection" stays free.
+ *
+ * @param {{ baseUrl?: string, accessToken?: string }} config
+ * @returns {Promise<{ ok: boolean, message: string, code?: string }>}
+ */
+export async function pingWdimtmCloud(config) {
+  const baseUrl = (config.baseUrl || DEFAULT_CLOUD_BASE_URL || "").trim().replace(/\/+$/, "");
+  if (!baseUrl) {
+    return {
+      ok: false,
+      code: "missing_cloud_base",
+      message: "WDIMTM Cloud base URL is required.",
+    };
+  }
+
+  try {
+    const account = await fetchCloudAccount({
+      baseUrl,
+      accessToken: (config.accessToken || "").trim(),
+    });
+    const plan = account.plan || "cloud";
+    const quota = account.quota;
+    const quotaText =
+      quota && typeof quota.limit === "number"
+        ? ` — ${quota.used ?? 0}/${quota.limit} used`
+        : "";
+    return {
+      ok: true,
+      code: "ready",
+      message: `Connected to WDIMTM Cloud (plan: ${plan})${quotaText}.`,
+    };
+  } catch (err) {
+    const classified = classifyRuntimeError(err, "cloud");
+    return { ok: false, code: classified.code, message: classified.message };
+  }
 }
 
 /**

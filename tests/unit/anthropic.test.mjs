@@ -14,7 +14,7 @@ import {
   isRuntimeReady,
   runtimeToAccessMode,
 } from "../../core/runtime-presets.js";
-import { testAnthropicConnection } from "../../core/runtime-test.js";
+import { testRuntimeConnection } from "../../core/runtime-test.js";
 
 const REQUEST = {
   selection: "the fee switch activates next week",
@@ -305,13 +305,26 @@ describe("anthropic registration", () => {
     );
   });
 
-  it("adapter dispatches the anthropic runtime", async () => {
-    const fs = await import("node:fs/promises");
-    const path = await import("node:path");
-    const root = path.resolve(import.meta.dirname, "../..");
-    const adapter = await fs.readFile(path.join(root, "core/runtime/adapter.js"), "utf8");
-    assert.ok(adapter.includes('from "./anthropic.js"'));
-    assert.ok(adapter.includes('case "anthropic"'));
+  it("the registry dispatches the anthropic runtime", async () => {
+    const { getRuntime } = await import("../../core/runtime/registry.js");
+    const { explainWithAnthropic, chatWithAnthropic } = await import(
+      "../../core/runtime/anthropic.js"
+    );
+    const entry = getRuntime("anthropic");
+    assert.equal(entry.explain, explainWithAnthropic);
+    assert.equal(entry.chat, chatWithAnthropic);
+    assert.deepEqual(
+      entry.configFromSettings({
+        anthropicBaseUrl: "https://api.anthropic.com/v1",
+        anthropicApiKey: "sk-ant-test",
+        anthropicModel: "claude-opus-5",
+      }),
+      {
+        apiBaseUrl: "https://api.anthropic.com/v1",
+        apiKey: "sk-ant-test",
+        model: "claude-opus-5",
+      }
+    );
   });
 
   it("manifest grants api.anthropic.com host permission", async () => {
@@ -335,9 +348,9 @@ describe("anthropic registration", () => {
   });
 });
 
-describe("testAnthropicConnection", () => {
+describe("anthropic connection test", () => {
   it("requires base URL and key", async () => {
-    const a = await testAnthropicConnection({
+    const a = await testRuntimeConnection("anthropic", {
       anthropicBaseUrl: "",
       anthropicApiKey: "sk-ant-test",
       anthropicModel: "claude-opus-5",
@@ -345,7 +358,7 @@ describe("testAnthropicConnection", () => {
     assert.equal(a.ok, false);
     assert.equal(a.code, "missing_anthropic_base");
 
-    const b = await testAnthropicConnection({
+    const b = await testRuntimeConnection("anthropic", {
       anthropicBaseUrl: ANTHROPIC_DEFAULTS.apiBaseUrl,
       anthropicApiKey: "",
       anthropicModel: "claude-opus-5",
@@ -361,7 +374,7 @@ describe("testAnthropicConnection", () => {
         res.end(jsonMessage("ok"));
       },
       async (base, seen) => {
-        const result = await testAnthropicConnection({
+        const result = await testRuntimeConnection("anthropic", {
           anthropicBaseUrl: base,
           anthropicApiKey: "sk-ant-test",
           anthropicModel: "claude-opus-5",
@@ -381,7 +394,7 @@ describe("testAnthropicConnection", () => {
         res.end(JSON.stringify({ error: { type: "authentication_error" } }));
       },
       async (base) => {
-        const result = await testAnthropicConnection({
+        const result = await testRuntimeConnection("anthropic", {
           anthropicBaseUrl: base,
           anthropicApiKey: "bad",
           anthropicModel: "claude-opus-5",

@@ -4,6 +4,8 @@
  * Replies in Chinese when the selection is primarily CJK.
  */
 
+import { attachmentsWithData, describeAttachments } from "../images.js";
+
 /**
  * @param {import('../lib/types.js').ExplainRequest & { mode?: string }} request
  * @param {{ onChunk?: (text: string) => void }} [opts]
@@ -276,6 +278,107 @@ export async function explainWithMock(request, opts = {}) {
     summary: short,
     followUps: [],
     runtime: "mock",
+  };
+}
+
+/**
+ * Offline chat: reuse the mock explainer framing on the latest user question.
+ *
+ * @param {{
+ *   messages: Array<{ role: string, content: string, attachments?: unknown[] }>,
+ *   selection?: string,
+ *   page?: { url: string, title: string, context?: string },
+ *   lens?: { id: string, instructions?: string },
+ *   memories?: Array<{ type: string, content: string }>,
+ *   answerLanguage?: string,
+ *   webEvidence?: string,
+ *   webSearchMeta?: Record<string, unknown>,
+ * }} request
+ * @param {{
+ *   forceZh?: boolean,
+ *   languageInstruction?: string,
+ *   onChunk?: (text: string) => void,
+ * }} config
+ * @returns {Promise<{ reply: string, runtime: string }>}
+ */
+export async function chatWithMock(request, config = {}) {
+  const messages = request.messages || [];
+  const last = messages[messages.length - 1];
+  const userText = String(last?.content || "");
+  const attachments = last?.attachments;
+
+  const forceZh =
+    config.forceZh === true ||
+    config.languageInstruction?.includes("Chinese") ||
+    request.answerLanguage === "zh_CN" ||
+    /[\u4e00-\u9fff]/.test(userText + (request.selection || ""));
+
+  const mock = await explainWithMock(
+    {
+      selection: request.selection || userText || "(image only)",
+      page: request.page || { url: "", title: "" },
+      lens: request.lens,
+      memories: request.memories,
+      mode: /simpl|简单/i.test(userText)
+        ? "simplify"
+        : /verify|核实|核验|hold up|sanity|fact/i.test(userText)
+          ? "verify"
+          : /why|为什么|重要/i.test(userText)
+            ? "why"
+            : "more",
+      answerLanguage: forceZh ? "zh_CN" : "en",
+      webEvidence: request.webEvidence,
+      webSearchMeta: request.webSearchMeta,
+    },
+    { forceZh }
+  );
+
+  const header = forceZh
+    ? `**深入对话（mock）**\n\n你问：${userText.slice(0, 200)}\n\n`
+    : `**Deeper chat (mock)**\n\nYou asked: ${userText.slice(0, 200)}\n\n`;
+
+  // Mock cannot see pixels — say so instead of pretending to read the image.
+  const attachmentNote = attachmentsWithData(attachments).length
+    ? forceZh
+      ? `\n\n_${describeAttachments(attachments, true)} mock 运行时无法读取图片 —— 接入支持视觉的模型后才会真正分析。_\n`
+      : `\n\n_${describeAttachments(attachments, false)} The mock runtime cannot read images — connect a vision-capable model to analyze them._\n`
+    : "";
+
+  let webNote = "";
+  const st = request.webSearchMeta?.status;
+  if (request.webEvidence && (st === "ok" || request.webSearchMeta?.used)) {
+    webNote = forceZh
+      ? `\n\n_已注入 WEB EVIDENCE（${request.webSearchMeta?.provider || "search"} · ${request.webSearchMeta?.resultCount ?? "?"} 条）。_\n`
+      : `\n\n_WEB EVIDENCE injected (${request.webSearchMeta?.provider || "search"} · ${request.webSearchMeta?.resultCount ?? "?"} hits)._\n`;
+  } else if (st === "failed") {
+    webNote = forceZh
+      ? `\n\n_网页搜索失败：${request.webSearchMeta?.humanError || request.webSearchMeta?.error || "未知"}。_\n`
+      : `\n\n_Web search failed: ${request.webSearchMeta?.humanError || request.webSearchMeta?.error || "unknown"}._\n`;
+  } else if (st === "not_configured" || st === "off") {
+    webNote = forceZh
+      ? `\n\n_网页搜索未开启（Options → Web search）。_\n`
+      : `\n\n_Web search is off (Options → Web search)._\n`;
+  }
+
+  const reply = header + attachmentNote + webNote + mock.explanation;
+
+  if (config.onChunk) {
+    await streamText(reply, config.onChunk);
+  }
+
+  return { reply, runtime: "mock" };
+}
+
+/**
+ * The mock runtime is the one that cannot fail a connectivity test: there is
+ * nothing to connect to.
+ * @returns {Promise<{ ok: boolean, message: string, code?: string }>}
+ */
+export async function pingMock() {
+  return {
+    ok: true,
+    code: "mock",
+    message: "Mock runtime needs no network — switch to BYOK or PromptaaS for real answers.",
   };
 }
 

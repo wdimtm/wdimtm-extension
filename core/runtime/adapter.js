@@ -26,12 +26,8 @@ import {
   modeWantsWebSearch,
   runWebSearch,
 } from "../web-search.js";
-import { explainWithAnthropic } from "./anthropic.js";
 import { runChat } from "./chat.js";
-import { explainWithMock } from "./mock.js";
-import { explainWithOpenAICompatible } from "./openai-compatible.js";
-import { explainWithPromptaaS } from "./promptaas.js";
-import { explainWithWdimtmCloud } from "./wdimtm-cloud.js";
+import { runtimeForExecution } from "./registry.js";
 
 /**
  * Configuration and the memory provider are supplied by the caller rather than
@@ -153,54 +149,17 @@ export async function explain(request, opts = {}) {
     ...(opts.signal ? { signal: opts.signal } : {}),
   };
 
+  // Which runtime, and which settings keys configure it, is the registry's
+  // question — this module only decides what to ask it.
+  const runtime = runtimeForExecution(settings.runtime);
   /** @type {import('../lib/types.js').ExplainResponse} */
-  let res;
-  switch (settings.runtime) {
-    case "openai-compatible":
-      res = await explainWithOpenAICompatible(full, {
-        apiBaseUrl: settings.apiBaseUrl || DEFAULT_SETTINGS.apiBaseUrl,
-        apiKey: settings.apiKey || "",
-        model: settings.model || DEFAULT_SETTINGS.model,
-        languageInstruction: full.languageInstruction,
-        ...streamOpts,
-      });
-      break;
-    case "anthropic":
-      res = await explainWithAnthropic(full, {
-        apiBaseUrl: settings.anthropicBaseUrl || DEFAULT_SETTINGS.anthropicBaseUrl,
-        apiKey: settings.anthropicApiKey || "",
-        model: settings.anthropicModel || DEFAULT_SETTINGS.anthropicModel,
-        languageInstruction: full.languageInstruction,
-        ...streamOpts,
-      });
-      break;
-    case "wdimtm-cloud":
-      // Hosted service mode — same client, same contract, server-side credentials.
-      res = await explainWithWdimtmCloud(full, {
-        baseUrl: settings.cloudBaseUrl || "",
-        accessToken: settings.cloudAccessToken || "",
-        languageInstruction: full.languageInstruction,
-        ...streamOpts,
-      });
-      break;
-    case "promptaas":
-      // Optional provider — same ExplainRequest contract; future home for routing/tools.
-      res = await explainWithPromptaaS(full, {
-        baseUrl: settings.promptaasBaseUrl || DEFAULT_SETTINGS.promptaasBaseUrl,
-        apiKey: settings.promptaasApiKey || "",
-        agentId: settings.promptaasAgentId || DEFAULT_SETTINGS.promptaasAgentId,
-        languageInstruction: full.languageInstruction,
-        ...streamOpts,
-      });
-      break;
-    case "mock":
-    default:
-      res = await explainWithMock(full, {
-        ...streamOpts,
-        forceZh: answerLanguage === "zh_CN",
-      });
-      break;
-  }
+  const res = await runtime.explain(full, {
+    ...runtime.configFromSettings(settings, {
+      answerLanguage,
+      languageInstruction: full.languageInstruction,
+    }),
+    ...streamOpts,
+  });
 
   const zhUi = uiLocale === "zh_CN" || answerLanguage === "zh_CN";
   const enriched = enrichResponse(res, mode, zhUi, {

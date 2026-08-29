@@ -35,7 +35,9 @@ import {
   isRuntimeReady,
   runtimeToAccessMode,
 } from "../../core/runtime-presets.js";
-import { getSettings, saveSettings, topUpUrlFor } from "../lib/settings.js";
+import { getRuntime } from "../../core/runtime/registry.js";
+import { runtimeIdForTestMode } from "../../core/runtime-test.js";
+import { DEFAULT_SETTINGS, getSettings, saveSettings, topUpUrlFor } from "../lib/settings.js";
 
 const form = document.getElementById("settings-form");
 const runtimeEl = document.getElementById("runtime");
@@ -1197,6 +1199,17 @@ cloudSignInBtn?.addEventListener("click", async () => {
   flash(t("signedIn"));
 });
 
+/**
+ * Fields whose blank form value has always meant "use the product default"
+ * rather than "fall back to whatever is saved". Which fields a runtime reads
+ * at all is the registry's answer, not this file's.
+ */
+const TEST_FIELD_FALLBACKS = {
+  model: DEFAULT_SETTINGS.model,
+  anthropicBaseUrl: ANTHROPIC_DEFAULTS.apiBaseUrl,
+  anthropicModel: ANTHROPIC_DEFAULTS.model,
+};
+
 async function runTestConnection(mode, statusElLocal, btn) {
   statusElLocal.textContent = t("testingConnection");
   statusElLocal.style.color = "var(--muted)";
@@ -1204,18 +1217,11 @@ async function runTestConnection(mode, statusElLocal, btn) {
   try {
     /** @type {Record<string, unknown>} */
     const payload = { mode };
-    if (mode === "byok" || mode === "openai-compatible") {
-      payload.apiBaseUrl = form.apiBaseUrl.value.trim();
-      payload.apiKey = form.apiKey.value.trim();
-      payload.model = form.model.value.trim() || "gpt-4o-mini";
-    } else if (mode === "anthropic") {
-      payload.anthropicBaseUrl =
-        form.anthropicBaseUrl.value.trim() || ANTHROPIC_DEFAULTS.apiBaseUrl;
-      payload.anthropicApiKey = form.anthropicApiKey.value.trim();
-      payload.anthropicModel = form.anthropicModel.value.trim() || ANTHROPIC_DEFAULTS.model;
-    } else if (mode === "cloud" || mode === "wdimtm-cloud") {
-      payload.cloudBaseUrl = form.cloudBaseUrl?.value?.trim() || "";
-      payload.cloudAccessToken = form.cloudAccessToken?.value?.trim() || "";
+    const entry = getRuntime(runtimeIdForTestMode(mode));
+    for (const key of entry?.settingsKeys || []) {
+      const field = form[key];
+      if (!field) continue;
+      payload[key] = String(field.value || "").trim() || TEST_FIELD_FALLBACKS[key] || "";
     }
     const res = await chrome.runtime.sendMessage({
       type: MSG.TEST_RUNTIME,

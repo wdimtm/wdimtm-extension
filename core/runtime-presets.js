@@ -6,6 +6,8 @@
  * Anthropic is a BYOK provider (different wire protocol), not its own access mode.
  */
 
+import { readinessOf } from "./runtime/registry.js";
+
 /** @typedef {{
  *   id: string,
  *   label: string,
@@ -126,42 +128,12 @@ export function byokProviderForSettings(settings) {
 
 /**
  * Whether the selected runtime is ready for real inference.
+ *
+ * The rule itself lives with the runtime it describes — see
+ * `runtime/registry.js`. This stays the name the UI imports.
+ *
  * @param {import('./settings.js').DEFAULT_SETTINGS extends infer S ? S : any} settings
  */
 export function isRuntimeReady(settings) {
-  const runtime = settings.runtime || "mock";
-  if (runtime === "mock") return { ok: false, reason: "mock" };
-  if (runtime === "openai-compatible") {
-    if (!settings.apiKey?.trim()) return { ok: false, reason: "missing_byok_key" };
-    if (!settings.apiBaseUrl?.trim()) return { ok: false, reason: "missing_byok_base" };
-    return { ok: true, reason: "ready" };
-  }
-  if (runtime === "anthropic") {
-    if (!settings.anthropicApiKey?.trim()) {
-      return { ok: false, reason: "missing_anthropic_key" };
-    }
-    if (!settings.anthropicBaseUrl?.trim()) {
-      return { ok: false, reason: "missing_anthropic_base" };
-    }
-    return { ok: true, reason: "ready" };
-  }
-  // Legacy client runtime: treat like cloud readiness for status purposes.
-  if (runtime === "promptaas") {
-    return {
-      ok: false,
-      reason: "use_cloud",
-    };
-  }
-  if (runtime === "wdimtm-cloud") {
-    // Production base URL is the default; users should not type it.
-    // Ready = signed in (session token from Google). Packages/checkout are separate.
-    const base =
-      String(settings.cloudBaseUrl || "").trim() || "https://cloud.wdimtm.com";
-    if (!base) return { ok: false, reason: "missing_cloud_base" };
-    if (!settings.cloudAccessToken?.trim()) {
-      return { ok: false, reason: "missing_cloud_token" };
-    }
-    return { ok: true, reason: "ready" };
-  }
-  return { ok: false, reason: "unknown" };
+  return readinessOf(settings);
 }

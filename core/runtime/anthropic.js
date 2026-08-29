@@ -194,6 +194,137 @@ export async function explainWithAnthropic(request, config) {
 }
 
 /**
+ * Multi-turn page chat over the Messages API: system stays top-level, no
+ * temperature, and the same SSE reader as explain.
+ *
+ * @param {{
+ *   system: string,
+ *   messages: Array<{ role: 'user' | 'assistant', content: string }>,
+ * }} request
+ * @param {{
+ *   apiBaseUrl?: string,
+ *   apiKey?: string,
+ *   model?: string,
+ *   onChunk?: (text: string) => void,
+ *   signal?: AbortSignal,
+ * }} config
+ * @returns {Promise<{ reply: string, runtime: string }>}
+ */
+export async function chatWithAnthropic(request, config) {
+  const base = (config.apiBaseUrl || DEFAULT_ANTHROPIC_BASE_URL).replace(/\/$/, "");
+  const model = config.model || DEFAULT_ANTHROPIC_MODEL;
+  if (!config.apiKey) throw new Error("API key is required for chat.");
+  const stream = Boolean(config.onChunk);
+
+  const deadline = createRequestTimeout({ externalSignal: config.signal });
+  const res = await fetchWithTimeout(
+    () =>
+      fetch(`${base}/messages`, {
+        method: "POST",
+        signal: deadline.signal,
+        headers: anthropicHeaders(config.apiKey),
+        body: JSON.stringify({
+          model,
+          // Headroom for adaptive thinking, which shares the max_tokens ceiling.
+          max_tokens: 5000,
+          stream,
+          system: request.system,
+          messages: (request.messages || []).map((m) => ({
+            role: m.role === "assistant" ? "assistant" : "user",
+            content: String(m.content || ""),
+          })),
+        }),
+      }),
+    deadline
+  ).catch((err) => {
+    deadline.settle();
+    throw err;
+  });
+
+  if (!res.ok) {
+    deadline.settle();
+    const body = await res.text().catch(() => "");
+    throw new Error(`Chat failed (${res.status}): ${body.slice(0, 200)}`);
+  }
+
+  if (stream && res.body) {
+    try {
+      const text = await readAnthropicTextStream(
+        res,
+        config.onChunk,
+        "Empty streamed chat response.",
+        deadline
+      );
+      return { reply: text, runtime: "anthropic" };
+    } catch (err) {
+      throw deadline.signal.aborted ? describeAbort(deadline) : err;
+    } finally {
+      deadline.settle();
+    }
+  }
+
+  deadline.settle();
+  const data = await res.json();
+  const text = flattenContent(data?.content).trim();
+  if (!text) throw new Error("Empty chat response.");
+  if (config.onChunk) config.onChunk(text);
+  return { reply: text, runtime: "anthropic" };
+}
+
+/**
+ * Connectivity probe for "Test connection".
+ * @param {{ apiBaseUrl?: string, apiKey?: string, model?: string }} config
+ * @returns {Promise<{ ok: boolean, message: string, code?: string }>}
+ */
+export async function pingAnthropic(config) {
+  const base = (config.apiBaseUrl || "").replace(/\/$/, "");
+  const model = config.model || DEFAULT_ANTHROPIC_MODEL;
+  if (!base) {
+    return {
+      ok: false,
+      code: "missing_anthropic_base",
+      message: "Anthropic base URL is required.",
+    };
+  }
+  if (!config.apiKey?.trim()) {
+    return { ok: false, code: "missing_anthropic_key", message: "Anthropic API key is required." };
+  }
+
+  try {
+    const res = await fetch(`${base}/messages`, {
+      method: "POST",
+      headers: anthropicHeaders(config.apiKey.trim()),
+      body: JSON.stringify({
+        model,
+        max_tokens: 1024,
+        system: "Reply with the single word: ok",
+        messages: [{ role: "user", content: "ping" }],
+      }),
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      const classified = classifyRuntimeError(
+        new Error(`LLM request failed (${res.status}): ${body.slice(0, 120)}`),
+        "byok"
+      );
+      return { ok: false, code: classified.code, message: classified.message };
+    }
+    const data = await res.json();
+    const text = flattenContent(data?.content).trim();
+    return {
+      ok: true,
+      code: "ready",
+      message: text
+        ? `Connected. Model replied: “${text.slice(0, 40)}”`
+        : "Connected. Empty content but HTTP OK.",
+    };
+  } catch (err) {
+    const classified = classifyRuntimeError(err, "byok");
+    return { ok: false, code: classified.code, message: classified.message };
+  }
+}
+
+/**
  * Messages responses are a list of content blocks; only text blocks carry the
  * answer (thinking blocks are empty unless summaries are requested).
  * @param {unknown} content

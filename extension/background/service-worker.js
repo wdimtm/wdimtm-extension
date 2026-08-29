@@ -6,6 +6,7 @@ import { MSG } from "../../core/messages.js";
 import { hasDomainRule, setDomainLens } from "../../core/domain-lenses.js";
 import { browserLocale } from "../lib/host-locale.js";
 import { getMemoryProvider } from "../lib/memory.js";
+import { safePortPost, servePortStream } from "../lib/port-server.js";
 import {
   DEFAULT_SETTINGS,
   SECRET_KEYS,
@@ -44,12 +45,7 @@ import { buildProfilePrompt, parseProfileResponse } from "../../core/memory-impo
 import { classifyImportFailure } from "../../core/memory-import/runner.js";
 import { classifyRuntimeError } from "../../core/runtime-errors.js";
 import { resolveServiceMode } from "../../core/service-mode.js";
-import {
-  testAnthropicConnection,
-  testByokConnection,
-  testCloudConnection,
-  testPromptaasConnection,
-} from "../../core/runtime-test.js";
+import { testRuntimeConnection } from "../../core/runtime-test.js";
 import { chat, explain } from "../../core/runtime/adapter.js";
 import { complete, importRuntimeStatus } from "../../core/runtime/completion.js";
 
@@ -64,15 +60,6 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     });
   return true;
 });
-
-/** Safe port write — content may disconnect while SW is still streaming. */
-function safePortPost(port, message) {
-  try {
-    port.postMessage(message);
-  } catch {
-    /* disconnected port — ignore */
-  }
-}
 
 /**
  * The runtime no longer reaches for storage itself, so the host assembles what
@@ -109,32 +96,18 @@ chrome.runtime.onConnect.addListener((port) => {
   if (port.name === "wdimtm-explain") {
     port.onMessage.addListener(async (msg) => {
       if (msg?.type !== MSG.EXPLAIN) return;
-      try {
-        const request = msg.payload;
-        if (!request?.selection) {
-          safePortPost(port, { type: "error", error: "Missing selection." });
-          return;
-        }
-
-        let streamed = "";
-        const response = await explain(request, {
-          ...(await runtimeDeps()),
-          signal: canceler.signal,
-          onChunk: (text) => {
-            streamed += text;
-            safePortPost(port, { type: "chunk", text });
-          },
-        });
-
-        // If runtime didn't stream, push full text once.
-        if (!streamed && response.explanation) {
-          safePortPost(port, { type: "chunk", text: response.explanation });
-        }
-
-        safePortPost(port, { type: "done", data: response });
-      } catch (err) {
-        await postRuntimeError(port, err, canceler.signal);
-      }
+      const request = msg.payload;
+      await servePortStream(port, {
+        validate: () => (request?.selection ? null : "Missing selection."),
+        run: async ({ onChunk }) =>
+          explain(request, {
+            ...(await runtimeDeps()),
+            signal: canceler.signal,
+            onChunk,
+          }),
+        textOf: (response) => response.explanation,
+        onError: (err) => postRuntimeError(port, err, canceler.signal),
+      });
     });
     return;
   }
@@ -142,43 +115,30 @@ chrome.runtime.onConnect.addListener((port) => {
   if (port.name === "wdimtm-chat") {
     port.onMessage.addListener(async (msg) => {
       if (msg?.type !== MSG.CHAT) return;
-      try {
-        const payload = msg.payload || {};
-        if (!payload.page?.url) {
-          safePortPost(port, { type: "error", error: "Chat requires page.url." });
-          return;
-        }
-        if (!payload.messages?.length) {
-          safePortPost(port, { type: "error", error: "Chat requires messages." });
-          return;
-        }
-
-        let streamed = "";
-        const response = await chat(
-          {
-            selection: payload.selection || "",
-            page: payload.page,
-            lens: payload.lens,
-            messages: sanitizeThreadAttachments(payload.messages || []),
-          },
-          {
-            ...(await runtimeDeps()),
-            signal: canceler.signal,
-            onChunk: (text) => {
-              streamed += text;
-              safePortPost(port, { type: "chunk", text });
+      const payload = msg.payload || {};
+      await servePortStream(port, {
+        validate: () => {
+          if (!payload.page?.url) return "Chat requires page.url.";
+          if (!payload.messages?.length) return "Chat requires messages.";
+          return null;
+        },
+        run: async ({ onChunk }) =>
+          chat(
+            {
+              selection: payload.selection || "",
+              page: payload.page,
+              lens: payload.lens,
+              messages: sanitizeThreadAttachments(payload.messages || []),
             },
-          }
-        );
-
-        if (!streamed && response.reply) {
-          safePortPost(port, { type: "chunk", text: response.reply });
-        }
-
-        safePortPost(port, { type: "done", data: response });
-      } catch (err) {
-        await postRuntimeError(port, err, canceler.signal);
-      }
+            {
+              ...(await runtimeDeps()),
+              signal: canceler.signal,
+              onChunk,
+            }
+          ),
+        textOf: (response) => response.reply,
+        onError: (err) => postRuntimeError(port, err, canceler.signal),
+      });
     });
   }
 });
@@ -674,43 +634,11 @@ async function handleMessage(msg) {
 
     case MSG.TEST_RUNTIME: {
       const settings = await getSettings();
-      // mode may be product access id (byok/promptaas) or runtime id
+      // mode may be product access id (byok/promptaas) or runtime id — either
+      // way the registry owns the mapping and the form overlay.
       const which = String(msg.payload?.mode || settings.runtime || "mock");
-      const isPromptaas = which === "promptaas";
-      const isCloud = which === "cloud" || which === "wdimtm-cloud";
-      let result;
-      if (isPromptaas) {
-        result = await testPromptaasConnection({
-          promptaasBaseUrl: msg.payload?.promptaasBaseUrl || settings.promptaasBaseUrl,
-          promptaasApiKey: msg.payload?.promptaasApiKey ?? settings.promptaasApiKey,
-          promptaasAgentId: msg.payload?.promptaasAgentId || settings.promptaasAgentId,
-        });
-      } else if (which === "anthropic") {
-        result = await testAnthropicConnection({
-          anthropicBaseUrl: msg.payload?.anthropicBaseUrl || settings.anthropicBaseUrl,
-          anthropicApiKey: msg.payload?.anthropicApiKey ?? settings.anthropicApiKey,
-          anthropicModel: msg.payload?.anthropicModel || settings.anthropicModel,
-        });
-      } else if (isCloud) {
-        result = await testCloudConnection({
-          cloudBaseUrl: msg.payload?.cloudBaseUrl || settings.cloudBaseUrl,
-          cloudAccessToken: msg.payload?.cloudAccessToken ?? settings.cloudAccessToken,
-        });
-      } else if (which === "mock") {
-        result = {
-          ok: true,
-          code: "mock",
-          message: "Mock runtime needs no network — switch to BYOK or PromptaaS for real answers.",
-        };
-      } else {
-        // byok | openai-compatible | default
-        result = await testByokConnection({
-          apiBaseUrl: msg.payload?.apiBaseUrl || settings.apiBaseUrl,
-          apiKey: msg.payload?.apiKey ?? settings.apiKey,
-          model: msg.payload?.model || settings.model,
-        });
-      }
-      if (which !== "mock") {
+      const result = await testRuntimeConnection(which, settings, msg.payload || {});
+      if (result.runtime !== "mock") {
         await saveSettings({
           lastRuntimeTestAt: new Date().toISOString(),
           lastRuntimeTestOk: Boolean(result.ok),

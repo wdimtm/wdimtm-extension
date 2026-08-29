@@ -10,6 +10,8 @@ import * as WdimtmDomainLens from "../../core/domain-lenses.js";
 import * as WdimtmSuggestLens from "../../core/suggest-lens.js";
 import * as WdimtmImages from "../../core/images.js";
 import * as WdimtmSiteScope from "../../core/site-scope.js";
+import { hideStreamingTrailers } from "../../core/followups.js";
+import { consumePortStream } from "../lib/port-client.js";
 import { CONTENT_CSS } from "./styles.inline.js";
 
 (() => {
@@ -2587,62 +2589,33 @@ import { CONTENT_CSS } from "./styles.inline.js";
       return;
     }
     activeChatPort = port;
-    let acc = "";
-    let finished = false;
 
-    const finishError = (err) => {
-      if (finished) return;
-      finished = true;
+    /** @param {string} text @param {any} [webSearch] */
+    const settle = (text, webSearch) => {
       activeChatPort = null;
-      setLastAssistantContent(formatChatError(err));
+      setLastAssistantContent(text, webSearch);
       chatBusy = false;
+      persistChat();
       renderChatPanel();
     };
 
-    port.onMessage.addListener((msg) => {
-      if (msg.type === "chunk") {
-        acc += msg.text || "";
-        patchChatStreamingBubble(acc);
-      } else if (msg.type === "done") {
-        if (finished) return;
-        finished = true;
+    consumePortStream(port, {
+      request: { type: "wdimtm:chat", payload: chatPayload() },
+      onChunk: (acc) => patchChatStreamingBubble(acc),
+      onDone: (data, acc) => settle(data?.reply || data?.explanation || acc, data?.webSearch),
+      onPartial: (acc) => settle(acc),
+      onError: (err) => {
         activeChatPort = null;
-        const finalText = msg.data?.reply || msg.data?.explanation || acc;
-        setLastAssistantContent(finalText, msg.data?.webSearch);
+        setLastAssistantContent(formatChatError(err));
         chatBusy = false;
-        persistChat();
         renderChatPanel();
-      } else if (msg.type === "error") {
-        finishError(new Error(msg.error || "Chat failed."));
-      }
+      },
+      onClosed: () => {
+        if (activeChatPort === port) activeChatPort = null;
+      },
+      // The user stopped waiting; do not overwrite whatever they moved on to.
+      isActive: () => chatBusy,
     });
-
-    port.onDisconnect.addListener(() => {
-      if (activeChatPort === port) activeChatPort = null;
-      if (finished || !chatBusy) return;
-      // Chrome often sets lastError when the extension was reloaded mid-request.
-      const lastErr = chrome.runtime.lastError?.message || "";
-      if (!acc) {
-        finishError(
-          new Error(lastErr || "Extension context invalidated.")
-        );
-      } else {
-        finished = true;
-        setLastAssistantContent(acc);
-        chatBusy = false;
-        persistChat();
-        renderChatPanel();
-      }
-    });
-
-    try {
-      port.postMessage({
-        type: "wdimtm:chat",
-        payload: chatPayload(),
-      });
-    } catch (err) {
-      finishError(err);
-    }
   }
 
   function abortChatStream() {
@@ -3012,16 +2985,39 @@ import { CONTENT_CSS } from "./styles.inline.js";
       return;
     }
     activePort = port;
-    let acc = "";
 
-    port.onMessage.addListener((msg) => {
-      if (msg.type === "chunk") {
-        acc += msg.text || "";
+    /** @param {string} explanation @param {any} [data] */
+    const settle = (explanation, data) => {
+      activePort = null;
+      lastExplanation = explanation;
+      lastFollowUps = normalizeFollowUpList(data?.followUps);
+      lastMemorySuggestion = data?.memorySuggestion || null;
+      recordExplainHistory(request, lastExplanation);
+      showPopover(rect, {
+        kind: "ok",
+        explanation: lastExplanation,
+        followUps: lastFollowUps,
+        memorySuggestion: lastMemorySuggestion,
+        runtime: data?.runtime,
+        lensId: activeLensId,
+      });
+      positionPopover(rect);
+    };
+
+    consumePortStream(port, {
+      request: {
+        type: MSG.EXPLAIN,
+        payload: {
+          selection: request.selection,
+          page: request.page,
+          lens: request.lens,
+          mode: request.mode,
+          followUpQuestion: request.followUpQuestion,
+        },
+      },
+      onChunk: (acc) => {
         // Hide model trailers while they stream in.
-        const visible = acc.replace(
-          /(?:^|\n)\s*(?:<<<\s*WDIMTM_(?:FOLLOWUPS|MEMORY|WHY)\s*>>>|<!--\s*wdimtm-)[\s\S]*$/i,
-          ""
-        );
+        const visible = hideStreamingTrailers(acc);
         lastExplanation = visible;
         showPopover(rect, {
           kind: "streaming",
@@ -3029,44 +3025,26 @@ import { CONTENT_CSS } from "./styles.inline.js";
           lensId: activeLensId,
         });
         positionPopover(rect);
-      } else if (msg.type === "done") {
-        activePort = null;
-        lastExplanation = msg.data?.explanation || acc;
-        lastFollowUps = normalizeFollowUpList(msg.data?.followUps);
-        lastMemorySuggestion = msg.data?.memorySuggestion || null;
-        recordExplainHistory(request, lastExplanation);
-        showPopover(rect, {
-          kind: "ok",
-          explanation: lastExplanation,
-          followUps: lastFollowUps,
-          memorySuggestion: lastMemorySuggestion,
-          runtime: msg.data?.runtime,
-          lensId: activeLensId,
-        });
-        positionPopover(rect);
-      } else if (msg.type === "error") {
+      },
+      onDone: (data, acc) => settle(data?.explanation || acc, data),
+      // A half-streamed explanation is worth keeping, exactly as a half-streamed
+      // chat reply always was.
+      onPartial: (acc) => settle(hideStreamingTrailers(acc)),
+      onError: (err) => {
         activePort = null;
         showPopover(rect, {
           kind: "error",
-          message: msg.error || "Explain failed.",
-          code: msg.code || "",
+          message: err.message || "Explain failed.",
+          code: err.code || "",
         });
-      }
-    });
-
-    port.onDisconnect.addListener(() => {
-      activePort = null;
-    });
-
-    port.postMessage({
-      type: MSG.EXPLAIN,
-      payload: {
-        selection: request.selection,
-        page: request.page,
-        lens: request.lens,
-        mode: request.mode,
-        followUpQuestion: request.followUpQuestion,
       },
+      onClosed: () => {
+        if (activePort === port) activePort = null;
+      },
+      failureMessage: tr(
+        "extContextInvalid",
+        "Extension was reloaded — refresh this page, then open chat again."
+      ),
     });
   }
 

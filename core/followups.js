@@ -20,6 +20,32 @@
  * @property {string} [reason]
  */
 
+/** The trailer blocks a model may append, in the order they are stripped. */
+const TRAILER_KINDS = "FOLLOWUPS|MEMORY|WHY";
+
+/**
+ * Everything from an opening trailer marker to the end of the text, in either
+ * marker form. A stream arrives one delta at a time, so the closing marker may
+ * not have been sent yet — a trailer is recognized by where it starts.
+ */
+const STREAMING_TRAILER_RE = new RegExp(
+  `(?:^|\\n)\\s*(?:<<<\\s*WDIMTM_(?:${TRAILER_KINDS})\\s*>>>|<!--\\s*wdimtm-)[\\s\\S]*$`,
+  "i"
+);
+
+/**
+ * Hide a trailer that is still streaming in, so the user never sees the
+ * machinery. The parse of a *finished* answer is extractResponseTrailers;
+ * this is the same knowledge applied to a partial one, and lives here so the
+ * content script does not need a second copy of the markers.
+ *
+ * @param {string} text
+ * @returns {string}
+ */
+export function hideStreamingTrailers(text) {
+  return String(text ?? "").replace(STREAMING_TRAILER_RE, "");
+}
+
 const FOLLOWUPS_BLOCK_RE =
   /(?:^|\n)\s*(?:<<<\s*WDIMTM_FOLLOWUPS\s*>>>|<!--\s*wdimtm-followups\s*-->)\s*([\s\S]*?)\s*(?:<<<\s*END\s*>>>|<!--\s*\/wdimtm-followups\s*-->)\s*/gi;
 
@@ -122,7 +148,10 @@ export function extractResponseTrailers(text) {
 
   // Safety: strip any leftover trailer markers that streamed incomplete
   raw = raw
-    .replace(/(?:^|\n)\s*<<<\s*WDIMTM_(?:FOLLOWUPS|MEMORY|WHY)\s*>>>[\s\S]*$/i, "")
+    .replace(
+      new RegExp(`(?:^|\\n)\\s*<<<\\s*WDIMTM_(?:${TRAILER_KINDS})\\s*>>>[\\s\\S]*$`, "i"),
+      ""
+    )
     .trim();
 
   return {

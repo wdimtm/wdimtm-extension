@@ -9,10 +9,7 @@ import {
   isRuntimeReady,
   runtimeToAccessMode,
 } from "../../core/runtime-presets.js";
-import {
-  testByokConnection,
-  testPromptaasConnection,
-} from "../../core/runtime-test.js";
+import { testRuntimeConnection } from "../../core/runtime-test.js";
 
 describe("runtime presets", () => {
   it("maps product access modes ↔ runtime ids", () => {
@@ -125,10 +122,10 @@ describe("classifyRuntimeError", () => {
 
 describe("connection tests", () => {
   it("testByokConnection requires key and base", async () => {
-    const a = await testByokConnection({ apiBaseUrl: "", apiKey: "x", model: "m" });
+    const a = await testRuntimeConnection("byok", { apiBaseUrl: "", apiKey: "x", model: "m" });
     assert.equal(a.ok, false);
     assert.equal(a.code, "missing_byok_base");
-    const b = await testByokConnection({
+    const b = await testRuntimeConnection("byok", {
       apiBaseUrl: "https://example.com/v1",
       apiKey: "",
       model: "m",
@@ -151,7 +148,7 @@ describe("connection tests", () => {
     await new Promise((r) => server.listen(0, "127.0.0.1", r));
     const { port } = server.address();
     try {
-      const result = await testByokConnection({
+      const result = await testRuntimeConnection("byok", {
         apiBaseUrl: `http://127.0.0.1:${port}/v1`,
         apiKey: "sk-test",
         model: "gpt-test",
@@ -171,7 +168,7 @@ describe("connection tests", () => {
     await new Promise((r) => server.listen(0, "127.0.0.1", r));
     const { port } = server.address();
     try {
-      const result = await testByokConnection({
+      const result = await testRuntimeConnection("byok", {
         apiBaseUrl: `http://127.0.0.1:${port}/v1`,
         apiKey: "bad",
         model: "m",
@@ -184,7 +181,7 @@ describe("connection tests", () => {
   });
 
   it("testPromptaasConnection still works for cloud backend / mocks", async () => {
-    const missing = await testPromptaasConnection({
+    const missing = await testRuntimeConnection("promptaas", {
       promptaasBaseUrl: "",
       promptaasAgentId: "wdimtm-explainer",
     });
@@ -198,7 +195,7 @@ describe("connection tests", () => {
     await new Promise((r) => server.listen(0, "127.0.0.1", r));
     const { port } = server.address();
     try {
-      const result = await testPromptaasConnection({
+      const result = await testRuntimeConnection("promptaas", {
         promptaasBaseUrl: `http://127.0.0.1:${port}`,
         promptaasAgentId: "wdimtm-explainer",
         promptaasApiKey: "tok",
