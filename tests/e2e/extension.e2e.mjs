@@ -301,30 +301,63 @@ async function main() {
     assert.ok(!/api\.openai\.com/i.test(answerText));
     results.push("mock explanation rendered: ok");
 
-    // Follow-up: Explain more (label may be localized / structured)
-    const moreBtn = page
+    // Chips only exist once the stream finishes; mid-stream the popover shows
+    // a hint inside a container with the same class, so waiting on
+    // .wdimtm-followups still races. Wait for an actual chip.
+    await page
       .locator("#wdimtm-host")
-      .locator('#wdimtm-popover [data-intent="more"]');
-    await moreBtn.waitFor({ state: "visible", timeout: 5000 });
-    await moreBtn.click({ force: true });
+      .locator('#wdimtm-popover [data-action="followup"]')
+      .first()
+      .waitFor({ state: "visible", timeout: 15000 });
+
+    // Which predicted chips appear is contextual — they are derived from the
+    // selection and the answer, so demanding a specific one (this asked for
+    // "Explain more") breaks whenever the suggestion logic improves. Discuss
+    // and Remember are the two the builder reserves; those are the contract.
+    for (const intent of ["discuss", "remember"]) {
+      const chip = page.locator("#wdimtm-host").locator(`#wdimtm-popover [data-intent="${intent}"]`);
+      assert.equal(await chip.count(), 1, `expected a reserved ${intent} chip`);
+    }
+
+    const predicted = page
+      .locator("#wdimtm-host")
+      .locator('#wdimtm-popover [data-action="followup"]:not([data-intent="discuss"]):not([data-intent="remember"])');
+    assert.ok((await predicted.count()) > 0, "expected at least one predicted follow-up");
+    results.push("follow-up chips rendered: ok");
+
+    // Escalation: click whichever chip was predicted and assert the popover
+    // answers again. Asserting the reply's wording would couple this to the
+    // mock's copy; that the content changes is the behaviour under test.
+    const beforeEscalation = await popover.innerText();
+    await predicted.first().click({ force: true });
     await page.waitForFunction(
-      () => {
+      (before) => {
         const host = document.getElementById("wdimtm-host");
         const pop = host?.shadowRoot?.getElementById("wdimtm-popover");
-        return (pop?.innerText || "").includes("Deeper");
+        const now = pop?.innerText || "";
+        return now.length > 0 && now !== before;
       },
-      null,
+      beforeEscalation,
       { timeout: 15000 }
     );
-    results.push("follow-up Explain more: ok");
+    // The text changes as soon as the second answer starts streaming, and chips
+    // are only rebuilt once it finishes — so the same race this file just fixed
+    // for the first render applies again here. Wait for the chips, not the text.
+    await page
+      .locator("#wdimtm-host")
+      .locator('#wdimtm-popover [data-action="followup"]')
+      .first()
+      .waitFor({ state: "visible", timeout: 15000 });
+    results.push("follow-up escalation: ok");
 
     // Discuss further → page chat panel
     const discussBtn = page
       .locator("#wdimtm-host")
       .locator('#wdimtm-popover [data-intent="discuss"]');
-    // After "more", discuss may be first; if missing, reopen explain once.
+    // Discuss is reserved so it is present; the old fallback here poked a
+    // "more" chip that no longer exists.
     if ((await discussBtn.count()) === 0) {
-      await page.locator("#wdimtm-host").locator('#wdimtm-popover [data-intent="more"]').click({ force: true }).catch(() => {});
+      await predicted.first().click({ force: true }).catch(() => {});
       await page.waitForTimeout(500);
     }
     // Re-query after possible re-render
