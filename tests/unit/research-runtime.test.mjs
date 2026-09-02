@@ -127,7 +127,13 @@ describe("PromptAAS research runtime adapter", () => {
       }
     );
 
-    assert.deepEqual(calls, ["POST /api/app/wdimtm-research/completion-messages"]);
+    // Chat is the default: agentaab's OpenAI-compatible providers send
+    // completion-mode requests to `/completions`, which those endpoints do not
+    // serve. Chat mode still substitutes `inputs`, and additionally requires a
+    // non-empty `query`.
+    assert.deepEqual(calls, ["POST /api/app/wdimtm-research/chat-messages"]);
+    assert.equal(sent.query, INPUT.goal);
+    assert.equal(sent.inputs.goal, INPUT.goal);
     assert.equal(headers.authorization, "Bearer pk_app_token");
     // PromptaaS runs blocking, so the whole result comes back from start().
     assert.equal(ref.provider, "promptaas");

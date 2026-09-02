@@ -96,7 +96,7 @@ export function toPromptaasInputs(input) {
  *   baseUrl: string,
  *   appSlug: string,
  *   publicToken?: string,
- *   endpoint?: 'completion' | 'workflow',
+ *   endpoint?: 'chat' | 'completion' | 'workflow',
  *   userId?: string,
  * }} config
  */
@@ -106,10 +106,19 @@ export function createPromptAASResearchRuntime(config) {
   if (!base) throw new Error("PromptaaS base URL is required for research.");
   if (!appSlug) throw new Error("PromptaaS app slug is required for research.");
 
+  // `chat` is the default: the OpenAI-compatible providers agentaab reaches send
+  // completion-mode requests to `/completions`, which those endpoints do not
+  // serve. Chat mode still substitutes `inputs` into the prompt template
+  // (the runtime renders `{ ...inputs, query }`), so the structured fields from
+  // `toPromptaasInputs()` keep working — it just also requires a non-empty
+  // `query`, which `start()` supplies below.
+  const isChat = config.endpoint !== "completion" && config.endpoint !== "workflow";
   const path =
     config.endpoint === "workflow"
       ? `/api/app/${encodeURIComponent(appSlug)}/workflows/run`
-      : `/api/app/${encodeURIComponent(appSlug)}/completion-messages`;
+      : isChat
+        ? `/api/app/${encodeURIComponent(appSlug)}/chat-messages`
+        : `/api/app/${encodeURIComponent(appSlug)}/completion-messages`;
 
   /** @type {Map<string, RuntimeExecutionState>} */
   const finished = new Map();
@@ -130,9 +139,16 @@ export function createPromptAASResearchRuntime(config) {
       const headers = { Accept: "application/json", "Content-Type": "application/json" };
       if (config.publicToken) headers.Authorization = `Bearer ${config.publicToken}`;
 
+      const inputs = toPromptaasInputs(input);
       const body = {
-        inputs: toPromptaasInputs(input),
+        inputs,
         response_mode: "blocking",
+        // Chat mode rejects an empty query with a 400 before the model is ever
+        // reached, so send the goal (the field the prompt is actually about)
+        // and fall back through the other free-text fields.
+        ...(isChat
+          ? { query: inputs.goal || inputs.question || inputs.selection || inputs.page_title || "research" }
+          : {}),
         // Stable per-user id so PromptaaS quota, credits and analytics land on
         // the right account. `auth:` marks it as an authenticated end user.
         ...(config.userId ? { user: `auth:wdimtm:${config.userId}` } : {}),
