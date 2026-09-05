@@ -27,7 +27,6 @@ describe("auth/sync", () => {
       {
         profileText: "eng",
         apiKey: "sk-secret",
-        promptaasApiKey: "secret2",
         customLenses: [],
         defaultLensId: "general",
       },

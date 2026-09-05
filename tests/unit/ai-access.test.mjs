@@ -87,12 +87,6 @@ describe("runtime presets", () => {
       true
     );
 
-    // Legacy direct Agentaab client path — steer to Cloud.
-    assert.equal(isRuntimeReady({ runtime: "promptaas", promptaasBaseUrl: "http://x" }).ok, false);
-    assert.equal(
-      isRuntimeReady({ runtime: "promptaas", promptaasBaseUrl: "http://x" }).reason,
-      "use_cloud"
-    );
 
     assert.equal(
       isRuntimeReady({
@@ -109,13 +103,13 @@ describe("classifyRuntimeError", () => {
   it("classifies auth / quota / offline", () => {
     assert.equal(classifyRuntimeError(new Error("401 unauthorized"), "byok").code, "unauthorized");
     assert.equal(
-      classifyRuntimeError(new Error("429 rate limit"), "promptaas").code,
+      classifyRuntimeError(new Error("429 rate limit"), "cloud").code,
       "quota"
     );
     assert.equal(classifyRuntimeError(new Error("Failed to fetch"), "byok").code, "offline");
     assert.equal(classifyRuntimeError(new Error("API key is required"), "byok").code, "missing_key");
     assert.ok(
-      classifyRuntimeError(new Error("401"), "promptaas").message.toLowerCase().includes("subscription")
+      classifyRuntimeError(new Error("401"), "cloud").message.toLowerCase().includes("sign in")
     );
   });
 });
@@ -180,29 +174,4 @@ describe("connection tests", () => {
     }
   });
 
-  it("testPromptaasConnection still works for cloud backend / mocks", async () => {
-    const missing = await testRuntimeConnection("promptaas", {
-      promptaasBaseUrl: "",
-      promptaasAgentId: "wdimtm-explainer",
-    });
-    assert.equal(missing.ok, false);
-
-    const server = http.createServer((req, res) => {
-      assert.match(req.url || "", /\/v1\/agents\/wdimtm-explainer\/run/);
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ explanation: "hello" }));
-    });
-    await new Promise((r) => server.listen(0, "127.0.0.1", r));
-    const { port } = server.address();
-    try {
-      const result = await testRuntimeConnection("promptaas", {
-        promptaasBaseUrl: `http://127.0.0.1:${port}`,
-        promptaasAgentId: "wdimtm-explainer",
-        promptaasApiKey: "tok",
-      });
-      assert.equal(result.ok, true);
-    } finally {
-      await new Promise((r) => server.close(r));
-    }
-  });
 });

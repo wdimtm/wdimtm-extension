@@ -213,14 +213,15 @@ interface ExplainRequest {
 
 ### Runtimes
 - Mock (default, offline, stream-simulated)
-- OpenAI-compatible chat completions (+ SSE stream)
-- PromptaaS adapter (`POST /v1/agents/{id}/run`) + local mock server (`npm run promptaas:mock`)
+- OpenAI-compatible chat completions (+ SSE stream) — also how this talks to an
+  agentaab Agent Business: point the base URL at
+  `https://api.agentaab.com/api/app/<slug>/v1`, no separate adapter
 - WDIMTM Cloud adapter (`POST /v1/explain`, streaming) + the real backend in `cloud/` (private working repo; Cloudflare Worker + D1): Google sign-in, managed inference, capability-tiered credits, memory sync
 
 ### Research (WDIMTM Cloud)
 - **Research this** from any explanation → a durable server-side `AgentJob` that keeps running after the tab closes
 - Progress / cancel in the popover, a job list in options, results with de-duplicated sources
-- PromptaaS Single Agent as the default runtime, single-shot managed inference as the fallback
+- An agentaab Single Agent as the default runtime, single-shot managed inference as the fallback
 
 ## Roadmap
 

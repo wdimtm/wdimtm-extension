@@ -422,7 +422,6 @@ async function handleMessage(msg) {
           ...safe,
           // Export flags whether secrets existed, not the secrets themselves.
           hasApiKey: Boolean(settings.apiKey),
-          hasPromptaasKey: Boolean(settings.promptaasApiKey),
           hasWebSearchKey: Boolean(settings.webSearchApiKey),
           hasCloudToken: Boolean(settings.cloudAccessToken),
           exportedAt: new Date().toISOString(),
@@ -439,7 +438,7 @@ async function handleMessage(msg) {
       /** @type {Record<string, unknown>} */
       const patch = {};
       for (const key of Object.keys(DEFAULT_SETTINGS)) {
-        if (key === "apiKey" || key === "promptaasApiKey" || key === "cloudAccessToken") {
+        if (key === "apiKey" || key === "cloudAccessToken") {
           continue;
         }
         if (key in incoming) patch[key] = incoming[key];
@@ -621,7 +620,6 @@ async function handleMessage(msg) {
           ready: ready.ok,
           reason: ready.reason,
           hasApiKey: Boolean(settings.apiKey),
-          hasPromptaasToken: Boolean(settings.promptaasApiKey),
           promptaasSubscribeUrl: settings.promptaasSubscribeUrl || "",
           serviceMode: resolveServiceMode(settings),
           hasCloudToken: Boolean(settings.cloudAccessToken),

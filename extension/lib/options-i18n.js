@@ -330,8 +330,6 @@ export const OPTIONS_STRINGS = {
     importNeedsModelTitle: "Configure a model first",
     importNeedsModelMock:
       "WDIMTM is on the built-in mock runtime, which has no model behind it. Add an OpenAI-compatible endpoint and key, then come back.",
-    importNeedsModelPromptaas:
-      "PromptaaS exposes a fixed explainer agent rather than an open completion endpoint, so import needs an OpenAI-compatible runtime instead.",
     importNeedsModelKey: "Add an API key for your OpenAI-compatible endpoint, then come back.",
     importOpenSettings: "Open AI access settings",
     importKeepThisTab: "Opens in a new tab so this page keeps what it already parsed.",
@@ -741,8 +739,6 @@ export const OPTIONS_STRINGS = {
     importNeedsModelTitle: "需要先配置模型",
     importNeedsModelMock:
       "当前用的是内置 mock 运行时，背后没有真实模型。请先配置 OpenAI 兼容的接口和密钥，再回来继续。",
-    importNeedsModelPromptaas:
-      "PromptaaS 暴露的是固定的解释 agent，而不是开放的补全接口，导入需要 OpenAI 兼容的运行时。",
     importNeedsModelKey: "请为你的 OpenAI 兼容接口填入 API 密钥，再回来继续。",
     importOpenSettings: "打开模型接入设置",
     importKeepThisTab: "会在新标签页打开，本页已解析的内容不会丢失。",

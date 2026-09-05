@@ -15,9 +15,9 @@ import { getRuntime } from "./runtime/registry.js";
  * runtime ids. Legacy runtime ids are accepted too, because the TEST_RUNTIME
  * message has always taken either.
  *
- * Note this is deliberately *not* `accessModeToRuntime`: that maps the retired
- * `promptaas` access mode onto WDIMTM Cloud, whereas testing "promptaas" has
- * always pinged the agent endpoint itself.
+ * The retired `promptaas` mode tests WDIMTM Cloud: the client runtime it used
+ * to ping spoke a contract agentaab never served, and Cloud is where that
+ * access mode has resolved since.
  *
  * @param {string} mode
  * @returns {string}
@@ -29,7 +29,6 @@ export function runtimeIdForTestMode(mode) {
     case "anthropic":
       return "anthropic";
     case "promptaas":
-      return "promptaas";
     case "cloud":
     case "wdimtm-cloud":
       return "wdimtm-cloud";

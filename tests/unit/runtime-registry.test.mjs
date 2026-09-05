@@ -48,7 +48,7 @@ describe("runtime registry", () => {
   it("registers every runtime the settings type allows", () => {
     assert.deepEqual(
       [...RUNTIME_IDS].sort(),
-      ["anthropic", "mock", "openai-compatible", "promptaas", "wdimtm-cloud"]
+      ["anthropic", "mock", "openai-compatible", "wdimtm-cloud"]
     );
     assert.equal(DEFAULT_RUNTIME_ID, DEFAULT_SETTINGS.runtime);
   });
@@ -99,15 +99,7 @@ describe("runtime registry", () => {
       }),
       { baseUrl: "https://c.example", accessToken: "tok" }
     );
-    assert.deepEqual(
-      getRuntime("promptaas").configFromSettings({
-        promptaasBaseUrl: "http://x",
-        promptaasApiKey: "k",
-        promptaasAgentId: "a",
-      }),
-      { baseUrl: "http://x", apiKey: "k", agentId: "a" }
-    );
-  });
+      });
 
   it("mock is told the answer language explicitly, false included", () => {
     const mock = getRuntime("mock");
@@ -145,7 +137,6 @@ describe("registry readiness", () => {
     [{ runtime: "wdimtm-cloud", cloudAccessToken: "" }, false, "missing_cloud_token"],
     [{ runtime: "wdimtm-cloud", cloudAccessToken: "t" }, true, "ready"],
     // Legacy client runtime: the UI offers Cloud instead, and says so.
-    [{ runtime: "promptaas", promptaasBaseUrl: "http://x" }, false, "use_cloud"],
     [{ runtime: "made-up" }, false, "unknown"],
   ];
 
@@ -163,17 +154,6 @@ describe("registry readiness", () => {
 });
 
 describe("registry completion support", () => {
-  it("keeps import's own answer, which is not the readiness one", () => {
-    // promptaas is "use_cloud" for inference but "promptaas" for import: the
-    // agent endpoint is a fixed explainer, not an open completion endpoint.
-    assert.equal(readinessOf({ runtime: "promptaas" }).reason, "use_cloud");
-    assert.deepEqual(importRuntimeStatus({ runtime: "promptaas", apiKey: "sk-live" }), {
-      ready: false,
-      reason: "promptaas",
-    });
-    assert.equal(completionSupportOf("promptaas").ok, false);
-  });
-
   it("asks for the BYOK key whatever runtime is selected", () => {
     // Import posts its own system prompt to the OpenAI-compatible endpoint, so
     // that is the key it needs — even under Cloud or Anthropic.

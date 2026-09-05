@@ -60,7 +60,6 @@ fill, hairline rules, 2/4/7px radii. Light and dark tokens both live at the top 
 ```bash
 npm run test:unit
 npm run test:e2e
-npm run promptaas:mock   # optional local Agentaab-compatible gateway
 ```
 
 ## Privacy

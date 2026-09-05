@@ -9,12 +9,6 @@ describe("importRuntimeStatus", () => {
     assert.equal(status.reason, "mock");
   });
 
-  it("blocks PromptaaS, which exposes a fixed agent rather than completions", () => {
-    const status = importRuntimeStatus({ runtime: "promptaas", apiKey: "sk-live" });
-    assert.equal(status.ready, false);
-    assert.equal(status.reason, "promptaas");
-  });
-
   it("blocks an OpenAI-compatible runtime with no key", () => {
     const status = importRuntimeStatus({ runtime: "openai-compatible", apiKey: "   " });
     assert.equal(status.ready, false);

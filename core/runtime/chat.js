@@ -4,7 +4,7 @@
  * This module owns what is the same for every runtime — validating the turn,
  * building the system prompt, attaching the web-search verdict — and nothing
  * else. The wire protocols live with the runtimes that speak them
- * (openai-compatible.js, anthropic.js, promptaas.js, wdimtm-cloud.js,
+ * (openai-compatible.js, anthropic.js, wdimtm-cloud.js,
  * mock.js); which one to use, and how to configure it, is the registry's.
  */
 
@@ -31,9 +31,6 @@ import { runtimeForExecution } from "./registry.js";
  *   anthropicBaseUrl?: string,
  *   anthropicApiKey?: string,
  *   anthropicModel?: string,
- *   promptaasBaseUrl?: string,
- *   promptaasApiKey?: string,
- *   promptaasAgentId?: string,
  *   cloudBaseUrl?: string,
  *   cloudAccessToken?: string,
  *   languageInstruction?: string,

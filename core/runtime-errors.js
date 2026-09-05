@@ -4,7 +4,7 @@
 
 /**
  * @param {unknown} err
- * @param {'byok' | 'promptaas' | 'cloud' | 'mock' | string} [mode]
+ * @param {'byok' | 'cloud' | 'mock' | string} [mode]
  * @returns {{ code: string, message: string }}
  */
 export function classifyRuntimeError(err, mode = "byok") {
@@ -17,8 +17,6 @@ export function classifyRuntimeError(err, mode = "byok") {
       message:
         mode === "cloud"
           ? "Cannot reach WDIMTM Cloud. Check the cloud base URL and your network."
-          : mode === "promptaas"
-            ? "Cannot reach PromptaaS. Check the base URL and your network."
             : "Cannot reach the API. Check the base URL, network, and host permissions.",
     };
   }
@@ -28,8 +26,6 @@ export function classifyRuntimeError(err, mode = "byok") {
       message:
         mode === "cloud"
           ? "WDIMTM Cloud rejected the access token (401). Sign in again to refresh it."
-          : mode === "promptaas"
-            ? "Subscription token rejected (401). Renew your PromptaaS plan or paste a fresh token."
             : "API key rejected (401). Check the key and that it matches the base URL.",
     };
   }
@@ -39,8 +35,6 @@ export function classifyRuntimeError(err, mode = "byok") {
       message:
         mode === "cloud"
           ? "Your WDIMTM Cloud plan does not include this capability (403)."
-          : mode === "promptaas"
-            ? "Access forbidden (403). Your subscription may not include this agent."
             : "Access forbidden (403). The key may lack permission for this model.",
     };
   }
@@ -58,8 +52,6 @@ export function classifyRuntimeError(err, mode = "byok") {
       message:
         mode === "cloud"
           ? "WDIMTM Cloud quota is used up (429). Wait for the reset or raise your plan limit."
-          : mode === "promptaas"
-            ? "Quota exceeded (429). Wait or upgrade your PromptaaS subscription."
             : "Rate limit / quota exceeded (429). Wait or check your provider plan.",
     };
   }
@@ -69,8 +61,6 @@ export function classifyRuntimeError(err, mode = "byok") {
       message:
         mode === "cloud"
           ? "WDIMTM Cloud endpoint not found (404). Check the cloud base URL (see docs/cloud-api-contract.md)."
-          : mode === "promptaas"
-            ? "Agent not found (404). Check agent id and PromptaaS base URL."
             : "Endpoint not found (404). Check API base URL (should usually end with /v1).",
     };
   }
@@ -88,8 +78,6 @@ export function classifyRuntimeError(err, mode = "byok") {
       message:
         mode === "cloud"
           ? "WDIMTM Cloud is not configured. Set the cloud base URL and paste an access token."
-          : mode === "promptaas"
-            ? "PromptaaS is not configured. Set base URL and optionally an access token."
             : "API key is required for bring-your-own-key mode.",
     };
   }

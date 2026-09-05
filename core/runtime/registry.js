@@ -6,7 +6,7 @@
  * to live in six places: the explain switch, the chat chain, two different
  * readiness rules, four hand-written connectivity pings, and the Options form.
  * They drifted, as duplicated maps do — three of them disagreed about whether
- * `promptaas` was ready, and about what to call the reason.
+ * a runtime was ready, and about what to call the reason.
  *
  * An entry answers every question the rest of the codebase asks about a runtime:
  *
@@ -31,11 +31,6 @@ import {
   explainWithOpenAICompatible,
   pingOpenAICompatible,
 } from "./openai-compatible.js";
-import {
-  chatWithPromptaaS,
-  explainWithPromptaaS,
-  pingPromptaaS,
-} from "./promptaas.js";
 import {
   chatWithWdimtmCloud,
   explainWithWdimtmCloud,
@@ -173,28 +168,6 @@ export const RUNTIMES = [
     ping: pingWdimtmCloud,
     explain: explainWithWdimtmCloud,
     chat: chatWithWdimtmCloud,
-  },
-  {
-    id: "promptaas",
-    settingsKeys: ["promptaasBaseUrl", "promptaasApiKey", "promptaasAgentId"],
-    configFromSettings: (settings, ctx = {}) =>
-      withLanguage(
-        {
-          baseUrl: settings.promptaasBaseUrl || "",
-          apiKey: settings.promptaasApiKey || "",
-          agentId: settings.promptaasAgentId || "",
-        },
-        ctx
-      ),
-    // Legacy client runtime: never offered in the UI (runtime-presets.js maps
-    // the access mode onto WDIMTM Cloud), so readiness sends the user there.
-    ready: () => ({ ok: false, reason: "use_cloud" }),
-    // Import asks a narrower question and gets a narrower answer: the agent
-    // endpoint is a fixed explainer, not an open completion endpoint.
-    completion: { ok: false, reason: "promptaas" },
-    ping: pingPromptaaS,
-    explain: explainWithPromptaaS,
-    chat: chatWithPromptaaS,
   },
 ];
 

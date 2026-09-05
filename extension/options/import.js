@@ -323,7 +323,6 @@ async function renderDisclosure() {
     el("disclose-blocked").hidden = false;
     const reasons = {
       mock: "importNeedsModelMock",
-      promptaas: "importNeedsModelPromptaas",
       missing_key: "importNeedsModelKey",
     };
     el("blocked-reason").textContent = t(reasons[runtime?.reason] || "importNeedsModelMock");

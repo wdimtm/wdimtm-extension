@@ -42,7 +42,6 @@ describe("settings secret storage", () => {
       "anthropicApiKey",
       "apiKey",
       "cloudAccessToken",
-      "promptaasApiKey",
       "webSearchApiKey",
     ]);
   });

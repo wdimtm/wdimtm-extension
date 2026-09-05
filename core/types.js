@@ -6,10 +6,10 @@
  *     → one model call (openai-compatible recommended)
  *     → structured personalized response
  *
- * Runtimes: mock | openai-compatible | promptaas
+ * Runtimes: mock | openai-compatible | anthropic | wdimtm-cloud
  * PromptaaS is optional — not required for ordinary Explain.
  *
- * @typedef {'mock' | 'openai-compatible' | 'promptaas'} RuntimeKind
+ * @typedef {'mock' | 'openai-compatible' | 'anthropic' | 'wdimtm-cloud'} RuntimeKind
  *
  * @typedef {
  *   | 'explain'

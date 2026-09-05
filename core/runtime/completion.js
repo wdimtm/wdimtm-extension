@@ -75,7 +75,7 @@ export async function complete(prompt, config) {
  * the registry entry (`completion`) rather than re-derived here.
  *
  * @param {{ runtime: string, apiKey: string }} settings
- * @returns {{ ready: boolean, reason?: 'mock' | 'promptaas' | 'missing_key' }}
+ * @returns {{ ready: boolean, reason?: 'mock' | 'missing_key' }}
  */
 export function importRuntimeStatus(settings) {
   const support = completionSupportOf(settings?.runtime);

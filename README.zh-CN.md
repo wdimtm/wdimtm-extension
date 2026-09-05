@@ -204,9 +204,9 @@ interface ExplainRequest {
 
 ### 运行时
 - Mock（默认、离线、模拟流式）
-- OpenAI 兼容的 chat completions（+ SSE 流式）
+- OpenAI 兼容的 chat completions（+ SSE 流式）——接 agentaab Agent Business 也走这条：
+  base URL 指向 `https://api.agentaab.com/api/app/<slug>/v1` 即可，不需要单独的适配器
 - Anthropic Messages API（用户自带 Claude Key）
-- PromptaaS 适配器（`POST /v1/agents/{id}/run`）+ 本地 mock server（`npm run promptaas:mock`）
 - WDIMTM Cloud 适配器（`POST /v1/explain`，流式）：Google 登录、托管推理、按能力计费的额度、记忆同步
 
 ### 研究（WDIMTM Cloud）

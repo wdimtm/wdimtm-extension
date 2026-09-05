@@ -18,7 +18,6 @@ import {
   listManageableLenses,
   forkLens,
 } from "../../core/lenses.js";
-import { explainWithPromptaaS } from "../../core/runtime/promptaas.js";
 import http from "node:http";
 
 describe("mock runtime", () => {
@@ -202,37 +201,3 @@ describe("runtime isolation contract", () => {
   });
 });
 
-describe("promptaas adapter", () => {
-  it("calls POST /v1/agents/:id/run", async () => {
-    const server = http.createServer((req, res) => {
-      assert.equal(req.method, "POST");
-      assert.match(req.url || "", /\/v1\/agents\/wdimtm-explainer\/run/);
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(
-        JSON.stringify({
-          explanation: "promptaas ok",
-          followUps: ["Explain more"],
-        })
-      );
-    });
-    await new Promise((r) => server.listen(0, "127.0.0.1", r));
-    const { port } = server.address();
-    try {
-      const res = await explainWithPromptaaS(
-        {
-          selection: "test selection here",
-          page: { url: "https://example.com", title: "t" },
-          lens: { id: "general" },
-        },
-        {
-          baseUrl: `http://127.0.0.1:${port}`,
-          agentId: "wdimtm-explainer",
-        }
-      );
-      assert.equal(res.explanation, "promptaas ok");
-      assert.equal(res.runtime, "promptaas");
-    } finally {
-      await new Promise((r) => server.close(r));
-    }
-  });
-});

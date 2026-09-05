@@ -11,7 +11,7 @@
 
 export const DEFAULT_SETTINGS = {
   runtime:
-    /** @type {'mock' | 'openai-compatible' | 'anthropic' | 'promptaas' | 'wdimtm-cloud'} */ ("mock"),
+    /** @type {'mock' | 'openai-compatible' | 'anthropic' | 'wdimtm-cloud'} */ ("mock"),
   apiBaseUrl: "https://api.openai.com/v1",
   apiKey: "",
   model: "gpt-4o-mini",
@@ -19,9 +19,6 @@ export const DEFAULT_SETTINGS = {
   anthropicBaseUrl: "https://api.anthropic.com/v1",
   anthropicApiKey: "",
   anthropicModel: "claude-opus-5",
-  promptaasBaseUrl: "http://127.0.0.1:8787",
-  promptaasApiKey: "",
-  promptaasAgentId: "wdimtm-explainer",
   /** Public subscribe / manage-plan URL for PromptaaS app */
   promptaasSubscribeUrl: "",
   /**
@@ -110,7 +107,6 @@ export const DEFAULT_SETTINGS = {
 export const SECRET_KEYS = /** @type {const} */ ([
   "apiKey",
   "anthropicApiKey",
-  "promptaasApiKey",
   "webSearchApiKey",
   "cloudAccessToken",
 ]);
