@@ -512,11 +512,14 @@ import { CONTENT_CSS } from "./styles.inline.js";
   }
 
   /**
-   * Read current selection from window or active input/textarea.
+   * Read current selection from the document.
+   *
+   * Text selected inside an <input> or <textarea> is deliberately ignored: the
+   * user is editing there, and a bubble over their own text is in the way.
    * @returns {{ selection: string, context: string, rect: DOMRect } | null}
    */
   function getSelectionPayload() {
-    // 1) Input / textarea
+    // 1) Never trigger on the user's own editable fields
     const active = document.activeElement;
     if (
       active &&
@@ -524,23 +527,7 @@ import { CONTENT_CSS } from "./styles.inline.js";
         (active.tagName === "INPUT" &&
           /^(text|search|url|tel|password|email|number)$/i.test(active.type || "text")))
     ) {
-      const el = /** @type {HTMLInputElement | HTMLTextAreaElement} */ (active);
-      if (host && (host === el || host.contains(el))) return null;
-      const start = el.selectionStart ?? 0;
-      const end = el.selectionEnd ?? 0;
-      if (end > start) {
-        const text = normalizeWhitespace(el.value.slice(start, end));
-        if (text.length >= 2) {
-          const rect = el.getBoundingClientRect();
-          if (rect.width || rect.height) {
-            return {
-              selection: truncate(text, MAX_SELECTION),
-              context: truncate(normalizeWhitespace(el.value), MAX_CONTEXT),
-              rect,
-            };
-          }
-        }
-      }
+      return null;
     }
 
     // 2) Normal DOM selection
