@@ -1,6 +1,6 @@
 {
   "name": "wdimtm",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "private": true,
   "description": "WDIMTM — What Does It Mean To Me? Browser extension for in-page explanations.",
   "type": "module",
