@@ -58,7 +58,7 @@ When memory count grows large, evaluate semantic retrieval (V3 in issue #5).
 | Memory cards | `chrome.storage.local` |
 | Page selections | Not retained after the request |
 
-Cloud runtimes (OpenAI / PromptaaS) receive only the *selected relevant* memories for that request.
+Cloud runtimes (OpenAI / Anthropic / WDIMTM Cloud) receive only the *selected relevant* memories for that request.
 
 ## Lenses vs Memory
 

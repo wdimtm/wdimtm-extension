@@ -27,6 +27,7 @@ describe("auth/sync", () => {
       {
         profileText: "eng",
         apiKey: "sk-secret",
+        cloudAccessToken: "secret2",
         customLenses: [],
         defaultLensId: "general",
       },
@@ -36,6 +37,7 @@ describe("auth/sync", () => {
     assert.equal(snap.memories.length, 1);
     assert.equal(snap.preferences.apiKey, undefined);
     assert.ok(!JSON.stringify(snap).includes("sk-secret"));
+    assert.ok(!JSON.stringify(snap).includes("secret2"));
   });
 
   it("buildUserDataSnapshot keeps the cloud endpoint but never the cloud token", () => {

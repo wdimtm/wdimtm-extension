@@ -11,6 +11,7 @@ import {
   RUNTIME_IDS,
   completionSupportOf,
   getRuntime,
+  normalizeRuntimeId,
   readinessOf,
   runtimeForExecution,
 } from "../../core/runtime/registry.js";
@@ -99,7 +100,7 @@ describe("runtime registry", () => {
       }),
       { baseUrl: "https://c.example", accessToken: "tok" }
     );
-      });
+  });
 
   it("mock is told the answer language explicitly, false included", () => {
     const mock = getRuntime("mock");
@@ -113,6 +114,18 @@ describe("runtime registry", () => {
     assert.equal(runtimeForExecution(undefined).id, "mock");
     assert.equal(runtimeForExecution("anthropic").id, "anthropic");
     assert.equal(getRuntime("nope"), undefined);
+  });
+
+  it("points a retired runtime id at the runtime that replaced it", () => {
+    // `promptaas` was removed in #116. Settings written before that still name
+    // it, and the fallback to mock would quietly take a configured user
+    // offline — so the id is translated before anything asks for the entry.
+    assert.equal(normalizeRuntimeId("promptaas"), "wdimtm-cloud");
+    assert.equal(getRuntime("promptaas"), undefined);
+    assert.equal(runtimeForExecution(normalizeRuntimeId("promptaas")).id, "wdimtm-cloud");
+    // Anything the registry still knows about is passed through untouched.
+    assert.equal(normalizeRuntimeId("anthropic"), "anthropic");
+    assert.equal(normalizeRuntimeId(undefined), "");
   });
 });
 
@@ -136,7 +149,6 @@ describe("registry readiness", () => {
     [{ runtime: "anthropic", anthropicApiKey: "k", anthropicBaseUrl: "x" }, true, "ready"],
     [{ runtime: "wdimtm-cloud", cloudAccessToken: "" }, false, "missing_cloud_token"],
     [{ runtime: "wdimtm-cloud", cloudAccessToken: "t" }, true, "ready"],
-    // Legacy client runtime: the UI offers Cloud instead, and says so.
     [{ runtime: "made-up" }, false, "unknown"],
   ];
 
@@ -154,6 +166,18 @@ describe("registry readiness", () => {
 });
 
 describe("registry completion support", () => {
+  it("keeps import's own answer, which is not the readiness one", () => {
+    // mock is "mock" for inference and "mock" for import, but for opposite
+    // reasons: no model behind it either way, yet import never goes through
+    // the explain path, so the two answers are declared separately.
+    assert.equal(readinessOf({ runtime: "mock" }).reason, "mock");
+    assert.deepEqual(importRuntimeStatus({ runtime: "mock", apiKey: "sk-live" }), {
+      ready: false,
+      reason: "mock",
+    });
+    assert.equal(completionSupportOf("mock").ok, false);
+  });
+
   it("asks for the BYOK key whatever runtime is selected", () => {
     // Import posts its own system prompt to the OpenAI-compatible endpoint, so
     // that is the key it needs — even under Cloud or Anthropic.

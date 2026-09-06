@@ -3,7 +3,7 @@
  * WDIMTM browser code talks only to this module for model execution.
  *
  * Dogfood path: openai-compatible single-shot is the recommended real runtime.
- * PromptaaS remains optional (future routing / billing / multi-step).
+ * Routing, billing and multi-step live behind WDIMTM Cloud, not in the client.
  */
 
 import { assertBoundedRequest } from "../context-bounds.js";

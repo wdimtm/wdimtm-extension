@@ -6,8 +6,7 @@
  *     → one model call (openai-compatible recommended)
  *     → structured personalized response
  *
- * Runtimes: mock | openai-compatible | anthropic | wdimtm-cloud
- * PromptaaS is optional — not required for ordinary Explain.
+ * Runtimes are declared in core/runtime/registry.js.
  *
  * @typedef {'mock' | 'openai-compatible' | 'anthropic' | 'wdimtm-cloud'} RuntimeKind
  *

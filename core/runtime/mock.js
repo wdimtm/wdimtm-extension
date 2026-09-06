@@ -378,7 +378,7 @@ export async function pingMock() {
   return {
     ok: true,
     code: "mock",
-    message: "Mock runtime needs no network — switch to BYOK or PromptaaS for real answers.",
+    message: "Mock runtime needs no network — switch to BYOK or WDIMTM Cloud for real answers.",
   };
 }
 

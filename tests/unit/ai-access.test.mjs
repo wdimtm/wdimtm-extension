@@ -9,7 +9,8 @@ import {
   isRuntimeReady,
   runtimeToAccessMode,
 } from "../../core/runtime-presets.js";
-import { testRuntimeConnection } from "../../core/runtime-test.js";
+import { runtimeIdForTestMode, testRuntimeConnection } from "../../core/runtime-test.js";
+import { normalizeRuntimeId } from "../../core/runtime/registry.js";
 
 describe("runtime presets", () => {
   it("maps product access modes ↔ runtime ids", () => {
@@ -87,6 +88,16 @@ describe("runtime presets", () => {
       true
     );
 
+    // The retired direct-Agentaab id (#116) resolves to Cloud before readiness
+    // is asked — falling through to mock would take a configured user offline.
+    assert.equal(normalizeRuntimeId("promptaas"), "wdimtm-cloud");
+    assert.equal(
+      isRuntimeReady({
+        runtime: normalizeRuntimeId("promptaas"),
+        cloudAccessToken: "tok",
+      }).ok,
+      true
+    );
 
     assert.equal(
       isRuntimeReady({
@@ -102,10 +113,7 @@ describe("runtime presets", () => {
 describe("classifyRuntimeError", () => {
   it("classifies auth / quota / offline", () => {
     assert.equal(classifyRuntimeError(new Error("401 unauthorized"), "byok").code, "unauthorized");
-    assert.equal(
-      classifyRuntimeError(new Error("429 rate limit"), "cloud").code,
-      "quota"
-    );
+    assert.equal(classifyRuntimeError(new Error("429 rate limit"), "cloud").code, "quota");
     assert.equal(classifyRuntimeError(new Error("Failed to fetch"), "byok").code, "offline");
     assert.equal(classifyRuntimeError(new Error("API key is required"), "byok").code, "missing_key");
     assert.ok(
@@ -174,4 +182,12 @@ describe("connection tests", () => {
     }
   });
 
+  it("routes a retired runtime id to the runtime that replaced it", () => {
+    // The dead Agentaab adapter is gone (#116); TEST_RUNTIME has always taken
+    // either an access mode or a runtime id, and an old caller naming the
+    // retired one must reach WDIMTM Cloud, not an unknown-runtime error.
+    assert.equal(runtimeIdForTestMode("promptaas"), "wdimtm-cloud");
+    assert.equal(runtimeIdForTestMode("cloud"), "wdimtm-cloud");
+    assert.equal(runtimeIdForTestMode("byok"), "openai-compatible");
+  });
 });

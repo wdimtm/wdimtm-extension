@@ -21,7 +21,8 @@ describe("service mode resolution", () => {
     assert.equal(resolveServiceMode({ runtime: "mock" }), "local");
     assert.equal(resolveServiceMode({ runtime: "openai-compatible" }), "byok");
     assert.equal(resolveServiceMode({ runtime: "anthropic" }), "byok");
-    // Legacy Agentaab client runtime — product path is Cloud, Agentaab is internal.
+    // Retired direct-Agentaab runtime id (#116) — the product path is Cloud,
+    // and settings written before its removal still name it.
     assert.equal(resolveServiceMode({ runtime: "promptaas" }), "cloud");
     assert.equal(resolveServiceMode({ runtime: "wdimtm-cloud" }), "cloud");
   });

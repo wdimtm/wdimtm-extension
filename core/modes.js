@@ -3,7 +3,7 @@
  *
  * Today almost all modes stay single OpenAI-compatible call.
  * capabilityForMode() documents future multi-step / tool routing
- * (likely via PromptaaS) without implementing a router yet.
+ * (server-side, behind WDIMTM Cloud) without implementing a router yet.
  */
 
 /** @typedef {import('./types.js').ExplainMode} ExplainMode */

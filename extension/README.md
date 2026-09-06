@@ -26,7 +26,7 @@ extension/
     anthropic.js
     mock.js
     openai-compatible.js
-    promptaas.js
+    wdimtm-cloud.js
   lib/
     settings.js, lenses.js, memory.js, messages.js, context-bounds.js, images.js, types.js
   options/                 # runtime, lenses, profile, memory, privacy
@@ -60,6 +60,7 @@ fill, hairline rules, 2/4/7px radii. Light and dark tokens both live at the top 
 ```bash
 npm run test:unit
 npm run test:e2e
+npm run cloud:mock       # optional local WDIMTM Cloud gateway
 ```
 
 ## Privacy

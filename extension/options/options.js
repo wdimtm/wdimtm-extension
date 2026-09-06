@@ -113,7 +113,8 @@ function selectedByokProvider() {
 }
 
 function setAccessMode(mode) {
-  // Product modes only. Legacy "anthropic" / "promptaas" collapse into byok / cloud.
+  // Product modes only. Retired "anthropic" / "promptaas" ids collapse into
+  // byok / cloud, so settings written by older versions still land somewhere.
   const m =
     mode === "byok" || mode === "anthropic"
       ? "byok"

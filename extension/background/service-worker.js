@@ -620,7 +620,6 @@ async function handleMessage(msg) {
           ready: ready.ok,
           reason: ready.reason,
           hasApiKey: Boolean(settings.apiKey),
-          promptaasSubscribeUrl: settings.promptaasSubscribeUrl || "",
           serviceMode: resolveServiceMode(settings),
           hasCloudToken: Boolean(settings.cloudAccessToken),
           cloudSignUpUrl: settings.cloudSignUpUrl || "",
@@ -632,7 +631,7 @@ async function handleMessage(msg) {
 
     case MSG.TEST_RUNTIME: {
       const settings = await getSettings();
-      // mode may be product access id (byok/promptaas) or runtime id — either
+      // mode may be a product access id (byok/cloud) or a runtime id — either
       // way the registry owns the mapping and the form overlay.
       const which = String(msg.payload?.mode || settings.runtime || "mock");
       const result = await testRuntimeConnection(which, settings, msg.payload || {});

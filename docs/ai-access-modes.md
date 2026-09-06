@@ -46,7 +46,7 @@ Select WDIMTM Cloud
   → Credits appear on /v1/me
 ```
 
-- **Package list source of truth:** Agentaab (`../promptaas`) app credit packages for the WDIMTM product app.
+- **Package list source of truth:** Agentaab app credit packages for the WDIMTM product app.
 - **Client contract:** `GET /v1/packages`, `POST /v1/packages/checkout` on WDIMTM Cloud only — the extension never talks to Agentaab URLs directly.
 - **Self-host / advanced:** base URL + token fields remain under a collapsed Advanced section for backends that implement the Cloud contract without Agentaab checkout.
 
@@ -54,7 +54,7 @@ Select WDIMTM Cloud
 
 ## What is *not* a product option
 
-- **Agentaab / PromptaaS** is how **WDIMTM Cloud** may be implemented on the server (routing, agents, billing). The extension does **not** offer “subscribe via Agentaab” as a third access card. Users only see **WDIMTM Cloud**.
+- **Agentaab** is how **WDIMTM Cloud** is implemented on the server (routing, agents, billing). The extension does **not** offer “subscribe via Agentaab” as a third access card, and the client adapter that once called Agentaab directly was removed in [#116](https://github.com/jerryleooo/wdimtm/issues/116). Users only see **WDIMTM Cloud**.
 - **Anthropic** is a **BYOK provider**, not a separate access mode. Choosing Claude under BYOK switches the wire protocol to the Messages API.
 
 ## Why this split

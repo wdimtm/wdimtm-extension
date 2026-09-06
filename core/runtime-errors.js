@@ -17,7 +17,7 @@ export function classifyRuntimeError(err, mode = "byok") {
       message:
         mode === "cloud"
           ? "Cannot reach WDIMTM Cloud. Check the cloud base URL and your network."
-            : "Cannot reach the API. Check the base URL, network, and host permissions.",
+          : "Cannot reach the API. Check the base URL, network, and host permissions.",
     };
   }
   if (lower.includes("401") || lower.includes("unauthorized") || lower.includes("invalid api key")) {
@@ -26,7 +26,7 @@ export function classifyRuntimeError(err, mode = "byok") {
       message:
         mode === "cloud"
           ? "WDIMTM Cloud rejected the access token (401). Sign in again to refresh it."
-            : "API key rejected (401). Check the key and that it matches the base URL.",
+          : "API key rejected (401). Check the key and that it matches the base URL.",
     };
   }
   if (lower.includes("403") || lower.includes("forbidden")) {
@@ -35,7 +35,7 @@ export function classifyRuntimeError(err, mode = "byok") {
       message:
         mode === "cloud"
           ? "Your WDIMTM Cloud plan does not include this capability (403)."
-            : "Access forbidden (403). The key may lack permission for this model.",
+          : "Access forbidden (403). The key may lack permission for this model.",
     };
   }
   // 402 Payment Required: cloud credits are used up (#51).
@@ -52,7 +52,7 @@ export function classifyRuntimeError(err, mode = "byok") {
       message:
         mode === "cloud"
           ? "WDIMTM Cloud quota is used up (429). Wait for the reset or raise your plan limit."
-            : "Rate limit / quota exceeded (429). Wait or check your provider plan.",
+          : "Rate limit / quota exceeded (429). Wait or check your provider plan.",
     };
   }
   if (lower.includes("404")) {
@@ -61,7 +61,7 @@ export function classifyRuntimeError(err, mode = "byok") {
       message:
         mode === "cloud"
           ? "WDIMTM Cloud endpoint not found (404). Check the cloud base URL (see docs/cloud-api-contract.md)."
-            : "Endpoint not found (404). Check API base URL (should usually end with /v1).",
+          : "Endpoint not found (404). Check API base URL (should usually end with /v1).",
     };
   }
   // A cancel is the user's own doing — it must never be dressed up as a failure,
@@ -78,7 +78,7 @@ export function classifyRuntimeError(err, mode = "byok") {
       message:
         mode === "cloud"
           ? "WDIMTM Cloud is not configured. Set the cloud base URL and paste an access token."
-            : "API key is required for bring-your-own-key mode.",
+          : "API key is required for bring-your-own-key mode.",
     };
   }
 

@@ -19,8 +19,6 @@ export const DEFAULT_SETTINGS = {
   anthropicBaseUrl: "https://api.anthropic.com/v1",
   anthropicApiKey: "",
   anthropicModel: "claude-opus-5",
-  /** Public subscribe / manage-plan URL for PromptaaS app */
-  promptaasSubscribeUrl: "",
   /**
    * WDIMTM Cloud (Issue #51) — the hosted service mode of the same client.
    * Production default is baked in; normal users never fill this. Self-hosters

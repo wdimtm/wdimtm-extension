@@ -9,6 +9,12 @@ describe("importRuntimeStatus", () => {
     assert.equal(status.reason, "mock");
   });
 
+  it("blocks mock even with a BYOK key on file — mock has no model behind it", () => {
+    const status = importRuntimeStatus({ runtime: "mock", apiKey: "sk-live" });
+    assert.equal(status.ready, false);
+    assert.equal(status.reason, "mock");
+  });
+
   it("blocks an OpenAI-compatible runtime with no key", () => {
     const status = importRuntimeStatus({ runtime: "openai-compatible", apiKey: "   " });
     assert.equal(status.ready, false);

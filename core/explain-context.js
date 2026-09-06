@@ -2,7 +2,7 @@
  * Explain context builder — structures model input so the LLM can tell
  * page facts from user profile / memories / lens preferences.
  *
- * Used by openai-compatible (primary dogfood path). Mock/PromptaaS may
+ * Used by openai-compatible (primary dogfood path). The other runtimes may
  * use the same sections for consistency.
  */
 

@@ -93,7 +93,8 @@ export function accessModeToRuntime(accessMode, byokProvider = "openai") {
   }
   // Legacy aliases: never offered in UI, still recognized if something old calls them.
   if (accessMode === "anthropic") return "anthropic";
-  // Direct Agentaab was never a product path; it is how Cloud is built.
+  // Retired runtime id (#116): direct Agentaab was never a product path, it is
+  // how Cloud is built. Settings written before it was removed still say this.
   if (accessMode === "promptaas") return "wdimtm-cloud";
   return "mock";
 }
@@ -103,6 +104,7 @@ export function accessModeToRuntime(accessMode, byokProvider = "openai") {
  * @returns {'mock' | 'byok' | 'cloud'}
  */
 export function runtimeToAccessMode(runtime) {
+  // "promptaas" is the retired runtime id (#116) — it meant Cloud all along.
   if (runtime === "wdimtm-cloud" || runtime === "promptaas") return "cloud";
   if (runtime === "openai-compatible" || runtime === "anthropic") return "byok";
   return "mock";

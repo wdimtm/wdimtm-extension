@@ -28,6 +28,7 @@ export function runtimeIdForTestMode(mode) {
       return "mock";
     case "anthropic":
       return "anthropic";
+    // Retired client runtime (#116); Agentaab is reached through Cloud now.
     case "promptaas":
     case "cloud":
     case "wdimtm-cloud":

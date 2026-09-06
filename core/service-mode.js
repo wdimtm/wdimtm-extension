@@ -184,16 +184,14 @@ const SERVICE_MODE_LABELS = {
 /**
  * Which service mode the current settings put the user in.
  *
- * PromptaaS is a *user-configured external endpoint* — it is someone else's
- * hosted app, not WDIMTM Cloud — so it resolves to `byok`.
- *
  * @param {{ runtime?: string } | null | undefined} settings
  * @returns {ServiceMode}
  */
 export function resolveServiceMode(settings) {
   const runtime = settings?.runtime || "mock";
   if (runtime === "wdimtm-cloud") return "cloud";
-  // Legacy client runtime that pointed at Agentaab directly — product path is Cloud.
+  // Retired runtime id (#116) that pointed at Agentaab directly — Cloud is the
+  // product path, and settings written before its removal still name it.
   if (runtime === "promptaas") return "cloud";
   if (runtime === "openai-compatible" || runtime === "anthropic") return "byok";
   return "local";

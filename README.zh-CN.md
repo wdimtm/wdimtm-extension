@@ -88,7 +88,7 @@ npm run test:unit
 npm run test:e2e      # 有头 Chromium + 真实未打包扩展
 ```
 
-默认运行时是 **mock**（离线）。在扩展选项里可以切换到 OpenAI-compatible、Anthropic、PromptaaS 或 WDIMTM Cloud。
+默认运行时是 **mock**（离线）。在扩展选项里可以切换到 OpenAI-compatible、Anthropic 或 WDIMTM Cloud。
 
 三种服务模式（Local / BYOK / WDIMTM Cloud）是同一个客户端，不是不同版本 —— 见 `docs/internal/business-model.md` 与 `docs/internal/cloud-api-contract.md`（均为私有工作仓库）。
 
@@ -118,7 +118,6 @@ WDIMTM Context Builder（service worker）
    ├── mock
    ├── openai-compatible（可选流式）
    ├── anthropic
-   ├── promptaas
    └── wdimtm-cloud（托管服务模式）
    │
    ▼
@@ -212,7 +211,7 @@ interface ExplainRequest {
 ### 研究（WDIMTM Cloud）
 - 从任意解释发起**研究这个** → 服务端持久化的 `AgentJob`，关掉标签页也继续跑
 - 浮层内显示进度 / 可取消，选项页有任务列表，结果附去重后的来源
-- 默认运行时为 PromptaaS Single Agent，回退到单次托管推理
+- 服务端默认运行时为 Agentaab Single Agent，回退到单次托管推理
 
 ## 路线图
 
@@ -271,6 +270,6 @@ interface ExplainRequest {
 
 ## 状态
 
-**v0.5.0** —— Chrome MV3 扩展：`选中 → 透镜 → 解释 → 追问/记忆`，短答不够时升级为基于同一选区的页面对话。页面对话支持图片 —— 系统截图直接粘贴，也可上传或拖入。Mock + OpenAI 兼容 + Anthropic + PromptaaS 适配器，可选网络证据，本地记忆 provider，对其它选区类扩展（如 Trancy）的共存处理，单元测试 + 有头 Playwright E2E。
+**v0.5.0** —— Chrome MV3 扩展：`选中 → 透镜 → 解释 → 追问/记忆`，短答不够时升级为基于同一选区的页面对话。页面对话支持图片 —— 系统截图直接粘贴，也可上传或拖入。Mock + OpenAI 兼容 + Anthropic + WDIMTM Cloud 适配器，可选网络证据，本地记忆 provider，对其它选区类扩展（如 Trancy）的共存处理，单元测试 + 有头 Playwright E2E。
 
 **暂缓：** 完整话题串拼接、图片作为上下文、习得偏好、Nowledge/MCP 记忆 provider、Phase 4 行动流程。

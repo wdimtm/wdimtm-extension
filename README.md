@@ -90,7 +90,7 @@ npm run test:unit
 npm run test:e2e      # headed Chromium + real unpacked extension
 ```
 
-Default runtime is **mock** (offline). In extension options you can switch to OpenAI-compatible, PromptaaS, or WDIMTM Cloud.
+Default runtime is **mock** (offline). In extension options you can switch to OpenAI-compatible, Anthropic, or WDIMTM Cloud.
 
 Service modes (Local / BYOK / WDIMTM Cloud) are one client, not separate editions — see `docs/internal/business-model.md` (private working repo) and `docs/internal/cloud-api-contract.md` (private working repo).
 
@@ -119,7 +119,7 @@ WDIMTM Context Builder (service worker)
 Runtime adapter
    ├── mock
    ├── openai-compatible (optional stream)
-   ├── promptaas
+   ├── anthropic
    └── wdimtm-cloud (hosted service mode)
    │
    ▼
@@ -216,12 +216,13 @@ interface ExplainRequest {
 - OpenAI-compatible chat completions (+ SSE stream) — also how this talks to an
   agentaab Agent Business: point the base URL at
   `https://api.agentaab.com/api/app/<slug>/v1`, no separate adapter
+- Anthropic Messages API (`POST {base}/messages`, + SSE stream)
 - WDIMTM Cloud adapter (`POST /v1/explain`, streaming) + the real backend in `cloud/` (private working repo; Cloudflare Worker + D1): Google sign-in, managed inference, capability-tiered credits, memory sync
 
 ### Research (WDIMTM Cloud)
 - **Research this** from any explanation → a durable server-side `AgentJob` that keeps running after the tab closes
 - Progress / cancel in the popover, a job list in options, results with de-duplicated sources
-- An agentaab Single Agent as the default runtime, single-shot managed inference as the fallback
+- An Agentaab Single Agent as the default server-side runtime, single-shot managed inference as the fallback
 
 ## Roadmap
 

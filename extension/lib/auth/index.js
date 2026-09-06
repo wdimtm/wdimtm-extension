@@ -92,15 +92,9 @@ export async function getSyncProvider() {
  * @returns {import('./types.js').UserDataSnapshot}
  */
 export function buildUserDataSnapshot(settings, memories = []) {
-  const {
-    apiKey: _k,
-    promptaasApiKey: _p,
-    cloudAccessToken: _c,
-    ...prefs
-  } = settings || {};
+  const { apiKey: _k, cloudAccessToken: _c, ...prefs } = settings || {};
   // Strip secrets from preferences blob
   delete prefs.apiKey;
-  delete prefs.promptaasApiKey;
   delete prefs.cloudAccessToken;
   return {
     version: 1,
@@ -122,8 +116,6 @@ export function buildUserDataSnapshot(settings, memories = []) {
       // endpoints without keys
       apiBaseUrl: settings?.apiBaseUrl,
       model: settings?.model,
-      promptaasBaseUrl: settings?.promptaasBaseUrl,
-      promptaasAgentId: settings?.promptaasAgentId,
       // Endpoint is a preference; the cloud access token stays device-local.
       cloudBaseUrl: settings?.cloudBaseUrl,
       accountMode: settings?.accountMode || "local",

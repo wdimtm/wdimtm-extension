@@ -20,14 +20,13 @@ explanation (+ optional why-it-matters)
 + meta (mode, personalization, capability)
 ```
 
-**No WDIMTM backend, Dify, or required PromptaaS** for ordinary Explain.
+**No WDIMTM backend and no hosted service** are required for ordinary Explain.
 
 | Runtime | Role |
 |---------|------|
 | **openai-compatible** | **Recommended real dogfood path** (BYOK / any OpenAI-compatible gateway including sub2api) |
 | **anthropic** | Native Anthropic Messages API (`POST {base}/messages`, `x-api-key` + `anthropic-version`, top-level `system`, no sampling params) |
 | **mock** | Offline / CI |
-| **promptaas** | Optional; future routing / workflows / billing |
 | **wdimtm-cloud** | Hosted service mode — same contract, server-side credentials (`cloud-api-contract.md` (private working repo)) |
 
 ## Boundary
@@ -35,7 +34,7 @@ explanation (+ optional why-it-matters)
 | Owner | Responsibility |
 |-------|----------------|
 | **WDIMTM** | Selection UX, bounded page context, Lens, profile/memory relevance, privacy, single-shot context assembly |
-| **Runtime** | Model execution. PromptaaS may later own tools, multi-step workflows, quota |
+| **Runtime** | Model execution. WDIMTM Cloud may later own tools, multi-step workflows, quota |
 
 ## ExplainRequest
 

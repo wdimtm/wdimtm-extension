@@ -110,10 +110,6 @@ describe("quota exhaustion offers a way out (#41)", () => {
       topUpUrlFor({ runtime: "wdimtm-cloud", cloudSignUpUrl: "https://cloud.example/plan" }),
       "https://cloud.example/plan"
     );
-    assert.equal(
-      topUpUrlFor({ runtime: "promptaas", promptaasSubscribeUrl: "https://p.example/sub" }),
-      "https://p.example/sub"
-    );
     // BYOK and mock have nothing to top up — the popover must not pretend they do.
     assert.equal(topUpUrlFor({ runtime: "openai-compatible", cloudSignUpUrl: "x" }), "");
     assert.equal(topUpUrlFor({ runtime: "mock" }), "");

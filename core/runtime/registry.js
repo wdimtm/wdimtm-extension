@@ -181,6 +181,30 @@ export const RUNTIME_IDS = RUNTIMES.map((entry) => entry.id);
 export const DEFAULT_RUNTIME_ID = "mock";
 
 /**
+ * Runtime ids that were removed, and what they became.
+ *
+ * `promptaas` was a client adapter that posted to `POST {base}/v1/agents/{id}/run`
+ * — an endpoint Agentaab never served (#116). Agentaab is how WDIMTM Cloud is
+ * implemented on the server, so a stored `promptaas` means Cloud.
+ */
+const RETIRED_RUNTIME_IDS = /** @type {Record<string, string>} */ ({
+  promptaas: "wdimtm-cloud",
+});
+
+/**
+ * Settings written by an older version can still name a runtime that no longer
+ * exists. Reading them has to land on the runtime that replaced it — falling
+ * through to `mock` would silently take a configured user offline.
+ *
+ * @param {string | undefined | null} id
+ * @returns {string}
+ */
+export function normalizeRuntimeId(id) {
+  const key = String(id || "");
+  return RETIRED_RUNTIME_IDS[key] || key;
+}
+
+/**
  * @param {string | undefined | null} id
  * @returns {RuntimeEntry | undefined}
  */

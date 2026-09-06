@@ -36,7 +36,7 @@ Principles:
 
 ### Never sync by default
 
-- OpenAI / PromptaaS API keys  
+- OpenAI / Anthropic API keys  
 - Ephemeral selection text / raw page DOM  
 - Analytics of every page visited  
 

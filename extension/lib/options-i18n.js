@@ -59,11 +59,10 @@ export const OPTIONS_STRINGS = {
 
     runtimeTitle: "Runtime",
     runtimeHint:
-      "WDIMTM owns browser context and personalization. The runtime owns model execution. Mock works offline; OpenAI-compatible and Agentaab call external services.",
+      "WDIMTM owns browser context and personalization. The runtime owns model execution. Mock works offline; OpenAI-compatible and WDIMTM Cloud call external services.",
     runtime: "Runtime",
     runtimeMock: "Mock (offline)",
     runtimeOpenAI: "OpenAI-compatible API (bring your own key)",
-    runtimePromptaaS: "Agentaab app (Beta — subscribe)",
     streamResponses: "Stream responses (popover + page chat)",
 
     webSearchTitle: "Web search (Verify / Research / Chat)",
@@ -114,11 +113,6 @@ export const OPTIONS_STRINGS = {
     testingConnection: "Testing…",
     testOk: "Connection OK.",
     testFailed: "Connection failed.",
-    openSubscribe: "Open subscription",
-    promptaasSubscribeUrl: "Subscribe URL (optional override)",
-    promptaasSubscribePlaceholder: "https://…/subscribe",
-    promptaasTokenPlaceholder: "paste token after subscribe",
-    promptaasSteps: "1) Open subscribe · 2) Paste access token · 3) Test connection · 4) Save",
     openCloudSignUp: "Open WDIMTM Cloud",
     cloudBaseUrl: "Cloud base URL",
     cloudAccessToken: "Access token (filled by sign-in)",
@@ -182,11 +176,6 @@ export const OPTIONS_STRINGS = {
     anthropicBaseUrl: "Anthropic base URL",
     anthropicApiKey: "Anthropic API key",
     anthropicModel: "Model",
-    promptaasBaseUrl: "Agentaab base URL",
-    promptaasApiKey: "Access token (optional)",
-    promptaasAgentId: "Agent id",
-    promptaasContract:
-      "Contract: POST {base}/v1/agents/{agentId}/run with ExplainRequest. See docs/runtime-contract.md.",
 
     defaultLensTitle: "Lens",
     defaultLensHint:
@@ -475,11 +464,10 @@ export const OPTIONS_STRINGS = {
 
     runtimeTitle: "运行时",
     runtimeHint:
-      "WDIMTM 负责浏览器上下文与个性化；运行时负责模型执行。Mock 可离线使用；OpenAI-compatible 与 Agentaab 会请求外部服务。",
+      "WDIMTM 负责浏览器上下文与个性化；运行时负责模型执行。Mock 可离线使用；OpenAI-compatible 与 WDIMTM Cloud 会请求外部服务。",
     runtime: "运行时",
     runtimeMock: "Mock（离线）",
     runtimeOpenAI: "OpenAI 兼容 API（自备密钥）",
-    runtimePromptaaS: "Agentaab 应用（Beta · 订阅）",
     streamResponses: "流式显示回答（弹层 + 页面对话）",
 
     webSearchTitle: "网页搜索（核实 / 研究 / 对话）",
@@ -529,11 +517,6 @@ export const OPTIONS_STRINGS = {
     testingConnection: "测试中…",
     testOk: "连接成功。",
     testFailed: "连接失败。",
-    openSubscribe: "打开订阅页",
-    promptaasSubscribeUrl: "订阅链接（可选覆盖）",
-    promptaasSubscribePlaceholder: "https://…/subscribe",
-    promptaasTokenPlaceholder: "订阅后粘贴访问令牌",
-    promptaasSteps: "1）打开订阅 · 2）粘贴访问令牌 · 3）测试连接 · 4）保存",
     openCloudSignUp: "打开 WDIMTM Cloud",
     cloudBaseUrl: "Cloud 基础 URL",
     cloudAccessToken: "访问令牌（登录后自动填入）",
@@ -597,11 +580,6 @@ export const OPTIONS_STRINGS = {
     anthropicBaseUrl: "Anthropic 基础 URL",
     anthropicApiKey: "Anthropic API 密钥",
     anthropicModel: "模型",
-    promptaasBaseUrl: "Agentaab 基础 URL",
-    promptaasApiKey: "访问令牌（可选）",
-    promptaasAgentId: "Agent ID",
-    promptaasContract:
-      "约定：POST {base}/v1/agents/{agentId}/run，请求体为 ExplainRequest。详见 docs/runtime-contract.md。",
 
     defaultLensTitle: "镜头",
     defaultLensHint:

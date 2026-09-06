@@ -65,11 +65,10 @@ export async function complete(prompt, config) {
 /**
  * Whether import can run at all.
  *
- * Import needs a general chat completion. The `mock` runtime has no model
- * behind it, and PromptaaS exposes a fixed explainer agent rather than an open
- * completion endpoint, so neither can serve this pipeline. A fresh install
- * defaults to `mock`, which makes this a routine path rather than an edge case:
- * the UI sends the user to configure a model and keeps their parsed file.
+ * Import needs a general chat completion, and the `mock` runtime has no model
+ * behind it, so it cannot serve this pipeline. A fresh install defaults to
+ * `mock`, which makes this a routine path rather than an edge case: the UI
+ * sends the user to configure a model and keeps their parsed file.
  *
  * Which runtimes can serve this, and which key they need, is declared once on
  * the registry entry (`completion`) rather than re-derived here.

@@ -5,6 +5,7 @@
 import { resolveUiLocale, STRINGS } from "../../core/i18n.js";
 import { browserLocale } from "./host-locale.js";
 import { applyOverride, BUILTIN_LENSES } from "../../core/lenses.js";
+import { normalizeRuntimeId } from "../../core/runtime/registry.js";
 import { DEFAULT_SETTINGS, SECRET_KEYS } from "../../core/settings-defaults.js";
 import { isHostDenied } from "../../core/site-scope.js";
 
@@ -82,6 +83,9 @@ export async function getSettings() {
   return {
     ...DEFAULT_SETTINGS,
     ...stored,
+    // Storage can still name a runtime that has since been removed (#116).
+    // Reading it has to land on its replacement; the registry owns that map.
+    runtime: normalizeRuntimeId(stored.runtime) || DEFAULT_SETTINGS.runtime,
     customLenses: Array.isArray(stored.customLenses)
       ? stored.customLenses
       : DEFAULT_SETTINGS.customLenses,
@@ -140,10 +144,7 @@ export function publicSettings(settings) {
     lensOverrides: settings.lensOverrides || {},
     domainLenses: Array.isArray(settings.domainLenses) ? settings.domainLenses : [],
     hasApiKey: Boolean(
-      settings.apiKey ||
-        settings.anthropicApiKey ||
-        settings.promptaasApiKey ||
-        settings.cloudAccessToken
+      settings.apiKey || settings.anthropicApiKey || settings.cloudAccessToken
     ),
     model: settings.runtime === "anthropic" ? settings.anthropicModel : settings.model,
     memoryProvider: settings.memoryProvider,
@@ -188,8 +189,8 @@ export function publicSettings(settings) {
  */
 export function topUpUrlFor(settings) {
   // Hosted path only — Agentaab is an internal Cloud implementation detail.
-  if (settings?.runtime === "wdimtm-cloud" || settings?.runtime === "promptaas") {
-    return String(settings.cloudSignUpUrl || settings.promptaasSubscribeUrl || "").trim();
+  if (settings?.runtime === "wdimtm-cloud") {
+    return String(settings.cloudSignUpUrl || "").trim();
   }
   return "";
 }
