@@ -58,7 +58,7 @@ WDIMTM 想要的是：
 
 Local 与 BYOK 永远是一等公民，永久免费。WDIMTM Cloud 是可选的，只提供那些确实需要服务端的能力：无需 API Key、跨设备的个人上下文、可持久运行的研究与监控任务。升级不会更换扩展。
 
-商业模式与架构边界：`docs/internal/business-model.md`（私有工作仓库）
+服务模式：[`docs/service-modes.md`](docs/service-modes.md)。定价留在私有工作仓库。
 
 ## 官网
 
@@ -90,7 +90,9 @@ npm run test:e2e      # 有头 Chromium + 真实未打包扩展
 
 默认运行时是 **mock**（离线）。在扩展选项里可以切换到 OpenAI-compatible、Anthropic 或 WDIMTM Cloud。
 
-三种服务模式（Local / BYOK / WDIMTM Cloud）是同一个客户端，不是不同版本 —— 见 `docs/internal/business-model.md` 与 `docs/internal/cloud-api-contract.md`（均为私有工作仓库）。
+三种服务模式（Local / BYOK / WDIMTM Cloud）是同一个客户端，不是不同版本 —— 见 [`docs/service-modes.md`](docs/service-modes.md) 与 [`docs/cloud-api-contract.md`](docs/cloud-api-contract.md)。
+
+`npm run package` 从这棵公开树打出 Chrome 商店的 zip。在私有工作仓库里，这条命令会先组装同一棵树再打包，因此上传的包里不会带上付费服务。
 
 ## 架构
 
@@ -127,12 +129,15 @@ WDIMTM Context Builder（service worker）
 ```
 
 契约细节：[`docs/runtime-contract.md`](docs/runtime-contract.md)
-Cloud API 契约：`docs/internal/cloud-api-contract.md`（私有工作仓库）
+Cloud API 契约：[`docs/cloud-api-contract.md`](docs/cloud-api-contract.md)
+商店文案：[`docs/chrome-web-store.md`](docs/chrome-web-store.md)
+研究任务契约：[`docs/research-agent-contract.md`](docs/research-agent-contract.md)
+服务模式：[`docs/service-modes.md`](docs/service-modes.md)
 记忆 RFC：[`docs/memory-rfc.md`](docs/memory-rfc.md)
 AI 接入方式：[`docs/ai-access-modes.md`](docs/ai-access-modes.md)
 扩展说明：[`extension/README.md`](extension/README.md)
 
-运行时适配器是产品中**短暂**的那一半。可持久的工作（深度研究、监控）属于云端 agent 运行时。
+运行时适配器是产品中**短暂**的那一半。可持久的工作（深度研究、监控）属于云端 agent 运行时，见 [`docs/service-modes.md`](docs/service-modes.md)。
 
 ### 请求结构
 

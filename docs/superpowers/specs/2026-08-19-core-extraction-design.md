@@ -88,9 +88,13 @@ core/          host-agnostic: lenses, modes, memory-sources, memory-import,
                explain-context, followups, runtimes, agent-job          (public)
 extension/     chrome glue + content scripts + options UI               (public)
 cloud/         Worker, credits, packages, D1 — depends on core          (private)
-docs/public/   architecture and design docs                             (public)
-docs/internal/ roadmap, business model, store listing ops               (private)
+docs/          architecture, the client contracts, the store listing    (public)
+docs/internal/ price hypothesis, private roadmap, mirror setup          (private)
 ```
+
+The store listing and the client contracts moved out of `docs/internal/` after
+this extraction. `scripts/publish-set.mjs` is the list of what stays private;
+everything else tracked is published, and `npm run package` zips that tree.
 
 One repository still. Splitting into three repositories is deliberately *not*
 part of this: it buys nothing until a second consumer of core exists, and costs

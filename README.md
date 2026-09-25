@@ -60,7 +60,7 @@ Local and BYOK stay first-class and free forever. WDIMTM Cloud is optional and a
 genuinely needs a server: no API key, cross-device personal context, durable research and
 watch jobs. Upgrading never changes the extension.
 
-Business model + architecture boundaries: `docs/internal/business-model.md` (private working repo)
+Service modes: [`docs/service-modes.md`](docs/service-modes.md). Pricing stays in the private working repo.
 
 ## Landing page
 
@@ -92,7 +92,9 @@ npm run test:e2e      # headed Chromium + real unpacked extension
 
 Default runtime is **mock** (offline). In extension options you can switch to OpenAI-compatible, Anthropic, or WDIMTM Cloud.
 
-Service modes (Local / BYOK / WDIMTM Cloud) are one client, not separate editions — see `docs/internal/business-model.md` (private working repo) and `docs/internal/cloud-api-contract.md` (private working repo).
+Service modes (Local / BYOK / WDIMTM Cloud) are one client, not separate editions — see [`docs/service-modes.md`](docs/service-modes.md) and [`docs/cloud-api-contract.md`](docs/cloud-api-contract.md).
+
+`npm run package` zips the Chrome Web Store item from this public tree. In the private working repo that command assembles the same tree first, so the upload cannot contain the paid service.
 
 ## Architecture
 
@@ -129,18 +131,18 @@ Floating surface
 ```
 
 Contract details: [`docs/runtime-contract.md`](docs/runtime-contract.md)  
-Cloud API contract: `docs/internal/cloud-api-contract.md` (private working repo)  
-Cloud backend: `cloud/README.md` (private working repo)  
-Store listing copy: `docs/internal/chrome-web-store.md` (private working repo)  
-Research AgentJob contract: `docs/internal/research-agent-contract.md` (private working repo)  
+Cloud API contract: [`docs/cloud-api-contract.md`](docs/cloud-api-contract.md)  
+Cloud backend: `cloud/` (private working repo)  
+Store listing: [`docs/chrome-web-store.md`](docs/chrome-web-store.md)  
+Research AgentJob contract: [`docs/research-agent-contract.md`](docs/research-agent-contract.md)  
 Memory RFC: [`docs/memory-rfc.md`](docs/memory-rfc.md)  
-Business model + service modes: `docs/internal/business-model.md` (private working repo)  
+Service modes: [`docs/service-modes.md`](docs/service-modes.md)  
 AI access modes: [`docs/ai-access-modes.md`](docs/ai-access-modes.md)  
 Extension notes: [`extension/README.md`](extension/README.md)
 
 Runtime adapters are the **ephemeral** side of the product. Durable work (deep research,
 watch) belongs to a cloud agent runtime — see
-`docs/internal/business-model.md` (private working repo).
+[`docs/service-modes.md`](docs/service-modes.md).
 
 ### Request shape
 

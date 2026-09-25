@@ -3,9 +3,10 @@
  * a permission in the manifest with no justification written for it, or a
  * justification left behind for a permission that was removed.
  *
- * The listing copy lives in docs/internal/chrome-web-store.md, which is not
- * published to the public mirror — so a missing file is "nothing to check",
- * not a failure.
+ * The listing copy lives in docs/chrome-web-store.md, which is part of the
+ * public tree: the store zip is that tree, so the justifications travel with
+ * it. A missing file is "nothing to check" for a unit test of the diff helper
+ * and a hard failure for `npm run package`.
  *
  *   node scripts/check-store-listing.mjs
  */
@@ -17,8 +18,8 @@ import { fileURLToPath } from "node:url";
 
 const root = path.dirname(fileURLToPath(new URL("../package.json", import.meta.url)));
 
-const MANIFEST = path.join(root, "extension/manifest.json");
-const LISTING = path.join(root, "docs/internal/chrome-web-store.md");
+const MANIFEST = "extension/manifest.json";
+const LISTING = "docs/chrome-web-store.md";
 
 /**
  * Every permission string the dashboard will ask us to justify, in the order
@@ -148,12 +149,15 @@ export function diffListing({ manifest, listing }) {
 }
 
 /**
- * @returns {Promise<{ skipped: boolean, missing: string[], stale: string[] }>}
+ * @param {string} [repoRoot] Tree whose manifest and listing to compare. Defaults
+ *   to this repository; packaging passes the assembled publish set.
+ * @returns {Promise<{ skipped: boolean, missing: string[], stale: string[], tooLong: Array<{ heading: string, length: number, limit: number }> }>}
  */
-export async function checkStoreListing() {
-  if (!existsSync(LISTING)) return { skipped: true, missing: [], stale: [], tooLong: [] };
-  const manifest = JSON.parse(await readFile(MANIFEST, "utf8"));
-  const listing = await readFile(LISTING, "utf8");
+export async function checkStoreListing(repoRoot = root) {
+  const listingPath = path.join(repoRoot, LISTING);
+  if (!existsSync(listingPath)) return { skipped: true, missing: [], stale: [], tooLong: [] };
+  const manifest = JSON.parse(await readFile(path.join(repoRoot, MANIFEST), "utf8"));
+  const listing = await readFile(listingPath, "utf8");
   return {
     skipped: false,
     ...diffListing({ manifest, listing }),
@@ -164,7 +168,7 @@ export async function checkStoreListing() {
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const result = await checkStoreListing();
   if (result.skipped) {
-    console.log("store listing: docs/internal/chrome-web-store.md not present — skipped.");
+    console.log("store listing: docs/chrome-web-store.md not present — skipped.");
     process.exit(0);
   }
   for (const p of result.missing) {
@@ -179,7 +183,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     );
   }
   if (result.missing.length || result.stale.length || (result.tooLong || []).length) {
-    console.error("\nFix docs/internal/chrome-web-store.md before submitting.");
+    console.error("\nFix docs/chrome-web-store.md before submitting.");
     process.exit(1);
   }
   console.log("store listing: every manifest permission has a justification.");

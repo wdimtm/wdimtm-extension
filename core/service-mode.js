@@ -6,7 +6,7 @@
  * actually provide it — and when it cannot, the UI must explain *why the cloud
  * is required*, not render "Upgrade to Pro".
  *
- * See docs/business-model.md and docs/cloud-api-contract.md.
+ * See docs/service-modes.md and docs/cloud-api-contract.md.
  */
 
 /** @typedef {'local' | 'byok' | 'cloud'} ServiceMode */
@@ -16,7 +16,7 @@ export const SERVICE_MODES = /** @type {const} */ (["local", "byok", "cloud"]);
 
 /**
  * The four reasons a backend is allowed to exist. If none applies, do not
- * introduce one (docs/business-model.md#four-triggers-for-a-backend).
+ * introduce one (docs/service-modes.md#four-triggers-for-a-backend).
  */
 export const CLOUD_TRIGGERS = /** @type {const} */ ([
   {

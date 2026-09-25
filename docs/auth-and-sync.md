@@ -4,7 +4,7 @@ Status: **Proposed** — product direction accepted; cloud backend is optional i
 
 Account mode is the **identity** axis. Who pays for inference is a separate axis
 ([`ai-access-modes.md`](ai-access-modes.md)); how both roll up into free vs paid service
-modes is `business-model.md` (private working repo) (#50). A user may stay local-only while
+modes is [`service-modes.md`](service-modes.md). A user may stay local-only while
 paying a model vendor directly, or sign in without ever using WDIMTM Cloud inference.
 
 ## Product decision

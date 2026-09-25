@@ -84,6 +84,6 @@ WDIMTM stays thin: owns browser context + personalization, not infrastructure.
 
 ## Related
 
-- Cloud API: `cloud-api-contract.md` (private working repo)  
-- Business model / service modes: `business-model.md` (private working repo)  
+- Cloud API: [`cloud-api-contract.md`](cloud-api-contract.md)  
+- Service modes: [`service-modes.md`](service-modes.md)  
 - Runtime contract: [`runtime-contract.md`](runtime-contract.md)

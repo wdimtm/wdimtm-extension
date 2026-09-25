@@ -27,7 +27,7 @@ explanation (+ optional why-it-matters)
 | **openai-compatible** | **Recommended real dogfood path** (BYOK / any OpenAI-compatible gateway including sub2api) |
 | **anthropic** | Native Anthropic Messages API (`POST {base}/messages`, `x-api-key` + `anthropic-version`, top-level `system`, no sampling params) |
 | **mock** | Offline / CI |
-| **wdimtm-cloud** | Hosted service mode — same contract, server-side credentials (`cloud-api-contract.md` (private working repo)) |
+| **wdimtm-cloud** | Hosted service mode — same contract, server-side credentials ([`cloud-api-contract.md`](cloud-api-contract.md)) |
 
 ## Boundary
 
@@ -176,7 +176,7 @@ When `stream` is on, content connects to port `wdimtm-chat` and receives `chunk`
 3. **mock** → offline / CI  
 
 Service-mode semantics (which capability each mode can provide, and why) live in
-[`service-mode.js`](../core/service-mode.js) and `business-model.md` (private working repo).  
+[`service-mode.js`](../core/service-mode.js) and [`service-modes.md`](service-modes.md).  
 Product UX: [`ai-access-modes.md`](ai-access-modes.md).
 
 ## Non-goals (current)

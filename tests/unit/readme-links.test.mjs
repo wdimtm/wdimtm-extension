@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
 
-import { EXCLUDE, INCLUDE } from "../../scripts/publish-set.mjs";
+import { isPrivate } from "../../scripts/publish-set.mjs";
 
 const root = path.resolve(import.meta.dirname, "../..");
 const READMES = ["README.md", "README.zh-CN.md"];
@@ -18,11 +18,9 @@ function targets(markdown) {
   return { images, links: links.filter((l) => l && !l.startsWith("#")) };
 }
 
-/** Is this path carried to the public mirror? */
+/** Is this path carried to the public mirror? A new file is, unless it is private. */
 function published(target) {
-  const top = target.split("/")[0];
-  if (!INCLUDE.includes(top) && !INCLUDE.includes(target)) return false;
-  return !EXCLUDE.some((ex) => target === ex || target.startsWith(`${ex}/`));
+  return !isPrivate(target);
 }
 
 describe("README links survive the trip to the mirror", () => {
@@ -49,6 +47,6 @@ describe("README links survive the trip to the mirror", () => {
   }
 
   it("the Chinese README is published alongside the English one", () => {
-    for (const name of READMES) assert.ok(INCLUDE.includes(name), `${name} missing from INCLUDE`);
+    for (const name of READMES) assert.equal(isPrivate(name), false, `${name} is private`);
   });
 });
