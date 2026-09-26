@@ -92,7 +92,7 @@ npm run test:e2e      # 有头 Chromium + 真实未打包扩展
 
 三种服务模式（Local / BYOK / WDIMTM Cloud）是同一个客户端，不是不同版本 —— 见 [`docs/service-modes.md`](docs/service-modes.md) 与 [`docs/cloud-api-contract.md`](docs/cloud-api-contract.md)。
 
-`npm run package` 从这棵公开树打出 Chrome 商店的 zip。在私有工作仓库里，这条命令会先组装同一棵树再打包，因此上传的包里不会带上付费服务。
+`npm run package` 从这棵公开树打出 Chrome 商店的 zip。在私有工作仓库里，这条命令会先组装同一棵树再打包，因此上传的包里不会带上付费服务。`npm run store:upload` 把这个 zip 上传为草稿；`npm run store:publish` 把草稿送审。商店凭证放在环境变量里，不写进仓库。
 
 ## 架构
 

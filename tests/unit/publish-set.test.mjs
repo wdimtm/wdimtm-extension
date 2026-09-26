@@ -27,6 +27,7 @@ describe("publish set", () => {
     assert.equal(isPrivate("docs/cloud-api-contract.md"), false);
     assert.equal(isPrivate("docs/research-agent-contract.md"), false);
     assert.equal(isPrivate("docs/chrome-web-store.md"), false);
+    assert.equal(isPrivate("scripts/publish-store.mjs"), false);
     assert.equal(isPrivate(".github/workflows/ci.yml"), false);
   });
 
@@ -64,6 +65,8 @@ describe("publish set", () => {
       for (const name of DROP_SCRIPTS) {
         assert.equal(pkg.scripts?.[name], undefined, `${name} still in the public package.json`);
       }
+      assert.equal(pkg.scripts["store:upload"], "node scripts/publish-store.mjs");
+      assert.equal(pkg.scripts["store:publish"], "node scripts/publish-store.mjs --submit-only");
       assert.match(pkg.repository.url, /wdimtm\/wdimtm-extension/);
       assert.equal(existsSync(path.join(dir, "docs/chrome-web-store.md")), true);
     } finally {

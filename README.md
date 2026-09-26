@@ -94,7 +94,7 @@ Default runtime is **mock** (offline). In extension options you can switch to Op
 
 Service modes (Local / BYOK / WDIMTM Cloud) are one client, not separate editions — see [`docs/service-modes.md`](docs/service-modes.md) and [`docs/cloud-api-contract.md`](docs/cloud-api-contract.md).
 
-`npm run package` zips the Chrome Web Store item from this public tree. In the private working repo that command assembles the same tree first, so the upload cannot contain the paid service.
+`npm run package` zips the Chrome Web Store item from this public tree. In the private working repo that command assembles the same tree first, so the upload cannot contain the paid service. `npm run store:upload` sends that zip as a draft; `npm run store:publish` submits the draft for review. The store credentials are environment variables, not files in this repo.
 
 ## Architecture
 

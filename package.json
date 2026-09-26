@@ -11,6 +11,8 @@
     "check:boundary": "node scripts/check-boundary.mjs --check",
     "check:store": "node scripts/check-store-listing.mjs",
     "package": "node scripts/package.mjs",
+    "store:upload": "node scripts/publish-store.mjs",
+    "store:publish": "node scripts/publish-store.mjs --submit-only",
     "test:e2e": "npm run build && node tests/e2e/extension.e2e.mjs",
     "test:e2e:headless": "echo 'Note: MV3 extensions need headed Chrome; headless is best-effort' && WDIMTM_E2E_HEADLESS=1 npm run build && node tests/e2e/extension.e2e.mjs",
     "sync:css": "node scripts/sync-content-css.mjs",

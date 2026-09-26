@@ -144,7 +144,7 @@ try {
   );
   for (const w of warnings) console.log(`\n  ! ${w}`);
   console.log(
-    "\nUpload it at https://chrome.google.com/webstore/devconsole → Items → Add new item."
+    "\nUpload the draft with npm run store:upload. Submit that draft with npm run store:publish."
   );
 } finally {
   await cleanup();
