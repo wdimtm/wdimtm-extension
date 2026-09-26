@@ -108,7 +108,9 @@ try {
     console.error("Cannot package:\n");
     for (const p of problems) console.error(`  ✗ ${p}`);
     console.error("");
-    process.exit(1);
+    // exitCode, not exit(): exit() would skip the finally that removes the staged tree.
+    process.exitCode = 1;
+    return;
   }
 
   // Always rebuild: packaging whatever happened to be in dist/ is how a fix that
