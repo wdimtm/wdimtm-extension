@@ -9,7 +9,9 @@
  */
 
 import { classifyRuntimeError } from "../runtime-errors.js";
+import { DEFAULT_OPENAI_MODEL } from "./openai-compatible.js";
 import { completionSupportOf } from "./registry.js";
+import { openAIOutputParams } from "./token-budget.js";
 
 /**
  * @param {{ system: string, user: string }} prompt
@@ -18,7 +20,7 @@ import { completionSupportOf } from "./registry.js";
  */
 export async function complete(prompt, config) {
   const base = (config.apiBaseUrl || "https://api.openai.com/v1").replace(/\/$/, "");
-  const model = config.model || "gpt-4o-mini";
+  const model = config.model || DEFAULT_OPENAI_MODEL;
 
   if (!config.apiKey) {
     throw new Error(classifyRuntimeError(new Error("API key is required"), "byok").message);
@@ -34,9 +36,8 @@ export async function complete(prompt, config) {
     body: JSON.stringify({
       model,
       // Extraction, not creative writing — low temperature keeps the JSON shape
-      // and the wording stable across batches.
-      temperature: 0.1,
-      max_tokens: config.maxTokens || 1200,
+      // and the wording stable across batches (where the model takes one).
+      ...openAIOutputParams(config.maxTokens || 1200, model, 0.1),
       messages: [
         { role: "system", content: prompt.system },
         { role: "user", content: prompt.user },

@@ -24,7 +24,7 @@ export const BYOK_PRESETS = [
     label: "OpenAI",
     labelZh: "OpenAI",
     apiBaseUrl: "https://api.openai.com/v1",
-    model: "gpt-4o-mini",
+    model: "gpt-5.6-luna",
     protocol: "openai-compatible",
   },
   {
@@ -32,7 +32,7 @@ export const BYOK_PRESETS = [
     label: "OpenRouter",
     labelZh: "OpenRouter",
     apiBaseUrl: "https://openrouter.ai/api/v1",
-    model: "openai/gpt-4o-mini",
+    model: "openai/gpt-5.6-luna",
     protocol: "openai-compatible",
   },
   {

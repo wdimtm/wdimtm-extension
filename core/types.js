@@ -75,6 +75,7 @@
  * @property {Array<string|FollowUpAction>} [followUps]  // prefer ≤3 predicted chips
  * @property {MemorySuggestion | null} [memorySuggestion]
  * @property {string} [runtime]
+ * @property {boolean} [truncated]  // the model hit its output ceiling mid-answer
  * @property {ExplainResponseMeta} [meta]
  */
 

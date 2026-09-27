@@ -99,6 +99,8 @@ import { CONTENT_CSS } from "./styles.inline.js";
   let lastFollowUps = [];
   /** @type {{ content: string, type: string, reason?: string } | null} */
   let lastMemorySuggestion = null;
+  /** The last explanation stopped at the model's output ceiling. */
+  let lastTruncated = false;
   /** Suppress hide briefly after show — translate extensions often jostle selection. */
   let suppressHideUntil = 0;
   /** Where "Top up credits" goes when the hosted balance runs out (#41). */
@@ -1060,6 +1062,15 @@ import { CONTENT_CSS } from "./styles.inline.js";
             </div>
           </div>`
         : "";
+      const cutOff =
+        state.kind === "ok" && state.truncated
+          ? `<div class="wdimtm-cutoff" role="status">
+              <span>${escapeHtml(tr("cutOffNote", "This answer hit the length limit and was cut off."))}</span>
+              <button type="button" class="wdimtm-btn wdimtm-btn-ghost" data-action="continue-cut">${escapeHtml(
+                tr("continueInChat", "Continue in chat")
+              )}</button>
+            </div>`
+          : "";
       const rememberNote = state.remembered
         ? `<div class="wdimtm-toast">${escapeHtml(tr("remembered", "Saved to local memory."))}</div>`
         : "";
@@ -1094,6 +1105,7 @@ import { CONTENT_CSS } from "./styles.inline.js";
         <div class="wdimtm-popover-body">
           ${demoBanner}
           <div class="wdimtm-answer">${formatAnswer(state.explanation || "")}</div>
+          ${cutOff}
           ${rememberNote}
           ${memBlock}
           ${follow}
@@ -1138,6 +1150,9 @@ import { CONTENT_CSS } from "./styles.inline.js";
         if (action === "discuss") {
           escalateToChat({ seedFromExplain: true });
         }
+        if (action === "continue-cut") {
+          escalateToChat({ seedFromExplain: true, continueCutOff: true });
+        }
         if (action === "top-up" && topUpUrl) {
           window.open(topUpUrl, "_blank", "noopener,noreferrer");
         }
@@ -1159,10 +1174,18 @@ import { CONTENT_CSS } from "./styles.inline.js";
     abortStream();
     hidePopover();
     hideBubble();
+    const seeded = lastExplanation;
     openChatPanel({
       seedFromExplain: opts.seedFromExplain !== false,
       escalate: true,
       fromSelection: true,
+    }).then(() => {
+      // Only ask the model to carry on when the cut-off answer is what the
+      // thread ends with — a resumed thread may have moved on since.
+      const last = chatState?.messages?.[chatState.messages.length - 1];
+      if (opts.continueCutOff && last?.role === "assistant" && last.content === seeded) {
+        sendChatMessage(tr("continuePrompt", "Continue from exactly where you stopped. Do not repeat what you already wrote."));
+      }
     });
   }
 
@@ -2000,6 +2023,18 @@ import { CONTENT_CSS } from "./styles.inline.js";
         const cls = m.role === "user" ? "wdimtm-chat-msg user" : "wdimtm-chat-msg assistant";
         const streamAttr =
           chatBusy && isLastAssistant ? ' data-chat-streaming="1"' : "";
+        const cutOff =
+          m.role === "assistant" && m.truncated
+            ? `<div class="wdimtm-cutoff" role="status">
+                <span>${escapeHtml(tr("cutOffNote", "This answer hit the length limit and was cut off."))}</span>${
+                  isLastAssistant && !chatBusy
+                    ? `<button type="button" class="wdimtm-btn wdimtm-btn-ghost" data-chat-action="continue">${escapeHtml(
+                        tr("continueAnswer", "Continue")
+                      )}</button>`
+                    : ""
+                }
+              </div>`
+            : "";
         const meta =
           m.role === "assistant" && m.webSearch
             ? `<div class="wdimtm-chat-search-meta">${escapeHtml(
@@ -2021,7 +2056,7 @@ import { CONTENT_CSS } from "./styles.inline.js";
             : "";
         return `<div class="${cls}"${streamAttr}>${role}${renderMessageAttachments(
           m.attachments
-        )}${body}${meta}</div>`;
+        )}${body}${cutOff}${meta}</div>`;
       })
       .join("");
 
@@ -2212,6 +2247,13 @@ import { CONTENT_CSS } from "./styles.inline.js";
       setLastAssistantContent(tr("chatStopped", "Stopped."));
       chatBusy = false;
       renderChatPanel();
+    });
+
+    panel.querySelector('[data-chat-action="continue"]')?.addEventListener("click", (e) => {
+      e.preventDefault();
+      sendChatMessage(
+        tr("continuePrompt", "Continue from exactly where you stopped. Do not repeat what you already wrote.")
+      );
     });
 
     panel.querySelector('[data-chat-action="close"]')?.addEventListener("click", (e) => {
@@ -2454,17 +2496,25 @@ import { CONTENT_CSS } from "./styles.inline.js";
     };
   }
 
-  function setLastAssistantContent(text, webSearch) {
+  /**
+   * @param {string} text
+   * @param {any} [webSearch]
+   * @param {boolean} [truncated] the reply stopped at the model's output ceiling
+   */
+  function setLastAssistantContent(text, webSearch, truncated) {
     if (!chatState?.messages?.length) return;
     const last = chatState.messages[chatState.messages.length - 1];
     if (last?.role === "assistant") {
       last.content = text;
       if (webSearch !== undefined) last.webSearch = webSearch;
+      if (truncated) last.truncated = true;
+      else delete last.truncated;
     } else {
       chatState.messages.push({
         role: "assistant",
         content: text,
         ...(webSearch ? { webSearch } : {}),
+        ...(truncated ? { truncated: true } : {}),
       });
     }
   }
@@ -2541,7 +2591,8 @@ import { CONTENT_CSS } from "./styles.inline.js";
       if (!res?.ok) throw new Error(res?.error || "Chat failed.");
       setLastAssistantContent(
         res.data.reply || res.data.explanation || "",
-        res.data.webSearch
+        res.data.webSearch,
+        res.data.truncated === true
       );
       await persistChat();
     } catch (err) {
@@ -2577,10 +2628,10 @@ import { CONTENT_CSS } from "./styles.inline.js";
     }
     activeChatPort = port;
 
-    /** @param {string} text @param {any} [webSearch] */
-    const settle = (text, webSearch) => {
+    /** @param {string} text @param {any} [webSearch] @param {boolean} [truncated] */
+    const settle = (text, webSearch, truncated) => {
       activeChatPort = null;
-      setLastAssistantContent(text, webSearch);
+      setLastAssistantContent(text, webSearch, truncated);
       chatBusy = false;
       persistChat();
       renderChatPanel();
@@ -2589,7 +2640,8 @@ import { CONTENT_CSS } from "./styles.inline.js";
     consumePortStream(port, {
       request: { type: "wdimtm:chat", payload: chatPayload() },
       onChunk: (acc) => patchChatStreamingBubble(acc),
-      onDone: (data, acc) => settle(data?.reply || data?.explanation || acc, data?.webSearch),
+      onDone: (data, acc) =>
+        settle(data?.reply || data?.explanation || acc, data?.webSearch, data?.truncated === true),
       onPartial: (acc) => settle(acc),
       onError: (err) => {
         activeChatPort = null;
@@ -2666,6 +2718,7 @@ import { CONTENT_CSS } from "./styles.inline.js";
           runtime: "memory",
           lensId: activeLensId,
           remembered: true,
+          truncated: lastTruncated,
         });
       }
     } catch (err) {
@@ -2689,6 +2742,7 @@ import { CONTENT_CSS } from "./styles.inline.js";
       memorySuggestion: null,
       runtime: lastRequest ? undefined : "mock",
       lensId: activeLensId,
+      truncated: lastTruncated,
     });
   }
 
@@ -2719,6 +2773,7 @@ import { CONTENT_CSS } from "./styles.inline.js";
           runtime: "memory",
           lensId: activeLensId,
           remembered: true,
+          truncated: lastTruncated,
         });
       }
     } catch (err) {
@@ -2934,6 +2989,7 @@ import { CONTENT_CSS } from "./styles.inline.js";
       lastExplanation = res.data.explanation;
       lastFollowUps = normalizeFollowUpList(res.data.followUps);
       lastMemorySuggestion = res.data.memorySuggestion || null;
+      lastTruncated = res.data.truncated === true;
       recordExplainHistory(request, res.data.explanation);
       showPopover(rect, {
         kind: "ok",
@@ -2942,6 +2998,7 @@ import { CONTENT_CSS } from "./styles.inline.js";
         memorySuggestion: lastMemorySuggestion,
         runtime: res.data.runtime,
         lensId: activeLensId,
+        truncated: lastTruncated,
       });
       positionPopover(rect);
     } catch (err) {
@@ -2979,6 +3036,7 @@ import { CONTENT_CSS } from "./styles.inline.js";
       lastExplanation = explanation;
       lastFollowUps = normalizeFollowUpList(data?.followUps);
       lastMemorySuggestion = data?.memorySuggestion || null;
+      lastTruncated = data?.truncated === true;
       recordExplainHistory(request, lastExplanation);
       showPopover(rect, {
         kind: "ok",
@@ -2987,6 +3045,7 @@ import { CONTENT_CSS } from "./styles.inline.js";
         memorySuggestion: lastMemorySuggestion,
         runtime: data?.runtime,
         lensId: activeLensId,
+        truncated: lastTruncated,
       });
       positionPopover(rect);
     };

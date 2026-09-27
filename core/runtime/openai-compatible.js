@@ -18,9 +18,16 @@ import {
   fetchWithTimeout,
 } from "../request-timeout.js";
 import { classifyRuntimeError } from "../runtime-errors.js";
+import {
+  CHAT_MAX_TOKENS,
+  CUT_OFF_BEFORE_ANSWER,
+  isCutOff,
+  openAIOutputParams,
+  tokenBudgetForMode,
+} from "./token-budget.js";
 
 export const DEFAULT_OPENAI_BASE_URL = "https://api.openai.com/v1";
-export const DEFAULT_OPENAI_MODEL = "gpt-4o-mini";
+export const DEFAULT_OPENAI_MODEL = "gpt-5.6-luna";
 
 /**
  * @param {import('../lib/types.js').ExplainRequest & {
@@ -56,7 +63,6 @@ export async function explainWithOpenAICompatible(request, config) {
   });
   const messages = buildModelMessages(ctx);
   const stream = Boolean(config.onChunk);
-  const maxTokens = tokenBudgetForMode(ctx.mode);
 
   // No request may hang without a ceiling (#18). The clock is on silence, not
   // on total duration — a long answer that keeps streaming is not a fault.
@@ -75,8 +81,7 @@ export async function explainWithOpenAICompatible(request, config) {
         },
         body: JSON.stringify({
           model,
-          temperature: 0.4,
-          max_tokens: maxTokens,
+          ...openAIOutputParams(tokenBudgetForMode(ctx.mode), model, 0.4),
           stream,
           // Only asked for when someone is accounting for the spend (WDIMTM Cloud).
           // Not every OpenAI-compatible server accepts this field, so BYOK — which
@@ -114,28 +119,30 @@ export async function explainWithOpenAICompatible(request, config) {
   };
 
   if (stream && res.body) {
-    let raw;
+    let streamed;
     try {
-      raw = await readSSE(res, config.onChunk, config.onUsage, deadline);
+      streamed = await readSSE(res, config.onChunk, config.onUsage, deadline);
     } catch (err) {
       throw deadline.signal.aborted ? describeAbort(deadline) : err;
     } finally {
       deadline.settle();
     }
-    const parsed = extractResponseTrailers(raw);
+    const parsed = extractResponseTrailers(streamed.text);
     return {
       explanation: parsed.explanation,
       followUps: parsed.followUps,
       memorySuggestion: parsed.memorySuggestion,
       whyItMatters: parsed.whyItMatters,
       runtime: "openai-compatible",
+      truncated: streamed.truncated,
       meta,
     };
   }
 
   const data = await res.json().finally(() => deadline.settle());
   const text = data?.choices?.[0]?.message?.content?.trim();
-  if (!text) throw new Error("Empty response from model.");
+  const truncated = isCutOff(data?.choices?.[0]?.finish_reason);
+  if (!text) throw new Error(truncated ? CUT_OFF_BEFORE_ANSWER : "Empty response from model.");
   // Token counts matter to whoever pays for them (cloud usage accounting, #51).
   config.onUsage?.({
     promptTokens: Number(data?.usage?.prompt_tokens) || 0,
@@ -150,6 +157,7 @@ export async function explainWithOpenAICompatible(request, config) {
     memorySuggestion: parsed.memorySuggestion,
     whyItMatters: parsed.whyItMatters,
     runtime: "openai-compatible",
+    truncated,
     meta,
   };
 }
@@ -173,7 +181,7 @@ export async function explainWithOpenAICompatible(request, config) {
  *   onChunk?: (text: string) => void,
  *   signal?: AbortSignal,
  * }} config
- * @returns {Promise<{ reply: string, runtime: string }>}
+ * @returns {Promise<{ reply: string, runtime: string, truncated: boolean }>}
  */
 export async function chatWithOpenAICompatible(request, config) {
   const base = (config.apiBaseUrl || DEFAULT_OPENAI_BASE_URL).replace(/\/$/, "");
@@ -195,8 +203,7 @@ export async function chatWithOpenAICompatible(request, config) {
         },
         body: JSON.stringify({
           model,
-          temperature: 0.5,
-          max_tokens: 900,
+          ...openAIOutputParams(CHAT_MAX_TOKENS, model, 0.5),
           stream,
           messages: [
             { role: "system", content: request.system },
@@ -226,14 +233,18 @@ export async function chatWithOpenAICompatible(request, config) {
 
   if (stream && res.body) {
     try {
-      const text = await readSSE(
+      const streamed = await readSSE(
         res,
         config.onChunk,
         undefined,
         deadline,
         "Empty streamed chat response."
       );
-      return { reply: text, runtime: "openai-compatible" };
+      return {
+        reply: streamed.text,
+        runtime: "openai-compatible",
+        truncated: streamed.truncated,
+      };
     } catch (err) {
       throw deadline.signal.aborted ? describeAbort(deadline) : err;
     } finally {
@@ -243,9 +254,10 @@ export async function chatWithOpenAICompatible(request, config) {
 
   const data = await res.json().finally(() => deadline.settle());
   const text = data?.choices?.[0]?.message?.content?.trim();
-  if (!text) throw new Error("Empty chat response.");
+  const truncated = isCutOff(data?.choices?.[0]?.finish_reason);
+  if (!text) throw new Error(truncated ? CUT_OFF_BEFORE_ANSWER : "Empty chat response.");
   if (config.onChunk) config.onChunk(text);
-  return { reply: text, runtime: "openai-compatible" };
+  return { reply: text, runtime: "openai-compatible", truncated };
 }
 
 /**
@@ -274,8 +286,8 @@ export async function pingOpenAICompatible(config) {
       },
       body: JSON.stringify({
         model,
-        max_tokens: 8,
-        temperature: 0,
+        // A reasoning model would spend 8 tokens thinking and never say "ok".
+        ...openAIOutputParams(8, model, 0),
         messages: [
           { role: "system", content: "Reply with the single word: ok" },
           { role: "user", content: "ping" },
@@ -305,20 +317,13 @@ export async function pingOpenAICompatible(config) {
   }
 }
 
-/** @param {string} mode */
-function tokenBudgetForMode(mode) {
-  if (mode === "more" || mode === "research" || mode === "probe") return 900;
-  if (mode === "verify" || mode === "opportunity") return 750;
-  if (mode === "why_it_matters") return 700;
-  return 650;
-}
-
 /**
  * @param {Response} res
  * @param {(t: string) => void} [onChunk]
  * @param {(u: { promptTokens: number, completionTokens: number }) => void} [onUsage]
  * @param {{ chunkReceived: () => void }} [deadline]
  * @param {string} [emptyMessage]
+ * @returns {Promise<{ text: string, truncated: boolean }>}
  */
 async function readSSE(
   res,
@@ -331,6 +336,7 @@ async function readSSE(
   const decoder = new TextDecoder();
   let buffer = "";
   let full = "";
+  let truncated = false;
 
   while (true) {
     const { done, value } = await reader.read();
@@ -352,6 +358,8 @@ async function readSSE(
           full += delta;
           onChunk?.(delta);
         }
+        // The last content frame says why the model stopped.
+        if (isCutOff(json.choices?.[0]?.finish_reason)) truncated = true;
         // With stream_options.include_usage the provider sends one final
         // choice-less frame carrying the totals.
         if (json.usage) {
@@ -366,8 +374,8 @@ async function readSSE(
     }
   }
 
-  if (!full.trim()) throw new Error(emptyMessage);
-  return full.trim();
+  if (!full.trim()) throw new Error(truncated ? CUT_OFF_BEFORE_ANSWER : emptyMessage);
+  return { text: full.trim(), truncated };
 }
 
 // Re-export for tests / tooling that want the same messages the runtime sends.

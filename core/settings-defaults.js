@@ -14,7 +14,7 @@ export const DEFAULT_SETTINGS = {
     /** @type {'mock' | 'openai-compatible' | 'anthropic' | 'wdimtm-cloud'} */ ("mock"),
   apiBaseUrl: "https://api.openai.com/v1",
   apiKey: "",
-  model: "gpt-4o-mini",
+  model: "gpt-5.6-luna",
   /** Native Anthropic Messages API runtime (#64) — separate key/model from BYOK. */
   anthropicBaseUrl: "https://api.anthropic.com/v1",
   anthropicApiKey: "",

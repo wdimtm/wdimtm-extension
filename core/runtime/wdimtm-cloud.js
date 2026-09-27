@@ -72,6 +72,7 @@ export async function explainWithWdimtmCloud(request, config) {
     followUps: data.followUps || data.follow_ups || [],
     memorySuggestion: data.memorySuggestion || data.memory_suggestion || null,
     runtime: "wdimtm-cloud",
+    truncated: data.truncated === true,
     meta: data.meta,
   };
 }
@@ -88,7 +89,7 @@ export async function explainWithWdimtmCloud(request, config) {
  *   onChunk?: (text: string) => void,
  *   signal?: AbortSignal,
  * }} config
- * @returns {Promise<{ reply: string, runtime: string }>}
+ * @returns {Promise<{ reply: string, runtime: string, truncated: boolean }>}
  */
 export async function chatWithWdimtmCloud(request, config) {
   const wantStream = typeof config.onChunk === "function";
@@ -116,7 +117,11 @@ export async function chatWithWdimtmCloud(request, config) {
         /** @type {(t: string) => void} */ (config.onChunk),
         deadline
       );
-      return { reply: streamed.explanation, runtime: "wdimtm-cloud" };
+      return {
+        reply: streamed.explanation,
+        runtime: "wdimtm-cloud",
+        truncated: Boolean(streamed.truncated),
+      };
     } catch (err) {
       throw deadline.signal.aborted ? describeAbort(deadline) : err;
     } finally {
@@ -127,7 +132,7 @@ export async function chatWithWdimtmCloud(request, config) {
   const data = await res.json().finally(() => deadline.settle());
   const reply = data.reply || data.explanation || data.content || "";
   if (!reply) throw new Error("WDIMTM Cloud chat response was empty.");
-  return { reply, runtime: "wdimtm-cloud" };
+  return { reply, runtime: "wdimtm-cloud", truncated: data.truncated === true };
 }
 
 /**
@@ -170,7 +175,7 @@ export async function pingWdimtmCloud(config) {
 }
 
 /**
- * SSE: data: {"delta":"…"} … data: {"done":true,"explanation"?,"followUps"?}
+ * SSE: data: {"delta":"…"} … data: {"done":true,"explanation"?,"followUps"?,"truncated"?}
  * @param {Response} res
  * @param {(text: string) => void} onChunk
  * @param {{ chunkReceived: () => void }} [deadline]
@@ -185,6 +190,7 @@ async function readCloudStream(res, onChunk, deadline) {
   let followUps;
   /** @type {unknown} */
   let meta;
+  let truncated = false;
   /** @type {string} */
   let streamError = "";
 
@@ -209,6 +215,7 @@ async function readCloudStream(res, onChunk, deadline) {
         if (json.done && json.explanation) explanation = json.explanation;
         if (json.followUps) followUps = json.followUps;
         if (json.meta) meta = json.meta;
+        if (json.done && json.truncated === true) truncated = true;
         // The response was already committed as 200 before the server hit
         // trouble, so failures arrive as a frame rather than a status code.
         if (json.error) streamError = String(json.error);
@@ -229,6 +236,7 @@ async function readCloudStream(res, onChunk, deadline) {
     explanation,
     followUps: /** @type {any} */ (followUps || []),
     runtime: "wdimtm-cloud",
+    truncated,
     meta: /** @type {any} */ (meta),
   };
 }

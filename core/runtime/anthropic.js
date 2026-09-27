@@ -22,6 +22,13 @@ import { extractResponseTrailers } from "../followups.js";
 import { capabilityForMode } from "../modes.js";
 import { createRequestTimeout, describeAbort, fetchWithTimeout } from "../request-timeout.js";
 import { classifyRuntimeError } from "../runtime-errors.js";
+import {
+  CHAT_MAX_TOKENS,
+  CUT_OFF_BEFORE_ANSWER,
+  REASONING_HEADROOM_TOKENS,
+  isCutOff,
+  tokenBudgetForMode,
+} from "./token-budget.js";
 
 export const ANTHROPIC_VERSION = "2023-06-01";
 export const DEFAULT_ANTHROPIC_BASE_URL = "https://api.anthropic.com/v1";
@@ -29,11 +36,9 @@ export const DEFAULT_ANTHROPIC_MODEL = "claude-opus-5";
 
 /**
  * Thinking is on by default on current Claude models and shares the
- * max_tokens ceiling with the visible answer. Answer length is steered by the
- * system prompt's depth line, so max_tokens is only a truncation guard — give
- * it headroom instead of budgeting it like an OpenAI completion.
+ * max_tokens ceiling with the visible answer, so every Claude request gets the
+ * reasoning headroom on top of the answer budget.
  */
-const THINKING_HEADROOM_TOKENS = 4096;
 
 /**
  * @param {string} apiKey
@@ -105,7 +110,7 @@ export async function explainWithAnthropic(request, config) {
   });
   const { system, messages } = splitSystemMessages(buildModelMessages(ctx));
   const stream = Boolean(config.onChunk);
-  const maxTokens = tokenBudgetForMode(ctx.mode) + THINKING_HEADROOM_TOKENS;
+  const maxTokens = tokenBudgetForMode(ctx.mode) + REASONING_HEADROOM_TOKENS;
 
   // Same silence clocks as the other runtimes (#18) — long streaming answers
   // are fine; a quiet connection is not.
@@ -154,21 +159,22 @@ export async function explainWithAnthropic(request, config) {
   };
 
   if (stream && res.body) {
-    let raw;
+    let streamed;
     try {
-      raw = await readAnthropicTextStream(res, config.onChunk, undefined, deadline);
+      streamed = await readAnthropicTextStream(res, config.onChunk, undefined, deadline);
     } catch (err) {
       throw deadline.signal.aborted ? describeAbort(deadline) : err;
     } finally {
       deadline.settle();
     }
-    const parsed = extractResponseTrailers(raw);
+    const parsed = extractResponseTrailers(streamed.text);
     return {
       explanation: parsed.explanation,
       followUps: parsed.followUps,
       memorySuggestion: parsed.memorySuggestion,
       whyItMatters: parsed.whyItMatters,
       runtime: "anthropic",
+      truncated: streamed.truncated,
       meta,
     };
   }
@@ -179,7 +185,8 @@ export async function explainWithAnthropic(request, config) {
     throw new Error("Claude declined this request (safety refusal). Try rephrasing the selection.");
   }
   const text = flattenContent(data?.content).trim();
-  if (!text) throw new Error("Empty response from model.");
+  const truncated = isCutOff(data?.stop_reason);
+  if (!text) throw new Error(truncated ? CUT_OFF_BEFORE_ANSWER : "Empty response from model.");
   const parsed = extractResponseTrailers(text);
   if (config.onChunk) config.onChunk(parsed.explanation);
 
@@ -189,6 +196,7 @@ export async function explainWithAnthropic(request, config) {
     memorySuggestion: parsed.memorySuggestion,
     whyItMatters: parsed.whyItMatters,
     runtime: "anthropic",
+    truncated,
     meta,
   };
 }
@@ -225,8 +233,7 @@ export async function chatWithAnthropic(request, config) {
         headers: anthropicHeaders(config.apiKey),
         body: JSON.stringify({
           model,
-          // Headroom for adaptive thinking, which shares the max_tokens ceiling.
-          max_tokens: 5000,
+          max_tokens: CHAT_MAX_TOKENS + REASONING_HEADROOM_TOKENS,
           stream,
           system: request.system,
           messages: (request.messages || []).map((m) => ({
@@ -249,13 +256,13 @@ export async function chatWithAnthropic(request, config) {
 
   if (stream && res.body) {
     try {
-      const text = await readAnthropicTextStream(
+      const streamed = await readAnthropicTextStream(
         res,
         config.onChunk,
         "Empty streamed chat response.",
         deadline
       );
-      return { reply: text, runtime: "anthropic" };
+      return { reply: streamed.text, runtime: "anthropic", truncated: streamed.truncated };
     } catch (err) {
       throw deadline.signal.aborted ? describeAbort(deadline) : err;
     } finally {
@@ -266,9 +273,10 @@ export async function chatWithAnthropic(request, config) {
   deadline.settle();
   const data = await res.json();
   const text = flattenContent(data?.content).trim();
-  if (!text) throw new Error("Empty chat response.");
+  const truncated = isCutOff(data?.stop_reason);
+  if (!text) throw new Error(truncated ? CUT_OFF_BEFORE_ANSWER : "Empty chat response.");
   if (config.onChunk) config.onChunk(text);
-  return { reply: text, runtime: "anthropic" };
+  return { reply: text, runtime: "anthropic", truncated };
 }
 
 /**
@@ -338,20 +346,13 @@ export function flattenContent(content) {
     .join("");
 }
 
-/** @param {string} mode */
-function tokenBudgetForMode(mode) {
-  if (mode === "more" || mode === "research" || mode === "probe") return 900;
-  if (mode === "verify" || mode === "opportunity") return 750;
-  if (mode === "why_it_matters") return 700;
-  return 650;
-}
-
 /**
  * Read a Messages API SSE stream, forwarding text deltas to onChunk.
  * Shared with the page-chat path in chat.js.
  * @param {Response} res
  * @param {(t: string) => void} [onChunk]
  * @param {string} [emptyMessage]
+ * @returns {Promise<{ text: string, truncated: boolean }>}
  */
 export async function readAnthropicTextStream(
   res,
@@ -363,6 +364,7 @@ export async function readAnthropicTextStream(
   const decoder = new TextDecoder();
   let buffer = "";
   let full = "";
+  let truncated = false;
 
   while (true) {
     const { done, value } = await reader.read();
@@ -391,6 +393,10 @@ export async function readAnthropicTextStream(
             deadline?.chunkReceived?.();
           }
         }
+        // message_delta carries the stop_reason once the model is finished.
+        if (json.type === "message_delta" && isCutOff(json.delta?.stop_reason)) {
+          truncated = true;
+        }
       } catch (err) {
         if (err instanceof SyntaxError) continue; // partial / non-JSON keepalive
         throw err;
@@ -398,8 +404,8 @@ export async function readAnthropicTextStream(
     }
   }
 
-  if (!full.trim()) throw new Error(emptyMessage);
-  return full.trim();
+  if (!full.trim()) throw new Error(truncated ? CUT_OFF_BEFORE_ANSWER : emptyMessage);
+  return { text: full.trim(), truncated };
 }
 
 // Re-export for tests / tooling that want the same messages the runtime sends.

@@ -741,7 +741,7 @@ async function reload() {
   form.answerLanguage.value = settings.answerLanguage || "auto";
   form.apiBaseUrl.value = settings.apiBaseUrl || "";
   form.apiKey.value = settings.apiKey || "";
-  form.model.value = settings.model || "gpt-4o-mini";
+  form.model.value = settings.model || "gpt-5.6-luna";
   form.model.dataset.fromPreset = "0";
   if (form.anthropicBaseUrl) {
     form.anthropicBaseUrl.value = settings.anthropicBaseUrl || ANTHROPIC_DEFAULTS.apiBaseUrl;
@@ -833,7 +833,7 @@ form.addEventListener("submit", async (e) => {
     answerLanguage: form.answerLanguage.value || "auto",
     apiBaseUrl: form.apiBaseUrl.value.trim() || "https://api.openai.com/v1",
     apiKey: form.apiKey.value.trim(),
-    model: form.model.value.trim() || "gpt-4o-mini",
+    model: form.model.value.trim() || "gpt-5.6-luna",
     anthropicBaseUrl:
       form.anthropicBaseUrl?.value?.trim() || ANTHROPIC_DEFAULTS.apiBaseUrl,
     anthropicApiKey: form.anthropicApiKey?.value?.trim() || "",

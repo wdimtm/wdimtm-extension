@@ -1042,6 +1042,26 @@
   font-size: 11px !important;
 }
 
+/* The model stopped at its output ceiling — say so, and offer the way on. */
+.wdimtm-cutoff {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+  margin-top: 10px !important;
+  padding-top: 9px !important;
+  border-top: 1px dashed var(--wdimtm-accent) !important;
+  font-size: 11.5px !important;
+  line-height: 1.45 !important;
+  color: var(--wdimtm-meta) !important;
+  font-style: normal !important;
+  text-align: left !important;
+}
+
+.wdimtm-cutoff .wdimtm-btn {
+  flex-shrink: 0 !important;
+}
+
 /* Demo notice — sits above sample output so it is read before the answer.
    Dashed like the hypothesis frame: both mark "do not take this as fact". */
 .wdimtm-demo-banner {

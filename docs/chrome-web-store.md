@@ -151,7 +151,7 @@ reviewer cannot discover is that the default runtime is a mock, so that goes fir
 > Options (right-click the toolbar icon) > AI access > "Use my own API key":
 > Base URL: https://api.openai.com/v1
 > Key: <PASTE TEST KEY HERE>
-> Model: gpt-4o-mini
+> Model: gpt-5.6-luna
 > Test connection, then Save.
 >
 > Select a sentence on any article, click the WDIMTM button beside it. The card has lenses and follow-ups.
@@ -164,7 +164,7 @@ Do not reuse a personal key. Create one that is safe to hand to a stranger:
 
 - A dedicated OpenAI project key, not your main account key.
 - A hard spend cap on that project (a few dollars is plenty).
-- Scoped to `gpt-4o-mini` if your provider supports per-model restriction.
+- Scoped to `gpt-5.6-luna` if your provider supports per-model restriction.
 - Revoke it once the extension is published, and update these instructions before the
   next submission — a dead key in the test instructions stalls the next review.
 
