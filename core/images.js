@@ -2,9 +2,8 @@
  * Image attachments for page chat — uploads and pasted screenshots.
  *
  * Pure logic only (no DOM, no chrome APIs) so the background worker and the
- * unit tests can share it. The content script has its own DOM-side helpers in
- * `content/images.global.js`; the limits below are mirrored there and must stay
- * in sync.
+ * unit tests can share it. The DOM-side half (reading, decoding, re-encoding)
+ * lives in `extension/content/images.js` and imports the limits from here.
  *
  * @typedef {Object} ImageAttachment
  * @property {string} id

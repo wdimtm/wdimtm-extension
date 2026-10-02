@@ -367,6 +367,28 @@ async function main() {
       await page.locator("#wdimtm-host").locator("#wdimtm-chat").waitFor({ state: "visible", timeout: 8000 });
       results.push("discuss further opens chat panel: ok");
 
+      // A pasted screenshot must land in the composer strip. The unit suite
+      // only loads source, so this is what catches a bundle missing the helpers.
+      await page.locator("#wdimtm-host").locator(".wdimtm-chat-input").evaluate((el) => {
+        const png = Uint8Array.from(
+          atob(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+          ),
+          (c) => c.charCodeAt(0)
+        );
+        const dt = new DataTransfer();
+        dt.items.add(new File([png], "shot.png", { type: "image/png" }));
+        el.focus();
+        el.dispatchEvent(
+          new ClipboardEvent("paste", { clipboardData: dt, bubbles: true, composed: true, cancelable: true })
+        );
+      });
+      await page
+        .locator("#wdimtm-host")
+        .locator(".wdimtm-chat-attach-item img")
+        .waitFor({ state: "attached", timeout: 5000 });
+      results.push("paste screenshot into chat: ok");
+
       await page.locator("#wdimtm-host").locator(".wdimtm-chat-input").fill("Why does this matter?");
       await page.locator("#wdimtm-host").locator('.wdimtm-chat-composer button[type="submit"]').click();
       await page.waitForFunction(

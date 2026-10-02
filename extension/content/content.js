@@ -8,7 +8,7 @@
 import * as WdimtmMarkdown from "../../core/markdown.js";
 import * as WdimtmDomainLens from "../../core/domain-lenses.js";
 import * as WdimtmSuggestLens from "../../core/suggest-lens.js";
-import * as WdimtmImages from "../../core/images.js";
+import * as WdimtmImages from "./images.js";
 import * as WdimtmSiteScope from "../../core/site-scope.js";
 import { hideStreamingTrailers } from "../../core/followups.js";
 import { consumePortStream } from "../lib/port-client.js";
