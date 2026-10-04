@@ -63,6 +63,19 @@ async function migrateSecretsOutOfSync(syncStored) {
 }
 
 /**
+ * The runtime to run with. Mock was the default until it stopped being a
+ * product option, so a stored `mock` usually means "never chose" and reads as
+ * Cloud. Only a dev build that sets `devMockRuntime` keeps it.
+ * @param {Record<string, unknown>} stored
+ * @returns {string}
+ */
+function productRuntimeId(stored) {
+  const id = normalizeRuntimeId(/** @type {string} */ (stored.runtime)) || DEFAULT_SETTINGS.runtime;
+  if (id === "mock" && stored.devMockRuntime !== true) return DEFAULT_SETTINGS.runtime;
+  return id;
+}
+
+/**
  * @returns {Promise<typeof DEFAULT_SETTINGS>}
  */
 export async function getSettings() {
@@ -85,7 +98,7 @@ export async function getSettings() {
     ...stored,
     // Storage can still name a runtime that has since been removed (#116).
     // Reading it has to land on its replacement; the registry owns that map.
-    runtime: normalizeRuntimeId(stored.runtime) || DEFAULT_SETTINGS.runtime,
+    runtime: productRuntimeId(stored),
     customLenses: Array.isArray(stored.customLenses)
       ? stored.customLenses
       : DEFAULT_SETTINGS.customLenses,

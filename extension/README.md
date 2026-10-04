@@ -11,7 +11,7 @@ Chrome/Chromium Manifest V3 extension for:
 3. **Load unpacked** → select this `extension/` directory
 4. Open any `http(s)` page (or `npm run demo` from repo root)
 
-Default runtime is **mock**. Open options to configure OpenAI-compatible or Agentaab (Beta), lenses, profile, and memory.
+Default access is **WDIMTM Cloud** (sign in with Google). Open options to switch to your own API key, and to set lenses, profile, and memory. The offline mock runtime is for development and E2E only: set `runtime: "mock"` and `devMockRuntime: true` in `chrome.storage.sync`.
 
 ## Layout
 

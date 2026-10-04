@@ -46,7 +46,6 @@ const byokFields = document.getElementById("byok-fields");
 const openaiFields = document.getElementById("openai-fields");
 const anthropicFields = document.getElementById("anthropic-fields");
 const cloudAccessFields = document.getElementById("cloud-fields");
-const mockFields = document.getElementById("mock-fields");
 const statusEl = document.getElementById("status");
 const defaultLensEl = document.getElementById("defaultLensId");
 const lensListEl = document.getElementById("lens-list");
@@ -106,7 +105,7 @@ function flash(msg, isError = false) {
 
 function selectedAccessMode() {
   const checked = form.querySelector('input[name="accessMode"]:checked');
-  return /** @type {'mock' | 'byok' | 'cloud'} */ (checked?.value || "mock");
+  return /** @type {'byok' | 'cloud'} */ (checked?.value || "cloud");
 }
 
 function selectedByokProvider() {
@@ -115,13 +114,8 @@ function selectedByokProvider() {
 
 function setAccessMode(mode) {
   // Product modes only. Retired "anthropic" / "promptaas" ids collapse into
-  // byok / cloud, so settings written by older versions still land somewhere.
-  const m =
-    mode === "byok" || mode === "anthropic"
-      ? "byok"
-      : mode === "cloud" || mode === "promptaas"
-        ? "cloud"
-        : "mock";
+  // byok / cloud, and anything else (a dev build's mock included) shows Cloud.
+  const m = mode === "byok" || mode === "anthropic" ? "byok" : "cloud";
   const radio = form.querySelector(`input[name="accessMode"][value="${m}"]`);
   if (radio) radio.checked = true;
   runtimeEl.value = accessModeToRuntime(m, selectedByokProvider());
@@ -137,7 +131,6 @@ function syncRuntimeFields() {
   if (openaiFields) openaiFields.hidden = !(mode === "byok" && !isAnthropic);
   if (anthropicFields) anthropicFields.hidden = !isAnthropic;
   if (cloudAccessFields) cloudAccessFields.hidden = mode !== "cloud";
-  if (mockFields) mockFields.hidden = mode !== "mock";
   if (mode === "cloud") {
     if (form.cloudBaseUrl && !form.cloudBaseUrl.value.trim()) {
       form.cloudBaseUrl.value = DEFAULT_CLOUD_BASE_URL;
@@ -234,9 +227,8 @@ async function refreshCloudPackages() {
     if (cloudPackagesMeta) {
       cloudPackagesMeta.hidden = false;
       cloudPackagesMeta.textContent =
-        catalog.source === "agentaab"
-          ? t("cloudPackagesFromAgentaab")
-          : t("cloudPackagesPreview");
+        catalog.checkout_available === false ? t("cloudPackagesPreview") : "";
+      cloudPackagesMeta.hidden = !cloudPackagesMeta.textContent && !catalog.warning;
       if (catalog.warning) {
         cloudPackagesMeta.textContent += ` ${catalog.warning}`;
       }
@@ -474,9 +466,7 @@ function renderAiStatusBanner(settings) {
     aiBanner.hidden = false;
     aiBanner.className = "onboarding-banner ok";
     if (mode === "cloud") {
-      // Cloud session may exist while product path (packages/checkout) is still WIP.
-      aiBanner.className = "onboarding-banner";
-      aiBanner.textContent = `${t("statusCloudInDev")}${tested}`;
+      aiBanner.textContent = t("statusCloudReady");
     } else if (settings.runtime === "anthropic") {
       aiBanner.textContent = `${t("statusAnthropicReady")}${tested}`;
     } else {
@@ -504,14 +494,11 @@ function renderAiStatusBanner(settings) {
   } else if (ready.reason === "use_cloud") {
     aiBanner.classList.add("error");
     aiBanner.textContent = t("statusUseCloudInstead");
-  } else if (mode === "cloud" || settings.runtime === "wdimtm-cloud") {
-    // Product path still WIP (#86–#88) — don't read as a broken config.
-    aiBanner.textContent = t("statusCloudInDev");
   } else if (ready.reason === "missing_cloud_base") {
     aiBanner.classList.add("error");
     aiBanner.textContent = t("statusMissingCloudBase");
   } else if (ready.reason === "missing_cloud_token") {
-    aiBanner.classList.add("error");
+    // Every new install starts here: a sign-in prompt, not an error.
     aiBanner.textContent = t("statusMissingCloudToken");
   } else {
     aiBanner.textContent = t("statusConfigureAi");

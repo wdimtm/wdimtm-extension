@@ -11,7 +11,12 @@
 
 export const DEFAULT_SETTINGS = {
   runtime:
-    /** @type {'mock' | 'openai-compatible' | 'anthropic' | 'wdimtm-cloud'} */ ("mock"),
+    /** @type {'mock' | 'openai-compatible' | 'anthropic' | 'wdimtm-cloud'} */ ("wdimtm-cloud"),
+  /**
+   * Dev and E2E only: keep the offline mock runtime. Without it a stored
+   * `mock` reads as Cloud, because mock is not a product option.
+   */
+  devMockRuntime: false,
   apiBaseUrl: "https://api.openai.com/v1",
   apiKey: "",
   model: "gpt-5.6-luna",

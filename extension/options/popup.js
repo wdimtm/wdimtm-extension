@@ -18,7 +18,7 @@ const POPUP = {
     aiNeedKey: "AI: API key missing. Open settings → AI access.",
     aiReadyByok: "AI: BYOK ready",
     aiReadyAnthropic: "AI: Anthropic (Claude) ready",
-    aiReadyCloud: "AI: WDIMTM Cloud (in development)",
+    aiReadyCloud: "AI: WDIMTM Cloud",
     runtimeLabel: "Runtime",
     lensLabel: "Default lens",
     memoryLabel: "Memory",
@@ -39,7 +39,7 @@ const POPUP = {
     aiNeedKey: "AI：缺少 API 密钥。打开设置 → AI 接入。",
     aiReadyByok: "AI：自备密钥已就绪",
     aiReadyAnthropic: "AI：Anthropic（Claude）已就绪",
-    aiReadyCloud: "AI：WDIMTM Cloud（开发中）",
+    aiReadyCloud: "AI：WDIMTM Cloud",
     runtimeLabel: "运行时",
     lensLabel: "默认镜头",
     memoryLabel: "记忆",
@@ -51,7 +51,7 @@ const POPUP = {
   },
 };
 
-const settings = await getSettings().catch(() => ({ uiLocale: "auto", runtime: "mock" }));
+const settings = await getSettings().catch(() => ({ uiLocale: "auto", runtime: "wdimtm-cloud" }));
 const locale = resolveUiLocale(settings.uiLocale, browserLocale());
 const copy = POPUP[locale] || POPUP.en;
 document.documentElement.lang = locale === "zh_CN" ? "zh-CN" : "en";

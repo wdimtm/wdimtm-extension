@@ -195,6 +195,9 @@ async function main() {
     await options.waitForTimeout(400);
     await options.screenshot({ path: path.join(OUT_DIR, "04-save-toast.png") });
     await options.close();
+    // Mock is not a product option any more, and Save above stored Cloud.
+    // E2E opts back in so the rest of the run needs no account.
+    await sw.evaluate(() => chrome.storage.sync.set({ runtime: "mock", devMockRuntime: true }));
 
     // ── Popup ────────────────────────────────────────────────────────
     // The per-site switch reads the current tab, which needs the `activeTab`

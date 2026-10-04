@@ -28,11 +28,11 @@ export const OPTIONS_STRINGS = {
 
     accountTitle: "Account",
     accountHint:
-      "Local mode (default) keeps preferences and memories on this browser. Sign in to sync is optional and will use OAuth + a sync backend (Phase B). API keys are never synced unless you explicitly allow it.",
+      "Local mode (default) keeps preferences and memories on this browser. Sign in with Google to sync them through WDIMTM Cloud. API keys are never synced unless you explicitly allow it.",
     accountMode: "Mode",
     accountModeLocal: "Local only — no account",
     accountModeCloud: "Sign in to sync (opt-in)",
-    accountStatusDefault: "Not signed in. Cloud backend not configured yet.",
+    accountStatusDefault: "Not signed in.",
     syncPreferences: "Sync preferences, lenses & memories",
     syncChatHistory: "Sync page-chat history",
     syncSecrets: "Sync API keys (not recommended)",
@@ -40,7 +40,7 @@ export const OPTIONS_STRINGS = {
     signOut: "Sign out",
     syncNow: "Sync now",
     accountExportHint:
-      "Until cloud sync ships, use Export / Import below to move data between devices. Design: docs/auth-and-sync.md.",
+      "Export / Import below moves data between browsers without an account.",
 
     productTitle: "Product",
     enableGlobal: "Enable WDIMTM globally",
@@ -77,24 +77,21 @@ export const OPTIONS_STRINGS = {
 
     aiAccessTitle: "AI access",
     aiAccessHint:
-      "Three paths: your own API key (pick a provider inside), WDIMTM Cloud (hosted — Agentaab is how Cloud is built, not a separate option), or Mock for offline demos.",
+      "Two ways in: WDIMTM Cloud (hosted, pay per package), or your own API key (pick a provider inside).",
     accessByokTitle: "Use my own API key",
     accessByokDesc:
       "Pick a provider (OpenAI, OpenRouter, Anthropic, Ollama, or custom). You pay that provider directly.",
-    accessCloudTitle: "WDIMTM Cloud (in development)",
+    accessCloudTitle: "WDIMTM Cloud",
     accessCloudDesc:
-      "Hosted path — still under development. Target flow: sign in, pick a package, pay. For daily use now, prefer BYOK.",
+      "Sign in with Google, buy a credit package, done. No API key to manage.",
     cloudProductHint:
-      "In development: package list + checkout will come from Agentaab via WDIMTM Cloud. Wiring tracked in issues #86–#88. Prefer BYOK until checkout is live.",
-    cloudDevBanner:
-      "WDIMTM Cloud is under development. You can preview the package UI, but buying and hosted inference are not ready for daily use yet. Use your own API key (BYOK) for real answers.",
+      "Sign in, pick a package, and pay. Credits are used per answer; the free monthly allowance is spent first.",
     cloudSignIn: "Sign in with Google",
     cloudSignedInAs: "Signed in as",
-    cloudNeedSignIn: "Sign in to buy a package and use Cloud (when shipping).",
+    cloudNeedSignIn: "Sign in to buy a package and use Cloud.",
     cloudPackagesLoading: "Loading packages…",
     cloudPackagesEmpty: "No packages available yet.",
-    cloudPackagesPreview: "Preview only — checkout not connected to Agentaab yet (#86–#87).",
-    cloudPackagesFromAgentaab: "Packages from Agentaab.",
+    cloudPackagesPreview: "Checkout is temporarily unavailable. Try again later.",
     cloudBuy: "Buy",
     cloudBuyUnavailable: "Unavailable",
     cloudCheckoutOpening: "Opening checkout…",
@@ -112,8 +109,6 @@ export const OPTIONS_STRINGS = {
     cloudCreditsUnit: "credits",
     cloudRefreshCredits: "I have paid — check now",
     cloudAdvanced: "Advanced / self-hosted",
-    accessMockTitle: "Mock (offline demo)",
-    accessMockDesc: "Fake answers for development and screenshots. Switch away before real use.",
     byokPreset: "Provider",
     byokPresetCustom: "Custom…",
     testConnection: "Test connection",
@@ -128,9 +123,7 @@ export const OPTIONS_STRINGS = {
     cloudSignUpPlaceholder: "https://…/cloud",
     cloudSteps: "1) Sign in · 2) Pick a package · 3) Pay",
     cloudSelfHosted:
-      "Only for self-hosting a backend that implements docs/cloud-api-contract.md. Production users leave these alone. Local and BYOK always remain available.",
-    mockFieldsHint:
-      "Mock invents short explanations without calling a model. Switch to BYOK or WDIMTM Cloud for real answers — then use Test connection.",
+      "Only for self-hosting a backend that implements the WDIMTM Cloud API. Leave these alone otherwise.",
     statusMock:
       "Using Mock — answers are demo text only. Pick “Use my own API key” or “WDIMTM Cloud”, fill the fields, Test connection, then Save.",
     statusMissingByokKey: "BYOK selected but no API key yet. Paste a key and Test connection.",
@@ -140,12 +133,11 @@ export const OPTIONS_STRINGS = {
     statusMissingAnthropicBase: "Anthropic selected but the base URL is empty.",
     statusAnthropicReady: "Anthropic ready — explains call the Messages API with your key.",
     statusUseCloudInstead:
-      "This extension no longer talks to Agentaab directly. Choose WDIMTM Cloud for the hosted path.",
+      "This runtime was retired. Choose WDIMTM Cloud for the hosted path.",
     statusMissingCloudBase: "WDIMTM Cloud selected but the cloud base URL is empty.",
     statusMissingCloudToken:
-      "WDIMTM Cloud selected but you are not signed in yet. Sign in with Google when Cloud is ready — or use BYOK now.",
-    statusCloudReady: "WDIMTM Cloud session present — hosted path is still in development; prefer BYOK for daily use until packages ship.",
-    statusCloudInDev: "WDIMTM Cloud is under development. Prefer BYOK for real answers until packages and checkout are live (#86–#88).",
+      "WDIMTM Cloud selected but you are not signed in yet. Sign in with Google below.",
+    statusCloudReady: "Using WDIMTM Cloud — signed in.",
     creditsLeft: "credits left:",
     balanceEmpty: "Hosted credits for this period are used up.",
     balanceResets: "Resets",
@@ -385,11 +377,10 @@ export const OPTIONS_STRINGS = {
     privacy1:
       "Only selected text, page title/URL, and a bounded neighborhood of surrounding text leave the content script.",
     privacy2: "The full page DOM is never uploaded.",
-    privacy3: "Mock: explain payloads stay in the browser (settings may sync).",
     privacy4:
       "BYOK: the explain payload (including relevant memories + lens) is sent to your configured OpenAI-compatible endpoint. Keys live in chrome.storage and are not product-cloud by default.",
     privacy4b:
-      "Agentaab: the explain payload is sent to the Agentaab app endpoint under your subscription token (sub2api-style billing lives outside WDIMTM).",
+      "WDIMTM Cloud: the explain payload goes to cloud.wdimtm.com, which runs the model and meters credits. Sign-in uses your Google account email and id only.",
     privacy5:
       "Local memories live in chrome.storage.local. Nothing is auto-remembered from what you read — only explicit Remember this or settings entries.",
     privacy6:
@@ -415,7 +406,7 @@ export const OPTIONS_STRINGS = {
     localModeNoAccount: "Local mode — no account.",
     notSignedIn: "Not signed in.",
     notSignedInCloudPending:
-      "Not signed in. WDIMTM Cloud is still under development — Local mode or BYOK recommended.",
+      "Not signed in.",
     signedInAs: "Signed in as",
   },
   zh_CN: {
@@ -425,11 +416,11 @@ export const OPTIONS_STRINGS = {
 
     accountTitle: "账户",
     accountHint:
-      "本地模式（默认）将偏好与记忆保存在本浏览器。「登录同步」为可选项，将使用 OAuth + 同步后端（Phase B）。除非你明确允许，否则不会同步 API 密钥。",
+      "本地模式（默认）将偏好与记忆保存在本浏览器。用 Google 登录后可经 WDIMTM Cloud 同步。除非你明确允许，否则不会同步 API 密钥。",
     accountMode: "模式",
     accountModeLocal: "仅本地 — 无账户",
     accountModeCloud: "登录以同步（可选）",
-    accountStatusDefault: "未登录。云端后端尚未配置。",
+    accountStatusDefault: "未登录。",
     syncPreferences: "同步偏好、镜头与记忆",
     syncChatHistory: "同步页面对话历史",
     syncSecrets: "同步 API 密钥（不推荐）",
@@ -437,7 +428,7 @@ export const OPTIONS_STRINGS = {
     signOut: "退出登录",
     syncNow: "立即同步",
     accountExportHint:
-      "在云同步上线前，请用下方的「导出 / 导入」在设备间迁移数据。设计说明：docs/auth-and-sync.md。",
+      "不想登录的话，可以用下方的「导出 / 导入」在浏览器之间迁移数据。",
 
     navContents: "目录",
     navAccount: "账户",
@@ -489,24 +480,21 @@ export const OPTIONS_STRINGS = {
 
     aiAccessTitle: "AI 接入",
     aiAccessHint:
-      "三条路径：自备密钥（在内部选择服务商）、WDIMTM Cloud（托管；Agentaab 是 Cloud 的实现方式，不是单独选项）、或 Mock 离线演示。",
+      "两条路径：WDIMTM Cloud（托管，按套餐付费），或自备密钥（在内部选择服务商）。",
     accessByokTitle: "使用我自己的 API 密钥",
     accessByokDesc:
       "选择服务商（OpenAI / OpenRouter / Anthropic / Ollama / 自定义）。费用直接付给该服务商。",
-    accessCloudTitle: "WDIMTM Cloud（开发中）",
+    accessCloudTitle: "WDIMTM Cloud",
     accessCloudDesc:
-      "托管路径 — 仍在开发中。目标流程：登录 → 选套餐 → 支付。日常使用请先用自备密钥（BYOK）。",
+      "用 Google 登录，买一个额度套餐即可，不用管理 API 密钥。",
     cloudProductHint:
-      "开发中：套餐列表与结账将经 WDIMTM Cloud 对接 Agentaab。联调见 #86–#88。上线前请用 BYOK 获得真实回答。",
-    cloudDevBanner:
-      "WDIMTM Cloud 仍在开发中。可预览套餐界面，但购买与托管推理尚不适合日常使用。需要真实回答请选「使用我自己的 API 密钥」。",
+      "登录、选套餐、付款即可。每次回答消耗额度，优先使用每月免费额度。",
     cloudSignIn: "使用 Google 登录",
     cloudSignedInAs: "已登录为",
-    cloudNeedSignIn: "登录后可购买套餐并使用 Cloud（上线后）。",
+    cloudNeedSignIn: "登录后可购买套餐并使用 Cloud。",
     cloudPackagesLoading: "正在加载套餐…",
     cloudPackagesEmpty: "暂无可用套餐。",
-    cloudPackagesPreview: "仅预览 — 尚未接到 Agentaab 结账（#86–#87）。",
-    cloudPackagesFromAgentaab: "套餐来自 Agentaab。",
+    cloudPackagesPreview: "结账暂时不可用，请稍后再试。",
     cloudBuy: "购买",
     cloudBuyUnavailable: "暂不可用",
     cloudCheckoutOpening: "正在打开结账…",
@@ -521,8 +509,6 @@ export const OPTIONS_STRINGS = {
     cloudCreditsUnit: "额度",
     cloudRefreshCredits: "我已付款 — 立即检查",
     cloudAdvanced: "高级 / 自托管",
-    accessMockTitle: "Mock（离线演示）",
-    accessMockDesc: "开发与截图用的假回答。正式使用前请切换到其他路径。",
     byokPreset: "服务商",
     byokPresetCustom: "自定义…",
     testConnection: "测试连接",
@@ -537,9 +523,7 @@ export const OPTIONS_STRINGS = {
     cloudSignUpPlaceholder: "https://…/cloud",
     cloudSteps: "1）登录 · 2）选择套餐 · 3）支付",
     cloudSelfHosted:
-      "仅用于自托管实现 docs/cloud-api-contract.md 的后端。正式用户无需改这些项。本地与 BYOK 始终可用。",
-    mockFieldsHint:
-      "Mock 会编造简短解释，不会调用真实模型。要得到真实回答请切换到「自备密钥」或 WDIMTM Cloud，并使用「测试连接」。",
+      "仅用于自托管实现 WDIMTM Cloud API 的后端，一般无需修改。",
     statusMock:
       "当前为 Mock — 回答仅为演示文案。请选择「使用我自己的 API 密钥」或「WDIMTM Cloud」，填写配置、测试连接后保存。",
     statusMissingByokKey: "已选择自备密钥，但尚未填写 API 密钥。请粘贴密钥并测试连接。",
@@ -547,14 +531,12 @@ export const OPTIONS_STRINGS = {
     statusMissingAnthropicKey: "已选择 Anthropic，但尚未填写 API 密钥。请粘贴密钥并测试连接。",
     statusMissingAnthropicBase: "已选择 Anthropic，但基础 URL 为空。",
     statusAnthropicReady: "Anthropic 已就绪 — 解释将用你的密钥调用 Messages API。",
-    statusUseCloudInstead: "扩展不再直接对接 Agentaab。托管路径请选择 WDIMTM Cloud。",
+    statusUseCloudInstead: "该运行时已停用。托管路径请选择 WDIMTM Cloud。",
     statusMissingCloudBase: "已选择 WDIMTM Cloud，但 Cloud 基础 URL 为空。",
     statusMissingCloudToken:
-      "已选择 WDIMTM Cloud，但尚未登录。Cloud 就绪后请用 Google 登录 — 现在请先用 BYOK。",
+      "已选择 WDIMTM Cloud，但尚未登录。请在下方用 Google 登录。",
     statusCloudReady:
-      "已有 WDIMTM Cloud 会话 — 托管路径仍在开发中；套餐上线前日常使用请优先 BYOK。",
-    statusCloudInDev:
-      "WDIMTM Cloud 仍在开发中。套餐与结账上线前（#86–#88），请用自备密钥获得真实回答。",
+      "正在使用 WDIMTM Cloud — 已登录。",
     creditsLeft: "剩余额度：",
     balanceEmpty: "本周期的托管额度已用完。",
     balanceResets: "重置时间",
@@ -786,11 +768,10 @@ export const OPTIONS_STRINGS = {
     privacyTitle: "隐私",
     privacy1: "只有选中文本、页面标题/URL，以及有界的周边上下文会离开内容脚本。",
     privacy2: "永远不会上传完整页面 DOM。",
-    privacy3: "Mock：解释请求留在浏览器内（设置项可能会同步）。",
     privacy4:
       "自备密钥（BYOK）：解释请求（含相关记忆与镜头）会发往你配置的 OpenAI 兼容端点。密钥保存在 chrome.storage，默认不同步到产品云。",
     privacy4b:
-      "Agentaab：解释请求会发往 Agentaab 应用端点，使用你的订阅令牌（sub2api 式计费在 WDIMTM 之外）。",
+      "WDIMTM Cloud：解释请求发往 cloud.wdimtm.com，由它调用模型并扣减额度。登录只读取 Google 账号的邮箱和 ID。",
     privacy5:
       "本地记忆保存在 chrome.storage.local。不会自动记住你读过的内容——只有显式的「记住这个」或设置里的条目。",
     privacy6:
@@ -814,7 +795,7 @@ export const OPTIONS_STRINGS = {
     lastSynced: "上次同步：",
     localModeNoAccount: "本地模式 — 无账户。",
     notSignedIn: "未登录。",
-    notSignedInCloudPending: "未登录。WDIMTM Cloud 仍在开发中 — 建议本地模式或 BYOK。",
+    notSignedInCloudPending: "未登录。",
     signedInAs: "已登录为",
   },
 };

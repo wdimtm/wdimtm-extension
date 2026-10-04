@@ -65,7 +65,7 @@
         ></div>
         <div id="cloud-account-fields" class="llm-fields" hidden>
           <p class="hint" id="account-status-line" data-i18n="accountStatusDefault">
-            Not signed in. Cloud backend not configured yet.
+            Not signed in.
           </p>
           <label class="field row">
             <input type="checkbox" id="syncPreferences" checked />
@@ -91,7 +91,7 @@
           <p class="hint" id="account-sync-meta"></p>
         </div>
         <p class="hint" data-i18n="accountExportHint">
-          Until cloud sync ships, use Export / Import below to move data between devices.
+          Export / Import below moves data between browsers without an account.
         </p>
       </section>
 
@@ -148,8 +148,8 @@
 
         <h2 id="sec-ai-access" data-i18n="aiAccessTitle">AI access</h2>
         <p class="hint" data-i18n="aiAccessHint">
-          Three ways in: your own API key (pick a provider inside), WDIMTM Cloud (hosted — Agentaab
-          is how Cloud is built, not a separate option), or Mock for offline demos.
+          Two ways in: WDIMTM Cloud (hosted, pay per package), or your own API key (pick a
+          provider inside).
         </p>
 
         <div
@@ -164,6 +164,16 @@
           <span id="ai-access-label" class="sr-only" data-i18n="aiAccessTitle">AI access</span>
 
           <label class="access-card">
+            <input type="radio" name="accessMode" id="access-cloud" value="cloud" />
+            <div class="access-card-body">
+              <strong data-i18n="accessCloudTitle">WDIMTM Cloud</strong>
+              <p data-i18n="accessCloudDesc">
+                Sign in with Google, buy a credit package, done. No API key to manage.
+              </p>
+            </div>
+          </label>
+
+          <label class="access-card">
             <input type="radio" name="accessMode" id="access-byok" value="byok" />
             <div class="access-card-body">
               <strong data-i18n="accessByokTitle">Use my own API key</strong>
@@ -173,31 +183,10 @@
               </p>
             </div>
           </label>
-
-          <label class="access-card">
-            <input type="radio" name="accessMode" id="access-cloud" value="cloud" />
-            <div class="access-card-body">
-              <strong data-i18n="accessCloudTitle">WDIMTM Cloud (in development)</strong>
-              <p data-i18n="accessCloudDesc">
-                Hosted path — still under development. Target: sign in, pick a package, pay. Prefer
-                BYOK for daily use until packages and checkout ship.
-              </p>
-            </div>
-          </label>
-
-          <label class="access-card">
-            <input type="radio" name="accessMode" id="access-mock" value="mock" />
-            <div class="access-card-body">
-              <strong data-i18n="accessMockTitle">Mock (offline demo)</strong>
-              <p data-i18n="accessMockDesc">
-                Fake answers for development and screenshots. Not real model intelligence.
-              </p>
-            </div>
-          </label>
         </div>
 
         <!-- Hidden runtime field kept for form serialization / tests -->
-        <input type="hidden" name="runtime" id="runtime" value="mock" />
+        <input type="hidden" name="runtime" id="runtime" value="wdimtm-cloud" />
 
         <!-- BYOK: provider picker is shared; openai-compatible vs Anthropic field sets swap below -->
         <div id="byok-fields" class="llm-fields" hidden>
@@ -291,15 +280,10 @@
         </div>
 
         <div id="cloud-fields" class="llm-fields" hidden>
-          <div id="cloud-dev-banner" class="onboarding-banner" role="status" data-i18n="cloudDevBanner">
-            WDIMTM Cloud is under development. You can preview the package UI, but buying and hosted
-            inference are not ready for daily use yet. Use your own API key (BYOK) for real answers.
-          </div>
           <p class="hint" data-i18n="cloudProductHint">
-            In development: package list + checkout will come from Agentaab via WDIMTM Cloud. Prefer
-            BYOK until checkout is live.
+            Sign in, pick a package, and pay. Credits are used per answer; the free monthly
+            allowance is spent first.
           </p>
-
           <div id="cloud-session-row" class="actions" style="margin-bottom: 12px">
             <button type="button" id="cloud-sign-in" class="btn" data-i18n="cloudSignIn">
               Sign in with Google
@@ -313,8 +297,8 @@
           <details id="cloud-advanced" class="cloud-advanced">
             <summary data-i18n="cloudAdvanced">Advanced / self-hosted</summary>
             <p class="hint" data-i18n="cloudSelfHosted">
-              Only for self-hosting a backend that implements docs/cloud-api-contract.md. Production
-              users leave these alone.
+              Only for self-hosting a backend that implements the WDIMTM Cloud API. Leave these alone
+              otherwise.
             </p>
             <label class="field">
               <span data-i18n="cloudBaseUrl">Cloud base URL</span>
@@ -354,13 +338,6 @@
               <span id="test-cloud-status" class="status" role="status" aria-live="polite"></span>
             </div>
           </details>
-        </div>
-
-        <div id="mock-fields" class="llm-fields" hidden>
-          <p class="hint" data-i18n="mockFieldsHint">
-            Mock invents short explanations without calling a model. Switch to BYOK or WDIMTM Cloud
-            for real answers — then use Test connection.
-          </p>
         </div>
 
         <label class="field row">
@@ -662,14 +639,13 @@
             Only selected text, page title/URL, and a bounded neighborhood leave the content script.
           </li>
           <li data-i18n="privacy2">The full page DOM is never uploaded.</li>
-          <li data-i18n="privacy3">Mock: explain payloads stay in the browser.</li>
           <li data-i18n="privacy4">
             BYOK: the explain payload is sent to your configured OpenAI-compatible endpoint. Keys
             stay in chrome.storage (not product cloud unless you opt in).
           </li>
           <li data-i18n="privacy4b">
-            Agentaab: the explain payload is sent to the Agentaab app endpoint under your
-            subscription token.
+            WDIMTM Cloud: the explain payload goes to cloud.wdimtm.com, which runs the model and
+            meters credits. Sign-in uses your Google account email and id only.
           </li>
           <li data-i18n="privacy5">
             Local memories live in chrome.storage.local. Nothing is auto-remembered.

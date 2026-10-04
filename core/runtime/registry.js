@@ -177,8 +177,11 @@ const BY_ID = new Map(RUNTIMES.map((entry) => [entry.id, entry]));
 /** Every runtime id the product knows about. */
 export const RUNTIME_IDS = RUNTIMES.map((entry) => entry.id);
 
-/** The offline default, and the fallback for an id nothing recognizes. */
-export const DEFAULT_RUNTIME_ID = "mock";
+/**
+ * The default, and the fallback for an id nothing recognizes. Mock stays
+ * registered for dev and E2E, but a product user never lands on fake answers.
+ */
+export const DEFAULT_RUNTIME_ID = "wdimtm-cloud";
 
 /**
  * Runtime ids that were removed, and what they became.
@@ -214,8 +217,8 @@ export function getRuntime(id) {
 
 /**
  * Execution always resolves to something runnable: an unknown runtime id falls
- * back to mock rather than failing, which is what the explain switch and the
- * chat chain both did with their `default` branch.
+ * back to the default rather than failing, which is what the explain switch and
+ * the chat chain both did with their `default` branch.
  *
  * @param {string | undefined | null} id
  * @returns {RuntimeEntry}

@@ -109,9 +109,10 @@ describe("runtime registry", () => {
     assert.equal(mock.configFromSettings({}, { answerLanguage: "zh_CN" }).forceZh, true);
   });
 
-  it("execution falls back to mock for an unknown runtime", () => {
-    assert.equal(runtimeForExecution("nope").id, "mock");
-    assert.equal(runtimeForExecution(undefined).id, "mock");
+  it("execution falls back to Cloud, not mock, for an unknown runtime", () => {
+    assert.equal(runtimeForExecution("nope").id, "wdimtm-cloud");
+    assert.equal(runtimeForExecution(undefined).id, "wdimtm-cloud");
+    assert.equal(runtimeForExecution("mock").id, "mock", "dev builds can still ask for mock");
     assert.equal(runtimeForExecution("anthropic").id, "anthropic");
     assert.equal(getRuntime("nope"), undefined);
   });
@@ -232,8 +233,9 @@ describe("registry-routed chat transports", () => {
     );
   });
 
-  it("routes an unknown runtime to mock rather than failing", async () => {
-    const result = await runChat(
+  it("never answers an unknown runtime with mock text", async () => {
+    // It routes to Cloud, which refuses without a session instead of inventing a reply.
+    const attempt = runChat(
       {
         selection: "hot key overload",
         page: { url: "https://example.com", title: "cache" },
@@ -242,6 +244,6 @@ describe("registry-routed chat transports", () => {
       },
       { runtime: "not-a-runtime" }
     );
-    assert.equal(result.runtime, "mock");
+    await assert.rejects(attempt);
   });
 });
