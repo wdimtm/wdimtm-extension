@@ -46,6 +46,7 @@ export const DEFAULT_OPENAI_MODEL = "gpt-5.6-luna";
  *   onUsage?: (usage: { promptTokens: number, completionTokens: number }) => void,
  *   signal?: AbortSignal,
  *   timeouts?: { firstByteMs?: number, stallMs?: number },
+ *   endUserId?: string,
  * }} config
  * @returns {Promise<import('../lib/types.js').ExplainResponse>}
  */
@@ -90,6 +91,10 @@ export async function explainWithOpenAICompatible(request, config) {
             ? { stream_options: { include_usage: true } }
             : {}),
           messages,
+          // Agentaab meters the end user named here. `auth:` is what marks the
+          // call authenticated; without it a server key is anonymous and the
+          // app's anonymous allowance (zero) refuses the request.
+          ...(config.endUserId ? { user: `auth:wdimtm:${config.endUserId}` } : {}),
         }),
       }),
     deadline

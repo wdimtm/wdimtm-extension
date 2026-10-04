@@ -150,6 +150,11 @@ describe("PromptAAS research runtime adapter", () => {
     assert.equal(sent.inputs.goal, INPUT.goal);
     assert.equal(sent.inputs.selection, INPUT.selection);
     assert.equal(sent.inputs.mode, "deep_research");
+    // The live capability renders messages, not the flat fields.
+    assert.equal(sent.inputs.messages[0].role, "system");
+    assert.match(sent.inputs.messages[0].content, /WDIMTM research agent/);
+    assert.match(sent.inputs.messages[1].content, /GOAL\nResearch sovereign AI budgets/);
+    assert.match(sent.inputs.messages[1].content, /SELECTION\nSovereign AI budgets are rising/);
   });
 
   it("can target a Workflow app instead of a Single Agent", async () => {

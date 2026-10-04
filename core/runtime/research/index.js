@@ -57,13 +57,55 @@ export function mapPromptaasState(status) {
 }
 
 /**
- * The inputs a PromptaaS research capability receives. This is the contract a
- * prompt template or workflow is written against, so it is flat and readable
- * rather than a nested WDIMTM object.
+ * Research instructions that used to live on the agentaab default capability.
+ * That capability now renders `{{messages.0.content}}` and
+ * `{{messages.1.content}}` only, because Explain shares it and sends its own
+ * system and user prompts as those two turns. The brief is assembled here.
+ */
+export const RESEARCH_SYSTEM_PROMPT = "You are the WDIMTM research agent. WDIMTM is a browser extension that answers one question about whatever a person is looking at on the web: \"what does this mean to me?\"\n\nA research run is the slow, durable path. It arrives with a selection from a page, bounded context around it, the reading lens the user had active, and — only when the user chose to save them — a profile and some memories. Your job is to synthesize, not to pad.\n\nMODES\n\n- deep_research — Research posture. Key findings, open questions, known unknowns. Say what is established, what is contested, and what you could not determine. One-shot synthesis, not a multi-agent loop.\n- opportunity_research — Opportunity posture. Separate facts from speculative opportunity hypotheses, and label them as such. Give testable next steps. Never invent market data, funding numbers, or traction figures; if you do not have a number, say you do not have it.\n\nRULES\n\n1. Separate facts from hypotheses. This is the product's core promise and it matters most in opportunity mode. A hypothesis presented as a fact is a defect.\n2. Personal relevance must be earned. Use profile and memories to say why this matters to this person. When there is no honest personal link, say so in one line and stay useful — do not manufacture relevance.\n3. Ground everything in the selection and page context you were given. You did not browse the page; you were handed an excerpt.\n4. Skip encyclopedic basics the reader almost certainly already knows given their profile.\n5. Cite with real URLs only. Never fabricate a source, a title, or a link. An empty sources list is correct when you have nothing to cite.\n6. Respect the lens. `lens_instructions` is the user's own wording for how they want things read; follow it.\n7. When `question` is present, answer that question first and tightly; the goal is context, not a second topic.\n\nOUTPUT\n\nReturn a single JSON object and nothing else — no prose before it, no markdown fence around it:\n\n{\n  \"summary\": \"2-4 sentences. The answer someone gets if they read nothing else.\",\n  \"detail\": \"Markdown. Scannable — short sections or bullets, not an essay. This is where findings, hypotheses (labeled), open questions and next steps live.\",\n  \"sources\": [{ \"url\": \"https://…\", \"title\": \"…\" }]\n}\n\nWrite in the language of the selection.";
+
+/** The user turn the old capability template used to render from flat fields. */
+export function researchUserBrief(inputs) {
+  return [
+    "GOAL",
+    inputs.goal,
+    "",
+    "MODE",
+    inputs.mode,
+    "",
+    "SELECTION",
+    inputs.selection,
+    "",
+    "PAGE",
+    `${inputs.page_title} — ${inputs.page_url}`,
+    "",
+    "PAGE CONTEXT",
+    inputs.page_context,
+    "",
+    "LENS",
+    inputs.lens,
+    inputs.lens_instructions,
+    "",
+    "PROFILE",
+    inputs.profile,
+    "",
+    "MEMORIES",
+    inputs.memories,
+    "",
+    "QUESTION",
+    inputs.question,
+  ].join("\n");
+}
+
+/**
+ * The inputs a PromptaaS research capability receives.
+ *
+ * Flat fields stay on the request so a template rollback still has the brief.
+ * `messages` is what the live template reads.
  * @param {object} input from buildResearchInput()
  */
 export function toPromptaasInputs(input) {
-  return {
+  const inputs = {
     goal: input.goal || "",
     mode: input.mode || "deep_research",
     selection: input.selection || "",
@@ -75,6 +117,13 @@ export function toPromptaasInputs(input) {
     profile: input.profile || "",
     memories: (input.memories || []).map((m) => `${m.type}: ${m.content}`).join("\n"),
     question: input.question || "",
+  };
+  return {
+    ...inputs,
+    messages: [
+      { role: "system", content: RESEARCH_SYSTEM_PROMPT },
+      { role: "user", content: researchUserBrief(inputs) },
+    ],
   };
 }
 
@@ -108,10 +157,9 @@ export function createPromptAASResearchRuntime(config) {
 
   // `chat` is the default: the OpenAI-compatible providers agentaab reaches send
   // completion-mode requests to `/completions`, which those endpoints do not
-  // serve. Chat mode still substitutes `inputs` into the prompt template
-  // (the runtime renders `{ ...inputs, query }`), so the structured fields from
-  // `toPromptaasInputs()` keep working — it just also requires a non-empty
-  // `query`, which `start()` supplies below.
+  // serve. Chat mode still substitutes `inputs` into the prompt template and
+  // requires a non-empty `query`, which `start()` supplies below. The live
+  // template reads `inputs.messages`, the two-turn brief from toPromptaasInputs.
   const isChat = config.endpoint !== "completion" && config.endpoint !== "workflow";
   const path =
     config.endpoint === "workflow"
