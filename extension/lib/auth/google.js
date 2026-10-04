@@ -1,9 +1,12 @@
 /**
  * Google sign-in glue for MV3 (Issue #51).
  *
- * `chrome.identity.getAuthToken` is the native path in Chrome and needs the
- * `oauth2` block in the manifest. Other Chromium builds (and unpacked
- * extensions without a stable id) fall back to `launchWebAuthFlow`.
+ * Sign-in always goes through `chrome.identity.launchWebAuthFlow` with a Google
+ * "Web application" client whose redirect URI is this extension's
+ * `https://<id>.chromiumapp.org/google`. `getAuthToken` is not used: Google no
+ * longer lets new Chrome-extension clients use its custom URI scheme, so it fails
+ * with "Custom URI scheme is not supported on Chrome apps" outside a signed-in
+ * Google Chrome profile.
  *
  * This module deals only in Google tokens. Trading one for a WDIMTM session is
  * auth/cloud.js — a Google token never becomes a WDIMTM credential by itself.
@@ -25,25 +28,6 @@ function manifestClientId() {
  */
 export async function getGoogleAccessToken(opts = {}) {
   const interactive = opts.interactive !== false;
-
-  if (chrome.identity?.getAuthToken) {
-    try {
-      const token = await new Promise((resolve, reject) => {
-        chrome.identity.getAuthToken({ interactive, scopes: SCOPES }, (t) => {
-          const err = chrome.runtime.lastError;
-          if (err || !t) {
-            reject(new Error(err?.message || "Google sign-in was cancelled."));
-            return;
-          }
-          resolve(typeof t === "string" ? t : t.token);
-        });
-      });
-      return { token };
-    } catch (err) {
-      // getAuthToken is unavailable outside Chrome and for some unpacked builds.
-      if (!chrome.identity?.launchWebAuthFlow) throw err;
-    }
-  }
 
   if (!chrome.identity?.launchWebAuthFlow) {
     throw new Error("This browser cannot sign in to Google from the extension.");
