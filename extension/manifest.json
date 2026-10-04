@@ -4,13 +4,14 @@
   "version": "0.5.1",
   "default_locale": "en",
   "description": "__MSG_extDescription__",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzCtEr8ZSOvONQQA6SAbw3JxLKm6zG1gy8/czwubW7EAL5/X/Jl7OMibjiy6YMghuugIG0n1YPJW1qEeX1TZQBONIBERVMjPHYH8k3Q//R2IE9qjJLJLa3hZkK6wK92VgrhPuA2pQrk4JAFH7WPT45JdtM2E3GD3jzZphNJ/OS1sgkSKSEBTQnk2itUL+mkpbbNTZmoFQMpIUS7BjJv2eyKKoqLfBRGnY3ep6M6n18tdL8fMzDU3ZrOvCINaCLCXayK2nuU6Xe8iUSnhcK2xWP/9F+i9Oa4pORbj1WNbFKTcKAlT86kdaPXiY5hJGhbwCEGQtD+v6bUU3/yc9CR8KaQIDAQAB",
   "permissions": [
     "storage",
     "identity",
     "activeTab"
   ],
   "oauth2": {
-    "client_id": "REPLACE_WITH_GOOGLE_OAUTH_CLIENT_ID.apps.googleusercontent.com",
+    "client_id": "194488321076-q2lbnsav3hpn6ej7m9p6a91m01vclees.apps.googleusercontent.com",
     "scopes": [
       "openid",
       "email",
