@@ -145,6 +145,7 @@ export function toPromptaasInputs(input) {
  *   baseUrl: string,
  *   appSlug: string,
  *   publicToken?: string,
+ *   serverToken?: string,
  *   endpoint?: 'chat' | 'completion' | 'workflow',
  *   userId?: string,
  * }} config
@@ -185,9 +186,12 @@ export function createPromptAASResearchRuntime(config) {
     async start(input) {
       /** @type {Record<string, string>} */
       const headers = { Accept: "application/json", "Content-Type": "application/json" };
-      if (config.publicToken) headers.Authorization = `Bearer ${config.publicToken}`;
+      // No Origin. The gateway rejects sk_app_ when a browser Origin is set.
+      const token = config.serverToken || config.publicToken;
+      if (token) headers.Authorization = `Bearer ${token}`;
 
       const inputs = toPromptaasInputs(input);
+      const endUser = config.userId ? `auth:wdimtm:${config.userId}` : "";
       const body = {
         inputs,
         response_mode: "blocking",
@@ -197,9 +201,14 @@ export function createPromptAASResearchRuntime(config) {
         ...(isChat
           ? { query: inputs.goal || inputs.question || inputs.selection || inputs.page_title || "research" }
           : {}),
-        // Stable per-user id so PromptaaS quota, credits and analytics land on
-        // the right account. `auth:` marks it as an authenticated end user.
-        ...(config.userId ? { user: `auth:wdimtm:${config.userId}` } : {}),
+        // The server key names the buyer with on_behalf_of. The gateway rejects
+        // that field from a public token, so a catalog pk_app_ cannot spend as
+        // this user. Callers that only have a public token still send `user`.
+        ...(endUser
+          ? config.serverToken
+            ? { on_behalf_of: endUser }
+            : { user: endUser }
+          : {}),
       };
 
       let executionId = "";

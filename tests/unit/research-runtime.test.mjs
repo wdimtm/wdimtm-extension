@@ -120,6 +120,7 @@ describe("PromptAAS research runtime adapter", () => {
           baseUrl,
           appSlug: "wdimtm-research",
           publicToken: "pk_app_token",
+          serverToken: "sk_app_token",
           userId: "usr_1",
         });
         assert.equal(runtime.execution, "blocking");
@@ -134,7 +135,8 @@ describe("PromptAAS research runtime adapter", () => {
     assert.deepEqual(calls, ["POST /api/app/wdimtm-research/chat-messages"]);
     assert.equal(sent.query, INPUT.goal);
     assert.equal(sent.inputs.goal, INPUT.goal);
-    assert.equal(headers.authorization, "Bearer pk_app_token");
+    assert.equal(headers.authorization, "Bearer sk_app_token");
+    assert.equal(headers.origin, undefined);
     // PromptaaS runs blocking, so the whole result comes back from start().
     assert.equal(ref.provider, "promptaas");
     assert.equal(ref.executionId, "invocation-uuid");
@@ -145,7 +147,9 @@ describe("PromptAAS research runtime adapter", () => {
     assert.equal(ref.state.usage.inputTokens, 400);
 
     // A stable user id is what makes PromptaaS quota and credits work per user.
-    assert.equal(sent.user, "auth:wdimtm:usr_1");
+    // The server key sends it as on_behalf_of, which a public token cannot.
+    assert.equal(sent.on_behalf_of, "auth:wdimtm:usr_1");
+    assert.equal(sent.user, undefined);
     assert.equal(sent.response_mode, "blocking");
     assert.equal(sent.inputs.goal, INPUT.goal);
     assert.equal(sent.inputs.selection, INPUT.selection);
