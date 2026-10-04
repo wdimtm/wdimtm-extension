@@ -21,6 +21,7 @@ import { applyOptionsI18n, ot } from "../lib/options-i18n.js";
 import { applyPageTheme, watchSystemTheme } from "../lib/page-theme.js";
 import {
   DEFAULT_CLOUD_BASE_URL,
+  fetchCloudAccount,
   fetchCloudPackages,
   reconcileCloudCredits,
   resolveCloudConfig,
@@ -289,6 +290,8 @@ async function refreshCloudPackages() {
     }
 
     if (signedIn) {
+      const account = await fetchCloudAccount(config).catch(() => null);
+      if (account) cloudPackagesEl.appendChild(renderCloudBalance(account));
       // The poll after checkout covers the usual case; this covers paying on a
       // phone, closing the tab, or coming back the next day.
       const claim = document.createElement("button");
@@ -308,6 +311,43 @@ async function refreshCloudPackages() {
     p.textContent = err instanceof Error ? err.message : String(err);
     cloudPackagesEl.appendChild(p);
   }
+}
+
+/**
+ * What the user has bought and what is left, next to the packages. A payment
+ * has to be visible somewhere after the poll credits it, or paying looks like
+ * nothing happened.
+ * @param {{ quota?: { purchasedRemaining?: number, allowanceRemaining?: number, limit?: number }, purchases?: Array<{ credits: number, createdAt: string }> }} account
+ */
+function renderCloudBalance(account) {
+  const box = document.createElement("div");
+  box.className = "cloud-balance";
+  const q = account.quota || {};
+  const line = document.createElement("p");
+  line.className = "cloud-balance-line";
+  line.textContent = t("cloudBalanceLine")
+    .replace("{purchased}", String(Number(q.purchasedRemaining) || 0))
+    .replace("{allowance}", String(Number(q.allowanceRemaining) || 0))
+    .replace("{limit}", String(Number(q.limit) || 0));
+  box.appendChild(line);
+
+  const purchases = Array.isArray(account.purchases) ? account.purchases : [];
+  const heading = document.createElement("p");
+  heading.className = "hint";
+  heading.textContent = purchases.length ? t("cloudPurchasesTitle") : t("cloudPurchasesEmpty");
+  box.appendChild(heading);
+  if (purchases.length) {
+    const list = document.createElement("ul");
+    list.className = "cloud-purchases";
+    for (const p of purchases) {
+      const item = document.createElement("li");
+      const when = p.createdAt ? new Date(p.createdAt).toLocaleString(uiLocale === "zh_CN" ? "zh-CN" : "en-US") : "";
+      item.textContent = `${when} · +${Number(p.credits) || 0} ${t("cloudCreditsUnit")}`;
+      list.appendChild(item);
+    }
+    box.appendChild(list);
+  }
+  return box;
 }
 
 async function buyCloudPackage(packageId) {
@@ -363,8 +403,13 @@ async function claimPaidCredits({ quiet = false } = {}) {
   try {
     const result = await reconcileCloudCredits(config);
     const added = Number(result?.creditsAdded) || 0;
+    const purchased = Number(result?.quota?.purchasedRemaining) || 0;
     if (added > 0) {
       flash(t("cloudCheckoutCredited").replace("{n}", String(added)));
+      await refreshCloudPackages();
+    } else if (!quiet && purchased > 0) {
+      // Usually the poll already credited it; "not found" would be a lie.
+      flash(t("cloudCheckoutAlreadyCredited").replace("{n}", String(purchased)));
       await refreshCloudPackages();
     } else if (!quiet) {
       flash(t("cloudCheckoutPending"));
@@ -1187,6 +1232,12 @@ cloudSignInBtn?.addEventListener("click", async () => {
     accountModeEl.value = "cloud";
     document.getElementById("cloud-account-fields").hidden = false;
   }
+  // reload() below re-reads storage. Picking Cloud only changed the radio, so
+  // without this the page snapped back to whatever runtime was last saved.
+  await saveSettings({
+    runtime: "wdimtm-cloud",
+    cloudBaseUrl: form.cloudBaseUrl?.value?.trim() || DEFAULT_CLOUD_BASE_URL,
+  });
   await chrome.runtime.sendMessage({
     type: "wdimtm:account-set-mode",
     payload: { mode: "cloud" },

@@ -782,6 +782,26 @@ kbd {
   background: transparent;
 }
 
+.cloud-balance {
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  border-radius: 4px;
+}
+
+.cloud-balance-line {
+  margin: 0 0 6px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.cloud-purchases {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  color: color-mix(in srgb, var(--ink) 72%, transparent);
+}
+
 .cloud-package-title {
   font-family: var(--font-heading, inherit);
   font-size: 15px;

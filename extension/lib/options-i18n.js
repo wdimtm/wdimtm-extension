@@ -103,6 +103,13 @@ export const OPTIONS_STRINGS = {
     cloudCheckoutCredited: "Payment received: {n} credits added.",
     cloudCheckoutPending:
       "No payment found yet. If you have paid, reopen this page in a minute.",
+    cloudCheckoutAlreadyCredited:
+      "Your payment is already credited. Purchased credits left: {n}.",
+    cloudBalanceLine:
+      "Purchased credits left: {purchased} · Free this month: {allowance}/{limit}",
+    cloudPurchasesTitle: "Purchases",
+    cloudPurchasesEmpty: "No purchases yet.",
+    cloudCreditsUnit: "credits",
     cloudRefreshCredits: "I have paid — check now",
     cloudAdvanced: "Advanced / self-hosted",
     accessMockTitle: "Mock (offline demo)",
@@ -507,6 +514,11 @@ export const OPTIONS_STRINGS = {
     cloudCheckoutWaiting: "正在等待付款到账 — 本页会自动更新。",
     cloudCheckoutCredited: "付款已到账：增加 {n} 额度。",
     cloudCheckoutPending: "还没查到付款。如果你已经付了，过一分钟再打开本页。",
+    cloudCheckoutAlreadyCredited: "付款已经到账。已购额度剩余 {n}。",
+    cloudBalanceLine: "已购额度剩余：{purchased} · 本月免费额度：{allowance}/{limit}",
+    cloudPurchasesTitle: "购买记录",
+    cloudPurchasesEmpty: "还没有购买记录。",
+    cloudCreditsUnit: "额度",
     cloudRefreshCredits: "我已付款 — 立即检查",
     cloudAdvanced: "高级 / 自托管",
     accessMockTitle: "Mock（离线演示）",
