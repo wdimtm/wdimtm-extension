@@ -211,9 +211,8 @@ async function refreshCloudPackages() {
       cloudBaseUrl: form.cloudBaseUrl?.value || settings.cloudBaseUrl,
       cloudAccessToken: form.cloudAccessToken?.value || settings.cloudAccessToken,
     });
-    const catalog = await fetchCloudPackages(config, {
-      currency: uiLocale === "zh_CN" ? "CNY" : "USD",
-    });
+    // Use the catalog's default currency; UI language only controls presentation.
+    const catalog = await fetchCloudPackages(config);
     cloudPackagesEl.textContent = "";
     const packages = Array.isArray(catalog.packages) ? catalog.packages : [];
     if (!packages.length) {
