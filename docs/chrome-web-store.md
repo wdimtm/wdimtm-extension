@@ -31,19 +31,21 @@ Fill in one field per permission. The dashboard lists them from the manifest.
 
 **`storage`**
 
-> Stores the user's own settings on their device: which AI endpoint to call, their
-> chosen lens, UI and answer language, answer depth, the per-site denylist, custom
-> lenses they wrote, and any memories they explicitly chose to save. The extension
-> has no server, so there is nowhere else for these to live. API keys are written to
-> local (unsynced) storage specifically so they are not uploaded to the user's Google
-> account by Chrome Sync.
+> Stores the user's own settings on their device: which service mode and AI endpoint
+> to use, their chosen lens, UI and answer language, answer depth, the per-site
+> denylist, custom lenses they wrote, any memories they explicitly chose to save, and
+> the WDIMTM Cloud session token after they sign in. API keys and the session token
+> are written to local (unsynced) storage so Chrome Sync never uploads them to the
+> user's Google account.
 
 **`identity`**
 
-> WDIMTM Cloud is an optional, opt-in service mode. When the user chooses it, `identity`
-> is used solely to run the Google sign-in that issues their Cloud session token, so their
-> credit balance can be attached to an account. It is never used in the default local or
-> bring-your-own-key modes, and no profile data beyond the sign-in result is read.
+> WDIMTM Cloud, the default service mode, needs an account so the user's credit balance
+> and optional sync can be attached to it. `identity` runs the Google sign-in
+> (launchWebAuthFlow) when the user clicks Sign in; the token is exchanged once with
+> cloud.wdimtm.com for a WDIMTM session. Scopes are openid, email and profile; only the
+> email address and Google account id are kept. It is never used in bring-your-own-key
+> mode.
 
 **`activeTab`**
 
@@ -62,7 +64,7 @@ this is one justification and not six.
 
 > WDIMTM explains text the user selects on whatever page they are reading, so the content script matches http://*/* and https://*/*: it cannot know in advance which sites those will be, and a fixed list would defeat the feature. It is dormant until the user selects text and clicks the button that appears. Nothing is read or sent before that click, and a denylist switches it off per site. all_frames is needed because article text is often inside an iframe; match_about_blank covers frames created without a URL.
 >
-> The other hosts answer the request. api.openai.com and api.anthropic.com are the two providers a user can point their own key at; exactly one is called per request. api.tavily.com, api.search.brave.com and google.serper.dev are optional search providers, off by default, reached only if the user enables search and gives a key for one. localhost, 127.0.0.1 and cloud.wdimtm.com are optional, requested only when the user configures a local model or opts into the hosted mode.
+> The other hosts answer the request. api.openai.com and api.anthropic.com are the two providers a user can point their own key at; exactly one is called per request. api.tavily.com, api.search.brave.com and google.serper.dev are optional search providers, off by default, reached only if the user enables search and gives a key for one. cloud.wdimtm.com (our hosted mode) is requested at Cloud sign-in; localhost and 127.0.0.1 only when the user sets up a local model.
 
 <details>
 <summary>Per-host detail, kept for the next manifest change (not pasted anywhere)</summary>
@@ -75,8 +77,8 @@ this is one justification and not six.
   — optional search, off by default, only the one the user configured is ever called.
 - `http://localhost/*`, `http://127.0.0.1/*` — optional, requested only when the user
   saves a loopback base URL. Match patterns carry no port, so these cover any port.
-- `https://cloud.wdimtm.com/*` — optional, the only host we operate; requested only if
-  the user switches to WDIMTM Cloud.
+- `https://cloud.wdimtm.com/*` — the only host we operate, and the default service mode.
+  Optional in the manifest: requested when the user signs in to WDIMTM Cloud.
 - `http://*/*`, `https://*/*` — content script. Dormant until a selection and a click.
   `all_frames` for article text inside iframes, `match_about_blank` for frames with no URL.
 
@@ -98,33 +100,36 @@ Tick these categories:
 
 | Category | Tick | Why |
 |---|---|---|
-| **Website content** | ✅ | The selected text, the bounded surrounding context, and the page title are sent to the user's AI endpoint. |
+| **Website content** | ✅ | The selected text, the bounded surrounding context, and the page title are sent to WDIMTM Cloud or the user's own AI endpoint. |
 | **Web history** | ✅ | The URL of the page is included with the explain request. It is one URL at the moment the user asks — not browsing history — but the URL does leave the device, so disclose it. |
-| **Authentication information** | ✅ | The user's own API key is stored locally and sent as the auth header to the endpoint they configured. |
-| **Personally identifiable information** | ✅ | The optional profile and memories are free text the user writes about themselves, and are sent with the request. They can contain personal information by design. |
-| Financial and payment information | ❌ | Never handled. |
+| **Authentication information** | ✅ | WDIMTM Cloud: Google sign-in, and the WDIMTM session token it issues (stored hashed on the server). BYOK: the user's own API key, stored locally and sent as the auth header to the endpoint they configured. |
+| **Personally identifiable information** | ✅ | WDIMTM Cloud keeps the user's email address and Google account id. The optional profile and memories are free text the user writes about themselves, sent with requests and, if sync is on, stored in WDIMTM Cloud. |
+| **Financial and payment information** | ✅ | WDIMTM Cloud keeps a purchase history (credits bought or refunded, and when). Payment itself happens on an Agentaab/Stripe checkout page; card details never reach the extension or WDIMTM Cloud. |
 | Health information | ❌ | Never handled. |
 | **Personal communications** | ✅ | Conversation import (#49) reads a ChatGPT or Claude export — the user's own chat history — and sends batches of it to their configured AI endpoint for distillation. It is explicitly user-initiated, shown as an itemized disclosure before a byte is sent, never written to disk, and never sent to a WDIMTM server. But it is unambiguously personal communications, so it is disclosed. |
-| Location | ❌ | Never requested or derived. |
+| Location | ❌ | Never requested or derived. IP addresses are used transiently for rate limiting and not stored. |
 | User activity | ❌ | No click, scroll, keystroke, or network monitoring. |
 
 If a field asks where the data goes, the answer depends on which service mode the user
 picked, and both must be described:
 
-- **BYOK (default):** to the third-party AI endpoint the user configures and pays for.
-  Nothing reaches a WDIMTM server.
-- **WDIMTM Cloud (opt-in, in development):** the request goes to the WDIMTM Cloud backend,
-  which signs the user in with Google, meters credits, and forwards the request to a model
-  provider. This path exists in the shipped extension and needs the `identity` permission,
-  so the listing must describe it even while it is under development.
+- **WDIMTM Cloud (default):** the request goes to cloud.wdimtm.com, which signs the user
+  in with Google, meters credits, and forwards the request to a model provider through
+  Agentaab. Explain and chat content is not stored; research jobs and, if sync is on,
+  memories are. Purchases go through Agentaab and Stripe. The user can download or
+  delete everything WDIMTM Cloud stores from Settings → Account.
+- **BYOK:** to the third-party AI endpoint the user configures and pays for. Nothing
+  reaches a WDIMTM server.
 
 ### Certifications
 
 All three can be certified truthfully:
 
 - **Not selling or transferring user data to third parties outside approved use cases** —
-  the only transfer is to the AI endpoint the user chose, which is what performs the
-  explanation, i.e. the approved "necessary to provide the single purpose" case.
+  the only transfers are to the model provider that performs the explanation (directly
+  in BYOK, through WDIMTM Cloud and Agentaab otherwise) and to the payment processor
+  when the user buys credits, i.e. the approved "necessary to provide the single
+  purpose" case.
 - **Not using or transferring user data for purposes unrelated to the single purpose** —
   there is no other use; no analytics, no telemetry, no advertising, no model training.
 - **Not using or transferring user data to determine creditworthiness or for lending** —
@@ -141,32 +146,21 @@ https://wdimtm.com/privacy
 ## Test instructions
 
 The dashboard caps this field at **500 characters** — half what the permission boxes
-get. Mind the key: `<PASTE TEST KEY HERE>` is 21 characters and a real `sk-proj-…`
-is about 56, so the text grows by ~35 when it is filled in. Budget for that. Everything
-cut from it is discoverable in the UI or already stated on the Privacy tab; what a
-reviewer cannot discover is that the default runtime is a mock, so that goes first.
+get. Everything cut from it is discoverable in the UI or already stated on the Privacy
+tab.
 
-> The default runtime is a mock: without a key every answer is placeholder text, labelled "Sample answer".
+Cloud sign-in only works for a reviewer once the OAuth consent screen is **published**
+(Google Auth Platform → Audience). While it is in Testing, only listed test users can
+sign in: either publish it before submitting, or add a reviewer account as a test user
+and put its address in these instructions.
+
+> New installs start on WDIMTM Cloud. Options opens on install (or right-click the toolbar icon > Options).
 >
-> Options (right-click the toolbar icon) > AI access > "Use my own API key":
-> Base URL: https://api.openai.com/v1
-> Key: <PASTE TEST KEY HERE>
-> Model: gpt-5.6-luna
-> Test connection, then Save.
+> AI access > WDIMTM Cloud > Sign in with Google. Every account gets 50 free credits a month; no purchase is needed to test.
 >
-> Select a sentence on any article, click the WDIMTM button beside it. The card has lenses and follow-ups.
+> Select a sentence on any article, click the WDIMTM button beside it. The card has lenses and follow-ups; Discuss further opens page chat.
 >
-> "WDIMTM Cloud" in Options is not open yet; ignore it.
-
-### The key you paste in
-
-Do not reuse a personal key. Create one that is safe to hand to a stranger:
-
-- A dedicated OpenAI project key, not your main account key.
-- A hard spend cap on that project (a few dollars is plenty).
-- Scoped to `gpt-5.6-luna` if your provider supports per-model restriction.
-- Revoke it once the extension is published, and update these instructions before the
-  next submission — a dead key in the test instructions stalls the next review.
+> Settings > Account has Download my Cloud data and Delete Cloud account.
 
 ---
 
@@ -186,8 +180,8 @@ The detailed description does not exist in the code and has to be written here.
 
 ### Detailed description (en)
 
-> **Lead with the key requirement.** An extension that shows placeholder text until the
-> user supplies a key earns one-star reviews if the listing does not say so first.
+> **Say up front what it costs.** Cloud works after a Google sign-in with a free monthly
+> allowance; say so, and say that an own key is the other way in.
 
 ```text
 WDIMTM explains what you are looking at — and why it matters to you.
@@ -195,11 +189,11 @@ WDIMTM explains what you are looking at — and why it matters to you.
 Select something on a page, click the button that appears, and get a short
 explanation in place. No copying, no switching to a chatbot, no writing a prompt.
 
-REQUIRES YOUR OWN AI API KEY
-This extension has no subscription and no bundled AI. You supply a key from
-OpenAI, Anthropic, or any OpenAI-compatible provider, and you pay that provider
-directly. Without a key the extension shows clearly-labelled sample answers.
-Setup takes about a minute in the options page.
+WORKS AFTER ONE SIGN-IN
+WDIMTM Cloud is the default: sign in with Google and you get 50 free credits
+every month, enough for everyday explains. Buy credit packs when you need more;
+there is no subscription. Prefer your own provider? Paste a key from OpenAI,
+Anthropic, or any OpenAI-compatible service and pay that provider directly.
 
 LENSES — the same text, read the way you need it
 Explain, Sanity check, Fact check, Opportunities, Engineering, Investing. Switch
@@ -214,8 +208,9 @@ selection and page context. You can paste a screenshot straight into it.
 
 MEMORY YOU CONTROL
 Tell it what you work on and it stops explaining things you already know.
-Nothing is remembered unless you press Remember, everything is stored on your
-own device, and you can read, edit, or delete any of it. You can also import an
+Nothing is remembered unless you press Remember, memories live on your own
+device (and in WDIMTM Cloud only if you turn on sync), and you can read, edit,
+or delete any of it. You can also import an
 existing ChatGPT or Claude export to start from what you have already told them
 — reviewed item by item before anything is saved.
 
@@ -223,8 +218,9 @@ WHAT IT DOES NOT DO
 It does not read pages you have not asked about. It does not run in the
 background, watch your browsing, or collect analytics. When you do ask, it sends
 the selected text, a bounded amount of surrounding text, the page title and the
-URL — never the whole page — directly to the endpoint you configured. There is
-no WDIMTM server in the way.
+URL — never the whole page — to WDIMTM Cloud, or with your own key straight to
+your provider. You can download or delete your Cloud account and its data from
+Settings at any time.
 
 Open source: https://github.com/wdimtm/wdimtm-extension
 Privacy policy: https://wdimtm.com/privacy
@@ -238,10 +234,10 @@ WDIMTM 帮你理解眼前这段内容 —— 以及它跟你有什么关系。
 在网页上选中一段文字，点出现的按钮，就地拿到一段简短解释。不用复制，不用切到
 聊天窗口，不用自己写提示词。
 
-需要你自己的 AI API Key
-本扩展没有订阅，也不自带 AI。你填入 OpenAI、Anthropic 或任意 OpenAI 兼容服务的
-Key，费用直接付给该服务商。没有 Key 时，扩展只会显示明确标注的示例答案。在设置页
-配置大约需要一分钟。
+登录即可使用
+默认使用 WDIMTM Cloud：用 Google 登录，每月赠送 50 点额度，足够日常解释使用。
+需要更多时可以购买点数包，没有订阅。更想用自己的服务商？填入 OpenAI、Anthropic
+或任意 OpenAI 兼容服务的 Key，费用直接付给该服务商。
 
 透镜 —— 同一段文字，按你需要的角度读
 通俗解释、有没有道理、核实主张、找机会、工程视角、投资视角。可以在按钮上随时切换
@@ -255,13 +251,14 @@ Key，费用直接付给该服务商。没有 Key 时，扩展只会显示明确
 
 由你掌握的记忆
 告诉它你在做什么，它就不会再解释你早就懂的东西。不按「记住」就什么都不会被记下，
-所有内容存在你自己的设备上，随时可读、可改、可删。你也可以导入已有的 ChatGPT 或
+记忆保存在你自己的设备上（只有开启同步时才会存到 WDIMTM Cloud），随时可读、可改、可删。你也可以导入已有的 ChatGPT 或
 Claude 导出记录，从你已经说过的话开始 —— 保存前会逐条让你审阅。
 
 它不做什么
 它不会读你没有问过的页面，不在后台运行，不监视你的浏览行为，也不收集任何分析数据。
-你提问时，它只把选中的文字、一小段周围上下文、页面标题和网址发给你配置的服务端点
-—— 从不发送整个页面。默认模式下没有 WDIMTM 服务器介入。
+你提问时，它只把选中的文字、一小段周围上下文、页面标题和网址发给 WDIMTM Cloud，
+或用你自己的 Key 直接发给你的服务商 —— 从不发送整个页面。你可以随时在设置里下载
+或删除你的云端账户及其数据。
 
 开源地址：https://github.com/wdimtm/wdimtm-extension
 隐私政策：https://wdimtm.com/privacy
@@ -312,7 +309,8 @@ left is what only a human can do.
 
 - [ ] Developer account registered, one-time fee paid
 - [x] Privacy policy live at https://wdimtm.com/privacy
-- [ ] Test key created, capped, and pasted into the test instructions
+- [ ] OAuth consent screen published, or a reviewer test user added and named in the
+      test instructions
 - [x] Permission justifications match the current manifest — checked by
       `npm run check:store`, and again by `npm run package`
 - [x] Screenshots cover conversation import (`screenshot-4-memory.png`)
@@ -320,10 +318,9 @@ left is what only a human can do.
 - [ ] Version in `extension/manifest.json` bumped, and matching `package.json`
 - [ ] `npm run store:upload` — rebuilds the public-tree zip and uploads that draft.
       Never upload a zip made by hand from `extension/`
-- [ ] Decide what to do about `oauth2.client_id`: a Google OAuth client for a Chrome
-      extension needs the extension id, which only exists once an item has been created
-      in the dashboard. Either upload a draft first and fill the id in before publishing,
-      or ship this submission BYOK-only and accept that Cloud sign-in fails until the
-      next version. `npm run package` warns while the placeholder is still there.
-- [ ] Privacy policy re-read end to end: it must describe import and WDIMTM Cloud, and
-      must not claim there is no server
+- [x] Store item id matches the OAuth redirect: the store item is
+      `jgjbkfelaamlhknmccbbimihhhcimocn`, the manifest `key` is its public key, and the
+      Web client allows `https://jgjbkfelaamlhknmccbbimihhhcimocn.chromiumapp.org/google`
+      (`tests/unit/manifest-key.test.mjs` fails if the key stops matching)
+- [x] Privacy policy describes import and WDIMTM Cloud, and does not claim there is no
+      server

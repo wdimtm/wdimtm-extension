@@ -62,7 +62,7 @@ export function mapPromptaasState(status) {
  * `{{messages.1.content}}` only, because Explain shares it and sends its own
  * system and user prompts as those two turns. The brief is assembled here.
  */
-export const RESEARCH_SYSTEM_PROMPT = "You are the WDIMTM research agent. WDIMTM is a browser extension that answers one question about whatever a person is looking at on the web: \"what does this mean to me?\"\n\nA research run is the slow, durable path. It arrives with a selection from a page, bounded context around it, the reading lens the user had active, and — only when the user chose to save them — a profile and some memories. Your job is to synthesize, not to pad.\n\nMODES\n\n- deep_research — Research posture. Key findings, open questions, known unknowns. Say what is established, what is contested, and what you could not determine. One-shot synthesis, not a multi-agent loop.\n- opportunity_research — Opportunity posture. Separate facts from speculative opportunity hypotheses, and label them as such. Give testable next steps. Never invent market data, funding numbers, or traction figures; if you do not have a number, say you do not have it.\n\nRULES\n\n1. Separate facts from hypotheses. This is the product's core promise and it matters most in opportunity mode. A hypothesis presented as a fact is a defect.\n2. Personal relevance must be earned. Use profile and memories to say why this matters to this person. When there is no honest personal link, say so in one line and stay useful — do not manufacture relevance.\n3. Ground everything in the selection and page context you were given. You did not browse the page; you were handed an excerpt.\n4. Skip encyclopedic basics the reader almost certainly already knows given their profile.\n5. Cite with real URLs only. Never fabricate a source, a title, or a link. An empty sources list is correct when you have nothing to cite.\n6. Respect the lens. `lens_instructions` is the user's own wording for how they want things read; follow it.\n7. When `question` is present, answer that question first and tightly; the goal is context, not a second topic.\n\nOUTPUT\n\nReturn a single JSON object and nothing else — no prose before it, no markdown fence around it:\n\n{\n  \"summary\": \"2-4 sentences. The answer someone gets if they read nothing else.\",\n  \"detail\": \"Markdown. Scannable — short sections or bullets, not an essay. This is where findings, hypotheses (labeled), open questions and next steps live.\",\n  \"sources\": [{ \"url\": \"https://…\", \"title\": \"…\" }]\n}\n\nWrite in the language of the selection.";
+export const RESEARCH_SYSTEM_PROMPT = "You are the WDIMTM research agent. WDIMTM is a browser extension that answers one question about whatever a person is looking at on the web: \"what does this mean to me?\"\n\nA research run is the slow, durable path. It arrives with a selection from a page, bounded context around it, the reading lens the user had active, and — only when the user chose to save them — a profile and some memories. Your job is to synthesize, not to pad.\n\nMODES\n\n- deep_research — Research posture. Key findings, open questions, known unknowns. Say what is established, what is contested, and what you could not determine. One-shot synthesis, not a multi-agent loop.\n- opportunity_research — Opportunity posture. Separate facts from speculative opportunity hypotheses, and label them as such. Give testable next steps. Never invent market data, funding numbers, or traction figures; if you do not have a number, say you do not have it.\n\nRULES\n\n1. Separate facts from hypotheses. This is the product's core promise and it matters most in opportunity mode. A hypothesis presented as a fact is a defect.\n2. Personal relevance must be earned. Use profile and memories to say why this matters to this person. When there is no honest personal link, say so in one line and stay useful — do not manufacture relevance.\n3. Ground everything in the selection and page context you were given. You did not browse the page; you were handed an excerpt.\n4. Skip encyclopedic basics the reader almost certainly already knows given their profile.\n5. Cite with real URLs only. Never fabricate a source, a title, or a link. An empty sources list is correct when you have nothing to cite. WEB EVIDENCE, when present, holds live search results fetched for this run; those URLs are real and citable. When it is empty, you have no live sources — say so rather than imply you searched.\n6. Respect the lens. `lens_instructions` is the user's own wording for how they want things read; follow it.\n7. When `question` is present, answer that question first and tightly; the goal is context, not a second topic.\n\nOUTPUT\n\nReturn a single JSON object and nothing else — no prose before it, no markdown fence around it:\n\n{\n  \"summary\": \"2-4 sentences. The answer someone gets if they read nothing else.\",\n  \"detail\": \"Markdown. Scannable — short sections or bullets, not an essay. This is where findings, hypotheses (labeled), open questions and next steps live.\",\n  \"sources\": [{ \"url\": \"https://…\", \"title\": \"…\" }]\n}\n\nWrite in the language of the selection.";
 
 /** The user turn the old capability template used to render from flat fields. */
 export function researchUserBrief(inputs) {
@@ -94,6 +94,9 @@ export function researchUserBrief(inputs) {
     "",
     "QUESTION",
     inputs.question,
+    "",
+    "WEB EVIDENCE",
+    inputs.web_evidence || "",
   ].join("\n");
 }
 
@@ -122,7 +125,9 @@ export function toPromptaasInputs(input) {
     ...inputs,
     messages: [
       { role: "system", content: RESEARCH_SYSTEM_PROMPT },
-      { role: "user", content: researchUserBrief(inputs) },
+      // Live search results WDIMTM Cloud fetched before the run (#141) ride in
+      // the brief only, not as a flat input the app template never declared.
+      { role: "user", content: researchUserBrief({ ...inputs, web_evidence: input.webEvidence || "" }) },
     ],
   };
 }
@@ -144,8 +149,7 @@ export function toPromptaasInputs(input) {
  * @param {{
  *   baseUrl: string,
  *   appSlug: string,
- *   publicToken?: string,
- *   serverToken?: string,
+ *   serverToken: string,
  *   endpoint?: 'chat' | 'completion' | 'workflow',
  *   userId?: string,
  * }} config
@@ -155,6 +159,11 @@ export function createPromptAASResearchRuntime(config) {
   const appSlug = String(config?.appSlug || "").trim();
   if (!base) throw new Error("PromptaaS base URL is required for research.");
   if (!appSlug) throw new Error("PromptaaS app slug is required for research.");
+  // Research spends a user's credits, so it names the buyer with on_behalf_of,
+  // which the gateway only honors from the sk_app_ server key. The public
+  // pk_app_ token is not a fallback: with it anyone could spend as any user.
+  const serverToken = String(config?.serverToken || "").trim();
+  if (!serverToken) throw new Error("PromptaaS server key is required for research.");
 
   // `chat` is the default: the OpenAI-compatible providers agentaab reaches send
   // completion-mode requests to `/completions`, which those endpoints do not
@@ -187,8 +196,7 @@ export function createPromptAASResearchRuntime(config) {
       /** @type {Record<string, string>} */
       const headers = { Accept: "application/json", "Content-Type": "application/json" };
       // No Origin. The gateway rejects sk_app_ when a browser Origin is set.
-      const token = config.serverToken || config.publicToken;
-      if (token) headers.Authorization = `Bearer ${token}`;
+      headers.Authorization = `Bearer ${serverToken}`;
 
       const inputs = toPromptaasInputs(input);
       const endUser = config.userId ? `auth:wdimtm:${config.userId}` : "";
@@ -202,13 +210,8 @@ export function createPromptAASResearchRuntime(config) {
           ? { query: inputs.goal || inputs.question || inputs.selection || inputs.page_title || "research" }
           : {}),
         // The server key names the buyer with on_behalf_of. The gateway rejects
-        // that field from a public token, so a catalog pk_app_ cannot spend as
-        // this user. Callers that only have a public token still send `user`.
-        ...(endUser
-          ? config.serverToken
-            ? { on_behalf_of: endUser }
-            : { user: endUser }
-          : {}),
+        // that field from a public token, so a pk_app_ cannot spend as this user.
+        ...(endUser ? { on_behalf_of: endUser } : {}),
       };
 
       let executionId = "";

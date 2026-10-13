@@ -18,12 +18,15 @@ import {
 import { getMemoryProvider } from "../lib/memory.js";
 import { MSG } from "../../core/messages.js";
 import { applyOptionsI18n, ot } from "../lib/options-i18n.js";
+import { redeemResultView } from "../lib/cloud-redeem.js";
 import { applyPageTheme, watchSystemTheme } from "../lib/page-theme.js";
 import {
   DEFAULT_CLOUD_BASE_URL,
   fetchCloudAccount,
+  onCloudSessionRejected,
   fetchCloudPackages,
   reconcileCloudCredits,
+  redeemCloudCode,
   resolveCloudConfig,
   startCloudPackageCheckout,
 } from "../../core/cloud.js";
@@ -39,6 +42,7 @@ import {
 import { getRuntime } from "../../core/runtime/registry.js";
 import { runtimeIdForTestMode } from "../../core/runtime-test.js";
 import { DEFAULT_SETTINGS, getSettings, saveSettings, topUpUrlFor } from "../lib/settings.js";
+import { clearRejectedCloudSession } from "../lib/auth/index.js";
 
 const form = document.getElementById("settings-form");
 const runtimeEl = document.getElementById("runtime");
@@ -46,6 +50,11 @@ const byokFields = document.getElementById("byok-fields");
 const openaiFields = document.getElementById("openai-fields");
 const anthropicFields = document.getElementById("anthropic-fields");
 const cloudAccessFields = document.getElementById("cloud-fields");
+const webSearchByokHint = document.getElementById("web-search-byok-hint");
+const webSearchCloudNote = document.getElementById("web-search-cloud-note");
+const webSearchByokFields = document.getElementById("web-search-byok-fields");
+const webSearchEnabledByok = document.getElementById("web-search-enabled-byok");
+const webSearchEnabledCloud = document.getElementById("web-search-enabled-cloud");
 const statusEl = document.getElementById("status");
 const defaultLensEl = document.getElementById("defaultLensId");
 const lensListEl = document.getElementById("lens-list");
@@ -68,6 +77,10 @@ const cloudSignInBtn = document.getElementById("cloud-sign-in");
 const cloudSessionStatus = document.getElementById("cloud-session-status");
 const cloudPackagesEl = document.getElementById("cloud-packages");
 const cloudPackagesMeta = document.getElementById("cloud-packages-meta");
+const cloudRedeemEl = document.getElementById("cloud-redeem");
+const cloudRedeemInput = document.getElementById("cloud-redeem-code");
+const cloudRedeemBtn = document.getElementById("cloud-redeem-btn");
+const cloudRedeemStatus = document.getElementById("cloud-redeem-status");
 
 /** @type {'en' | 'zh_CN'} */
 let uiLocale = "en";
@@ -131,6 +144,7 @@ function syncRuntimeFields() {
   if (openaiFields) openaiFields.hidden = !(mode === "byok" && !isAnthropic);
   if (anthropicFields) anthropicFields.hidden = !isAnthropic;
   if (cloudAccessFields) cloudAccessFields.hidden = mode !== "cloud";
+  syncWebSearchFields(mode);
   if (mode === "cloud") {
     if (form.cloudBaseUrl && !form.cloudBaseUrl.value.trim()) {
       form.cloudBaseUrl.value = DEFAULT_CLOUD_BASE_URL;
@@ -144,6 +158,22 @@ function syncRuntimeFields() {
     refreshCloudSessionStatus();
     refreshCloudPackages();
   }
+}
+
+/**
+ * WDIMTM Cloud runs web search server-side with its own key (#141): no
+ * provider or key to pick, and the switch only governs page chat. BYOK keeps
+ * the provider, key and max-results fields. Hidden fields keep their values,
+ * so switching back to BYOK loses nothing.
+ * @param {'byok' | 'cloud'} mode
+ */
+function syncWebSearchFields(mode) {
+  const cloud = mode === "cloud";
+  if (webSearchByokHint) webSearchByokHint.hidden = cloud;
+  if (webSearchCloudNote) webSearchCloudNote.hidden = !cloud;
+  if (webSearchByokFields) webSearchByokFields.hidden = cloud;
+  if (webSearchEnabledByok) webSearchEnabledByok.hidden = cloud;
+  if (webSearchEnabledCloud) webSearchEnabledCloud.hidden = !cloud;
 }
 
 function applyByokPreset(presetId, { force = false } = {}) {
@@ -206,6 +236,11 @@ async function refreshCloudPackages() {
     const settings = await getSettings();
     if (!form.cloudBaseUrl?.value?.trim()) {
       form.cloudBaseUrl.value = settings.cloudBaseUrl || DEFAULT_CLOUD_BASE_URL;
+    }
+    // Redeeming needs a session; the catalog does not. Decided before the
+    // catalog loads so an empty or failing catalog cannot hide the code box.
+    if (cloudRedeemEl) {
+      cloudRedeemEl.hidden = !(form.cloudAccessToken?.value || settings.cloudAccessToken || "").trim();
     }
     const config = resolveCloudConfig({
       cloudBaseUrl: form.cloudBaseUrl?.value || settings.cloudBaseUrl,
@@ -314,6 +349,13 @@ function renderCloudBalance(account) {
   const box = document.createElement("div");
   box.className = "cloud-balance";
   const q = account.quota || {};
+  const access = account.cloudAccess;
+  if (access?.active && access.source === "entitlement" && access.until) {
+    const accessLine = document.createElement("p");
+    accessLine.className = "cloud-access-line";
+    accessLine.textContent = t("cloudAccessUntil").replace("{date}", formatInstant(access.until));
+    box.appendChild(accessLine);
+  }
   const line = document.createElement("p");
   line.className = "cloud-balance-line";
   line.textContent = t("cloudBalanceLine")
@@ -340,6 +382,66 @@ function renderCloudBalance(account) {
   }
   return box;
 }
+
+/** @param {string} iso */
+function formatInstant(iso) {
+  const at = new Date(iso);
+  if (Number.isNaN(at.getTime())) return String(iso || "");
+  return at.toLocaleString(uiLocale === "zh_CN" ? "zh-CN" : "en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+}
+
+/**
+ * @param {string} msg
+ * @param {boolean} [isError]
+ */
+function setRedeemStatus(msg, isError = false) {
+  if (!cloudRedeemStatus) return;
+  cloudRedeemStatus.textContent = msg;
+  cloudRedeemStatus.classList.toggle("is-error", isError);
+}
+
+/** Redeem a promotional code for Cloud access (#135). */
+async function redeemCode() {
+  const code = cloudRedeemInput?.value?.trim() || "";
+  if (!code) {
+    setRedeemStatus(t("cloudRedeemEmpty"), true);
+    return;
+  }
+  const settings = await getSettings();
+  const config = resolveCloudConfig({
+    cloudBaseUrl: form.cloudBaseUrl?.value || settings.cloudBaseUrl,
+    cloudAccessToken: form.cloudAccessToken?.value || settings.cloudAccessToken,
+  });
+  if (!config.accessToken) {
+    setRedeemStatus(t("cloudNeedSignIn"), true);
+    return;
+  }
+  if (cloudRedeemBtn) cloudRedeemBtn.disabled = true;
+  setRedeemStatus(t("cloudRedeemWorking"));
+  try {
+    const result = await redeemCloudCode(config, code);
+    const view = redeemResultView(result, { t, formatInstant });
+    setRedeemStatus(view.message, view.isError);
+    if (!view.isError) flash(view.message);
+    if (view.clearInput && cloudRedeemInput) cloudRedeemInput.value = "";
+    if (view.refreshAccount) await refreshCloudPackages();
+  } catch {
+    setRedeemStatus(t("cloudRedeemFailed"), true);
+  } finally {
+    if (cloudRedeemBtn) cloudRedeemBtn.disabled = false;
+  }
+}
+
+cloudRedeemBtn?.addEventListener("click", () => redeemCode());
+// Enter in a text field would submit the settings form; redeem instead.
+cloudRedeemInput?.addEventListener("keydown", (e) => {
+  if (e.key !== "Enter") return;
+  e.preventDefault();
+  redeemCode();
+});
 
 async function buyCloudPackage(packageId) {
   try {
@@ -1100,6 +1202,33 @@ document.getElementById("account-sign-out").addEventListener("click", async () =
   await refreshAccountCard();
 });
 
+document.getElementById("account-export").addEventListener("click", async () => {
+  const res = await chrome.runtime.sendMessage({ type: "wdimtm:account-export" });
+  if (!res?.ok) {
+    flash(res?.error || t("exportFailed"), true);
+    return;
+  }
+  const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `wdimtm-cloud-data-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  flash(t("accountExported"));
+});
+
+document.getElementById("account-delete").addEventListener("click", async () => {
+  if (!confirm(t("accountDeleteConfirm"))) return;
+  const res = await chrome.runtime.sendMessage({ type: "wdimtm:account-delete" });
+  if (!res?.ok) {
+    flash(res?.error || t("accountDelete"), true);
+    return;
+  }
+  flash(t("accountDeleted"));
+  await reload();
+});
+
 document.getElementById("account-sync-now").addEventListener("click", async () => {
   const res = await chrome.runtime.sendMessage({ type: "wdimtm:account-sync-now" });
   if (!res?.ok) {
@@ -1427,7 +1556,25 @@ function bindContentsRail() {
 
 bindContentsRail();
 
-reload().catch((err) => flash(err instanceof Error ? err.message : String(err), true));
+// Settings calls Cloud directly (packages, balance, redeem). A 401 there means
+// the session expired (#139): forget it and show "Sign in" again, rather than
+// leaving a dead token in the form for the next Save to write back.
+onCloudSessionRejected(async (token) => {
+  await clearRejectedCloudSession(token);
+  if (form.cloudAccessToken?.value?.trim() === token) form.cloudAccessToken.value = "";
+  await refreshCloudSessionStatus();
+  await refreshAccountCard();
+});
+
+reload()
+  .then(() => {
+    // "Buy credits" in the popover opens Settings at #cloud (#75). The section
+    // is only shown in Cloud mode, which is the mode that hit the 402.
+    if (location.hash === "#cloud" && cloudAccessFields && !cloudAccessFields.hidden) {
+      document.getElementById("cloud-packages")?.scrollIntoView({ block: "center" });
+    }
+  })
+  .catch((err) => flash(err instanceof Error ? err.message : String(err), true));
 
 // Changing the theme applies immediately rather than waiting for Save — the
 // control is a preview of the page it is sitting on.

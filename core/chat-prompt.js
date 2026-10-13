@@ -42,27 +42,50 @@ export function buildChatSystemPrompt(ctx) {
     );
   }
 
-  // Always declare search state so the model does not hallucinate "technical errors".
-  const meta = ctx.webSearchMeta || { status: "not_configured", used: false };
+  // Always declare search state so the model does not hallucinate "technical
+  // errors". The one exception is WDIMTM Cloud, which searches server-side and
+  // appends this section itself (#141): the client marks that "delegated".
+  if (ctx.webSearchMeta?.status !== "delegated") {
+    parts.push(buildChatWebSearchSection(ctx.webSearchMeta, ctx.webEvidence));
+  }
+
+  return parts.filter(Boolean).join("\n");
+}
+
+/**
+ * The WEB SEARCH STATUS (and, when there are hits, WEB EVIDENCE) section of the
+ * chat system prompt. Exported so WDIMTM Cloud can append it after running the
+ * search itself.
+ *
+ * @param {{ used?: boolean, status?: string, provider?: string, query?: string,
+ *   resultCount?: number, error?: string, humanError?: string } | undefined} webSearchMeta
+ * @param {string | undefined} webEvidence
+ * @param {{ cloud?: boolean }} [opts] cloud: search is included with WDIMTM
+ *   Cloud, so there is no provider or API key for the user to fix
+ * @returns {string}
+ */
+export function buildChatWebSearchSection(webSearchMeta, webEvidence, opts = {}) {
+  const meta = webSearchMeta || { status: "not_configured", used: false };
   const status = meta.status || (meta.used ? "ok" : meta.error ? "failed" : "not_configured");
-  parts.push("", "## WEB SEARCH STATUS", `status: ${status}`);
+  const parts = ["## WEB SEARCH STATUS", `status: ${status}`];
   if (meta.provider) parts.push(`provider: ${meta.provider}`);
   if (meta.query) parts.push(`query: ${meta.query}`);
   if (typeof meta.resultCount === "number") {
     parts.push(`resultCount: ${meta.resultCount}`);
   }
 
-  if (status === "ok" && ctx.webEvidence) {
+  if (status === "ok" && webEvidence) {
     parts.push(
-      "",
       "## WEB EVIDENCE",
       "(Live web search — external sources, not the page. Cite URLs when used.)",
-      ctx.webEvidence
+      webEvidence
     );
   } else if (status === "failed") {
     parts.push(
       `error: ${meta.humanError || meta.error || "unknown"}`,
-      "Instruction: Tell the user live web search failed with this error. Answer only from the page/selection. Do not invent news or pretend results exist. Suggest checking Options → Web search (provider + API key)."
+      opts.cloud
+        ? "Instruction: Tell the user live web search failed with this error. Answer only from the page/selection. Do not invent news or pretend results exist. Search is included with WDIMTM Cloud, so do not ask them for an API key; suggest trying again later."
+        : "Instruction: Tell the user live web search failed with this error. Answer only from the page/selection. Do not invent news or pretend results exist. Suggest checking Options → Web search (provider + API key)."
     );
   } else if (status === "empty") {
     parts.push(
@@ -71,9 +94,10 @@ export function buildChatSystemPrompt(ctx) {
   } else {
     // not_configured / off
     parts.push(
-      "Instruction: Live web search is NOT configured for this user. If they ask you to search the web or news, clearly say WDIMTM web search is off and they should enable it in extension Options (provider + API key + enable checkbox). Do NOT invent a search API technical error. Answer from page/selection only."
+      opts.cloud
+        ? "Instruction: Live web search is OFF for page chat. If they ask you to search the web or news, clearly say WDIMTM web search is off and they can turn on \"Enable web search\" in extension Options → Web search (included with WDIMTM Cloud, no API key needed). Do NOT invent a search API technical error. Answer from page/selection only."
+        : "Instruction: Live web search is NOT configured for this user. If they ask you to search the web or news, clearly say WDIMTM web search is off and they should enable it in extension Options (provider + API key + enable checkbox). Do NOT invent a search API technical error. Answer from page/selection only."
     );
   }
-
   return parts.filter(Boolean).join("\n");
 }

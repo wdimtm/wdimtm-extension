@@ -67,6 +67,29 @@ async function storeSession(session) {
 }
 
 /**
+ * Drop the stored session without calling the server: the account it named is
+ * gone (#139).
+ */
+export async function forgetCloudSession() {
+  await storeSession(null);
+}
+
+/**
+ * Forget a session the server answered 401 for (#139): it expired or was
+ * revoked. Only that token is cleared, so a sign-in that finished while the
+ * failing request was in flight survives.
+ * @param {string} rejectedToken
+ */
+export async function clearRejectedCloudSession(rejectedToken) {
+  const token = String(rejectedToken || "").trim();
+  if (!token) return;
+  const [session, settings] = await Promise.all([readStoredSession(), getSettings()]);
+  if (session?.accessToken === token || settings.cloudAccessToken === token) {
+    await storeSession(null);
+  }
+}
+
+/**
  * @returns {Promise<import('./types.js').SyncProvider>}
  */
 export async function getSyncProvider() {

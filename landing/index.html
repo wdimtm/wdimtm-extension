@@ -377,7 +377,21 @@
           </div>
           <div class="access">
             <article class="access-card">
-              <span class="tag" data-i18n="access.byok.tag">Recommended</span>
+              <span class="tag" data-i18n="access.cloud.tag">Default</span>
+              <h3 data-i18n="access.cloud.title">WDIMTM Cloud</h3>
+              <p data-i18n="access.cloud.body">
+                The default: sign in with Google and start explaining, with 50 free credits every
+                month and credit packs when you need more, no subscription. Managed inference,
+                memory that syncs across devices if you want it, and research that keeps running
+                after the tab closes. Same extension, same answers as bring-your-own-key.
+              </p>
+              <p class="runtime-id">
+                <span data-i18n="access.cloud.runtime">Runtime id:</span>
+                <code>wdimtm-cloud</code>
+              </p>
+            </article>
+            <article class="access-card">
+              <span class="tag muted" data-i18n="access.byok.tag">Your key</span>
               <h3 data-i18n="access.byok.title">Bring your own key</h3>
               <p data-i18n="access.byok.body">
                 Any OpenAI-compatible API — OpenAI, OpenRouter, a local model, your own gateway —
@@ -387,20 +401,6 @@
               <p class="runtime-id">
                 <span data-i18n="access.byok.runtime">Runtime ids:</span>
                 <code>openai-compatible</code> · <code>anthropic</code>
-              </p>
-            </article>
-            <article class="access-card">
-              <span class="tag muted" data-i18n="access.cloud.tag">Not open yet</span>
-              <h3 data-i18n="access.cloud.title">WDIMTM Cloud</h3>
-              <p data-i18n="access.cloud.body">
-                An optional hosted mode for people who would rather not hold a key: managed
-                inference, memory that syncs across devices, and research that keeps running
-                after the tab closes. Same extension, same answers — it changes who pays and
-                where the key lives. Local and bring-your-own-key stay free, permanently.
-              </p>
-              <p class="runtime-id">
-                <span data-i18n="access.cloud.runtime">Runtime id:</span>
-                <code>wdimtm-cloud</code>
               </p>
             </article>
           </div>
@@ -442,12 +442,13 @@
             </div>
             <div class="step">
               <div>
-                <h4 data-i18n="install.s3.title">Add your key</h4>
+                <h4 data-i18n="install.s3.title">Sign in, or add your key</h4>
                 <p data-i18n-html="install.s3.bodyHtml">
-                  Open WDIMTM Options → <strong>AI access</strong> → <strong>Use my own API
-                  key</strong>, and pick an OpenAI-compatible endpoint or Anthropic. Hit
-                  <strong>Test connection</strong>, save, then select text on any page. Until you
-                  do this you get sample answers, clearly labelled as such.
+                  Options opens on install. Under <strong>AI access</strong>,
+                  <strong>WDIMTM Cloud</strong> is selected: click <strong>Sign in with
+                  Google</strong> and select text on any page. To use your own provider instead,
+                  pick <strong>Use my own API key</strong>, choose an OpenAI-compatible endpoint or
+                  Anthropic, hit <strong>Test connection</strong> and save.
                 </p>
               </div>
             </div>

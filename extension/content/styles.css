@@ -1062,6 +1062,27 @@
   flex-shrink: 0 !important;
 }
 
+/* Where more credits come from (#40). Quieter than the cut-off note: it is
+   an offer, not a problem with this answer. */
+.wdimtm-nudge {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+  margin-top: 10px !important;
+  padding-top: 9px !important;
+  border-top: 1px solid var(--wdimtm-border) !important;
+  font-size: 11.5px !important;
+  line-height: 1.45 !important;
+  color: var(--wdimtm-meta) !important;
+  font-style: normal !important;
+  text-align: left !important;
+}
+
+.wdimtm-nudge .wdimtm-btn {
+  flex-shrink: 0 !important;
+}
+
 /* Demo notice — sits above sample output so it is read before the answer.
    Dashed like the hypothesis frame: both mark "do not take this as fact". */
 .wdimtm-demo-banner {

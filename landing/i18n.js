@@ -129,15 +129,15 @@
       "access.title": "You bring the model. We bring the moment.",
       "access.body":
         "WDIMTM owns context and personalization — not your GPU bill. Choose how inference is paid for.",
-      "access.byok.tag": "Recommended",
+      "access.byok.tag": "Your key",
       "access.byok.title": "Bring your own key",
       "access.byok.body":
         "Any OpenAI-compatible API — OpenAI, OpenRouter, a local model, your own gateway — or Anthropic directly with a Claude key. One request per explain, streaming supported, and you pay the provider rather than us.",
       "access.byok.runtime": "Runtime ids:",
-      "access.cloud.tag": "Not open yet",
+      "access.cloud.tag": "Default",
       "access.cloud.title": "WDIMTM Cloud",
       "access.cloud.body":
-        "An optional hosted mode for people who would rather not hold a key: managed inference, memory that syncs across devices, and research that keeps running after the tab closes. Same extension, same answers — it changes who pays and where the key lives. Local and bring-your-own-key stay free, permanently.",
+        "The default: sign in with Google and start explaining, with 50 free credits every month and credit packs when you need more, no subscription. Managed inference, memory that syncs across devices if you want it, and research that keeps running after the tab closes. Same extension, same answers as bring-your-own-key.",
       "access.cloud.runtime": "Runtime id:",
 
       "install.kicker": "Install",
@@ -150,9 +150,9 @@
       "install.s2.title": "Load the extension",
       "install.s2.bodyHtml":
         "Open <code>chrome://extensions</code> → enable Developer mode → <strong>Load unpacked</strong> → select the <code>dist/</code> folder.",
-      "install.s3.title": "Add your key",
+      "install.s3.title": "Sign in, or add your key",
       "install.s3.bodyHtml":
-        "Open WDIMTM Options → <strong>AI access</strong> → <strong>Use my own API key</strong>, and pick an OpenAI-compatible endpoint or Anthropic. Hit <strong>Test connection</strong>, save, then select text on any page. Until you do this you get sample answers, clearly labelled as such.",
+        "Options opens on install. Under <strong>AI access</strong>, <strong>WDIMTM Cloud</strong> is selected: click <strong>Sign in with Google</strong> and select text on any page. To use your own provider instead, pick <strong>Use my own API key</strong>, choose an OpenAI-compatible endpoint or Anthropic, hit <strong>Test connection</strong> and save.",
 
       "cta.title": "Stop translating confusion into prompts",
       "cta.body":
@@ -282,15 +282,15 @@
       "access.kicker": "接入",
       "access.title": "模型你来带。场景我们守。",
       "access.body": "WDIMTM 负责上下文与个性化——不负责你的算力账单。推理如何付费由你选。",
-      "access.byok.tag": "推荐",
+      "access.byok.tag": "自带密钥",
       "access.byok.title": "自带 API Key",
       "access.byok.body":
         "任意 OpenAI 兼容 API —— OpenAI、OpenRouter、本地模型、自建网关 —— 或者用 Claude 密钥直连 Anthropic。每次解释一次请求，支持流式，费用直接付给服务商而不是我们。",
       "access.byok.runtime": "运行时 id：",
-      "access.cloud.tag": "尚未开放",
+      "access.cloud.tag": "默认",
       "access.cloud.title": "WDIMTM Cloud",
       "access.cloud.body":
-        "给不想自己管密钥的人准备的可选托管模式：托管推理、跨设备同步的记忆，以及关掉标签页也会继续跑的研究任务。同一个扩展、同样的答案 —— 变的只是谁付钱、密钥放在哪。本地模式与自带密钥永久免费。",
+        "默认模式：用 Google 登录即可开始使用，每月赠送 50 点额度，不够时再买点数包，没有订阅。托管推理、可选的跨设备记忆同步，以及关掉标签页也会继续跑的研究任务。同一个扩展，和自带密钥模式给出同样的答案。",
       "access.cloud.runtime": "运行时 id：",
 
       "install.kicker": "安装",
@@ -303,9 +303,9 @@
       "install.s2.title": "加载扩展",
       "install.s2.bodyHtml":
         "打开 <code>chrome://extensions</code> → 开启开发者模式 → <strong>加载已解压的扩展程序</strong> → 选择 <code>dist/</code> 目录。",
-      "install.s3.title": "填入你的密钥",
+      "install.s3.title": "登录，或填入你的密钥",
       "install.s3.bodyHtml":
-        "打开 WDIMTM 选项 → <strong>AI 接入</strong> → <strong>使用我自己的 API Key</strong>，选择 OpenAI 兼容端点或 Anthropic。点<strong>测试连接</strong>，保存，然后在任意页面选中文字。在此之前你看到的都是明确标注的示例答案。",
+        "安装后会自动打开选项页。<strong>AI 接入</strong>里默认选中 <strong>WDIMTM Cloud</strong>：点<strong>使用 Google 登录</strong>，然后在任意页面选中文字即可。想用自己的服务商，就选<strong>使用我自己的 API Key</strong>，选择 OpenAI 兼容端点或 Anthropic，点<strong>测试连接</strong>并保存。",
 
       "cta.title": "别再把困惑翻译成提示词",
       "cta.body": "选中你看不懂的内容。得到简短、贴合你的解释——无需离开标签页。",

@@ -468,6 +468,15 @@ a.btn:hover {
   color: var(--accent-700);
 }
 
+.btn.ghost.danger,
+.btn.ghost.danger:hover {
+  color: var(--danger);
+}
+
+.btn.ghost.danger:hover {
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+}
+
 .btn.small {
   height: 27px;
   padding: 0 10px;
@@ -791,6 +800,43 @@ kbd {
 .cloud-balance-line {
   margin: 0 0 6px;
   font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.cloud-redeem {
+  margin-top: 16px;
+}
+
+.field .cloud-redeem-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: inherit;
+  color: inherit;
+}
+
+.cloud-redeem-row input {
+  flex: 1;
+  min-width: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.cloud-redeem-row input::placeholder {
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.cloud-redeem .hint:empty {
+  display: none;
+}
+
+.cloud-redeem .hint.is-error {
+  color: var(--danger);
+}
+
+.cloud-access-line {
+  margin: 0 0 6px;
   color: var(--ink);
 }
 

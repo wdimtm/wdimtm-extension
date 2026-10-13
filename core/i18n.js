@@ -56,6 +56,20 @@ const STRINGS = {
     chatStopped: "Stopped.",
     stop: "Stop",
     topUp: "Top up credits",
+    buyCredits: "Buy credits",
+    signInCloud: "Sign in to WDIMTM Cloud",
+    errSignInRequired:
+      "Sign in to WDIMTM Cloud in Settings to start with free monthly credits, or use your own API key.",
+    nudgeFirst:
+      "{n} WDIMTM credits left. Free credits reset every month; buy a credit pack when you need more.",
+    nudgeLow: "{n} WDIMTM credits left.",
+    nudgeEmpty: "That was your last WDIMTM credit for now.",
+    errAllowanceExhausted:
+      "You've used this month's free WDIMTM credits. Buy a credit pack to keep going, or use your own API key.",
+    errInsufficientCredits:
+      "You don't have enough WDIMTM credits for this. Buy a credit pack, or use your own API key.",
+    errBudgetExhausted:
+      "WDIMTM Cloud is paused for now: the service budget is used up. Try again later, or use your own API key.",
     chatSuggestSummarize: "Summarize selection",
     chatSuggestPage: "Summarize page (bounded)",
     chatSuggestWhy: "Why does this matter?",
@@ -137,6 +151,15 @@ const STRINGS = {
     chatStopped: "已停止。",
     stop: "停止",
     topUp: "充值额度",
+    buyCredits: "购买额度",
+    signInCloud: "登录 WDIMTM Cloud",
+    errSignInRequired: "在设置中登录 WDIMTM Cloud，即可使用每月免费额度；也可以改用自己的 API Key。",
+    nudgeFirst: "WDIMTM 额度还剩 {n} 个。免费额度每月重置，需要更多时可以购买额度包。",
+    nudgeLow: "WDIMTM 额度只剩 {n} 个。",
+    nudgeEmpty: "这是你目前最后一个 WDIMTM 额度。",
+    errAllowanceExhausted: "本月的 WDIMTM 免费额度已用完。购买额度包即可继续使用，也可以改用自己的 API Key。",
+    errInsufficientCredits: "WDIMTM 额度不足以完成这次请求。购买额度包，或改用自己的 API Key。",
+    errBudgetExhausted: "WDIMTM Cloud 暂时停用：服务预算已用完。请稍后再试，或改用自己的 API Key。",
     chatSuggestSummarize: "总结选区",
     chatSuggestPage: "总结本页（有界）",
     chatSuggestWhy: "这为什么重要？",

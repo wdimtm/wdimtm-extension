@@ -195,7 +195,8 @@ interface ExplainRequest {
 - 不需要额外权限 —— 扩展从不自己抓屏
 
 ### 网络证据（可选）
-- Provider：`tavily` | `brave` | `serper` | `none`，用你自己的 Key
+- Provider：`tavily` | `brave` | `serper` | `none`，用你自己的 Key（BYOK）
+- WDIMTM Cloud 已包含搜索：无需 Key；核实、研究与事实核查镜头始终搜索，页面对话在开关打开时搜索
 - 供**核实**、**研究**与页面对话使用；以 `WEB EVIDENCE` 注入并附带可引用的 URL
 - 普通「解释」保持离线、单次调用；证据缺失时答案会明说
 - 默认关闭

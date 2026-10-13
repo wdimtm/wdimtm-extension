@@ -44,10 +44,27 @@ export function cloudPath(baseUrl, path) {
 }
 
 /**
+ * Called when the server rejects a session token with 401 (#139). The host
+ * clears its stored session, so the UI stops saying "Signed in as …" for a
+ * session that expired on the server.
+ * @type {((rejectedToken: string) => Promise<void> | void) | null}
+ */
+let sessionRejectedHandler = null;
+
+/**
+ * @param {((rejectedToken: string) => Promise<void> | void) | null} handler
+ */
+export function onCloudSessionRejected(handler) {
+  sessionRejectedHandler = handler;
+}
+
+/**
  * Fetch with WDIMTM Cloud auth + normalized errors.
  * @param {{ baseUrl?: string, accessToken?: string }} config
  * @param {string} path
- * @param {{ method?: string, body?: unknown, accept?: string, signal?: AbortSignal }} [init]
+ * @param {{ method?: string, body?: unknown, accept?: string, signal?: AbortSignal, throwOnError?: boolean }} [init]
+ *   `throwOnError: false` hands back a non-2xx response for routes whose error
+ *   body is part of the contract (redeem).
  * @returns {Promise<Response>}
  */
 export async function cloudFetch(config, path, init = {}) {
@@ -71,11 +88,24 @@ export async function cloudFetch(config, path, init = {}) {
     ...(init.body !== undefined ? { body: JSON.stringify(init.body) } : {}),
   });
 
-  if (!res.ok) {
+  if (res.status === 401 && config.accessToken && sessionRejectedHandler) {
+    // The token is passed so the host only clears this session, not one a
+    // sign-in replaced while the request was in flight.
+    await Promise.resolve(sessionRejectedHandler(config.accessToken)).catch(() => {});
+  }
+
+  if (!res.ok && init.throwOnError !== false) {
     const text = await res.text().catch(() => "");
-    throw new Error(
-      `WDIMTM Cloud request failed (${res.status}): ${text.slice(0, 240)}`
-    );
+    const err = new Error(`WDIMTM Cloud request failed (${res.status}): ${text.slice(0, 240)}`);
+    // The status and the whole body travel with the error: a 402 carries the
+    // quota and a checkout link that the 240-character message may cut (#75).
+    /** @type {any} */ (err).status = res.status;
+    try {
+      /** @type {any} */ (err).body = JSON.parse(text);
+    } catch {
+      /* not JSON: the message is all there is */
+    }
+    throw err;
   }
   return res;
 }
@@ -187,6 +217,66 @@ export async function startCloudPackageCheckout(config, body) {
  */
 export async function reconcileCloudCredits(config) {
   const res = await cloudFetch(config, "/credits/reconcile", { method: "POST", body: {} });
+  return res.json();
+}
+
+/**
+ * Redeem a promotional code for Cloud access (#135). Requires a session.
+ *
+ * Does not throw on a refused code: `already_redeemed`, `code_expired` and the
+ * rest are answers the UI has to put into words, not transport failures.
+ *
+ * @param {{ baseUrl?: string, accessToken?: string }} config
+ * @param {string} code
+ * @returns {Promise<{
+ *   ok: boolean,
+ *   status: number,
+ *   error?: 'code_required' | 'invalid_code' | 'already_redeemed' | 'code_expired' | 'code_exhausted' | 'rate_limited' | string,
+ *   message?: string,
+ *   entitlement?: { type: string, startsAt: string, endsAt: string },
+ *   cloudAccess?: { active: boolean, source: string | null, until: string | null },
+ *   quota?: object,
+ *   plan?: string,
+ * }>}
+ */
+export async function redeemCloudCode(config, code) {
+  const res = await cloudFetch(config, "/redeem", {
+    method: "POST",
+    body: { code: String(code || "").trim() },
+    throwOnError: false,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (res.ok) return { ...data, ok: true, status: res.status };
+  return {
+    ...data,
+    ok: false,
+    status: res.status,
+    error: String(data?.error || (res.status === 401 ? "unauthorized" : "redeem_failed")),
+  };
+}
+
+/**
+ * Everything WDIMTM Cloud stores for this account (#139): profile, synced
+ * snapshot, usage, purchases and research jobs.
+ * @param {{ baseUrl?: string, accessToken?: string }} config
+ * @returns {Promise<object>}
+ */
+export async function exportCloudAccount(config) {
+  const res = await cloudFetch(config, "/account/export");
+  return res.json();
+}
+
+/**
+ * Delete the account and everything stored for it (#139). Cannot be undone;
+ * bought credits that are not spent are lost with it.
+ * @param {{ baseUrl?: string, accessToken?: string }} config
+ * @returns {Promise<{ deleted: boolean }>}
+ */
+export async function deleteCloudAccount(config) {
+  const res = await cloudFetch(config, "/account/delete", {
+    method: "POST",
+    body: { confirm: "delete" },
+  });
   return res.json();
 }
 

@@ -20,14 +20,25 @@ import { DEFAULT_SETTINGS } from "../settings-defaults.js";
 import {
   buildChatSearchQuery,
   buildSearchQuery,
+  chatSearchMeta,
   formatWebEvidence,
-  humanizeSearchError,
   isWebSearchConfigured,
   modeWantsWebSearch,
   runWebSearch,
 } from "../web-search.js";
 import { runChat } from "./chat.js";
 import { runtimeForExecution } from "./registry.js";
+
+/**
+ * WDIMTM Cloud runs web search on the server with its own provider key (#141),
+ * so the extension must not search too: no user key is needed, nothing is
+ * searched twice, and the client cannot hand the server text labelled as
+ * evidence.
+ * @param {string | undefined} runtimeId
+ */
+function searchesServerSide(runtimeId) {
+  return runtimeForExecution(runtimeId).id === "wdimtm-cloud";
+}
 
 /**
  * Configuration and the memory provider are supplied by the caller rather than
@@ -100,9 +111,14 @@ export async function explain(request, opts = {}) {
   const cap = capabilityForMode(mode);
 
   // Optional web search for verify / research (and fact-check lens on explain).
+  // WDIMTM Cloud does this server-side.
   /** @type {import('../lib/web-search.js').WebSearchResult | null} */
   let webSearch = null;
-  if (isWebSearchConfigured(settings) && modeWantsWebSearch(mode, lens.id)) {
+  if (
+    !searchesServerSide(settings.runtime) &&
+    isWebSearchConfigured(settings) &&
+    modeWantsWebSearch(mode, lens.id)
+  ) {
     const query = buildSearchQuery(request.selection, request.page?.title || "");
     webSearch = await runWebSearch({
       provider: settings.webSearchProvider,
@@ -190,7 +206,8 @@ export async function explain(request, opts = {}) {
           : "none",
     capability: cap.kind,
     capabilityStatus: cap.status,
-    webSearch: full.webSearchMeta || { used: false },
+    // Cloud reports the search it ran itself.
+    webSearch: full.webSearchMeta || res.meta?.webSearch || { used: false },
   };
 
   return enriched;
@@ -236,7 +253,8 @@ export async function chat(request, opts = {}) {
 
   /** @type {import('../lib/web-search.js').WebSearchResult | null} */
   let webSearch = null;
-  const searchConfigured = isWebSearchConfigured(settings);
+  const runtimeId = settings.runtime || "mock";
+  const cloudSearch = searchesServerSide(runtimeId);
   const zhAnswer = answerLanguage === "zh_CN";
 
   /** @type {{
@@ -248,14 +266,17 @@ export async function chat(request, opts = {}) {
    *   resultCount?: number,
    *   query?: string,
    * }} */
-  let webSearchMeta = {
-    used: false,
-    status: "not_configured",
-    provider: settings.webSearchProvider || "none",
-  };
+  let webSearchMeta = cloudSearch
+    ? // WDIMTM Cloud searches and writes the WEB SEARCH STATUS block itself.
+      { used: false, status: "delegated" }
+    : {
+        used: false,
+        status: "not_configured",
+        provider: settings.webSearchProvider || "none",
+      };
 
   // Page chat: search every turn when configured (mode "chat").
-  if (searchConfigured && modeWantsWebSearch("chat", lens.id)) {
+  if (!cloudSearch && isWebSearchConfigured(settings) && modeWantsWebSearch("chat", lens.id)) {
     const searchQuery = buildChatSearchQuery(
       lastUser,
       request.selection || "",
@@ -267,33 +288,7 @@ export async function chat(request, opts = {}) {
       query: searchQuery,
       maxResults: settings.webSearchMaxResults || 5,
     });
-    if (webSearch.used && webSearch.hits?.length) {
-      webSearchMeta = {
-        used: true,
-        status: "ok",
-        provider: webSearch.provider,
-        resultCount: webSearch.hits.length,
-        query: webSearch.query,
-      };
-    } else if (webSearch.error) {
-      webSearchMeta = {
-        used: false,
-        status: "failed",
-        provider: webSearch.provider,
-        error: webSearch.error,
-        humanError: humanizeSearchError(webSearch.error, { zh: zhAnswer }),
-        resultCount: 0,
-        query: webSearch.query,
-      };
-    } else {
-      webSearchMeta = {
-        used: false,
-        status: "empty",
-        provider: webSearch.provider,
-        resultCount: 0,
-        query: webSearch.query,
-      };
-    }
+    webSearchMeta = chatSearchMeta(webSearch, { zh: zhAnswer });
   }
 
   const wantStream = settings.stream !== false && typeof opts.onChunk === "function";
@@ -309,9 +304,13 @@ export async function chat(request, opts = {}) {
       webEvidence:
         webSearch && webSearch.used ? formatWebEvidence(webSearch) : undefined,
       webSearchMeta,
+      // Cloud only: the user's page-chat search switch. No key — Cloud has one.
+      ...(cloudSearch
+        ? { cloudSearch: { enabled: settings.webSearchEnabled === true } }
+        : {}),
     },
     {
-      runtime: settings.runtime || "mock",
+      runtime: runtimeId,
       apiBaseUrl: settings.apiBaseUrl,
       apiKey: settings.apiKey,
       model: settings.model,

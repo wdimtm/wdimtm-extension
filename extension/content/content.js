@@ -1071,6 +1071,7 @@ import { CONTENT_CSS } from "./styles.inline.js";
               )}</button>
             </div>`
           : "";
+      const nudge = state.kind === "ok" ? creditNudgeLine(state.nudge) : "";
       const rememberNote = state.remembered
         ? `<div class="wdimtm-toast">${escapeHtml(tr("remembered", "Saved to local memory."))}</div>`
         : "";
@@ -1110,6 +1111,7 @@ import { CONTENT_CSS } from "./styles.inline.js";
           ${memBlock}
           ${follow}
           ${toolbar}
+          ${nudge}
           ${runtime}
         </div>`;
     } else if (state.kind === "research") {
@@ -1117,8 +1119,8 @@ import { CONTENT_CSS } from "./styles.inline.js";
     } else if (state.kind === "error") {
       body = `
         <div class="wdimtm-popover-body">
-          <div class="wdimtm-error">${escapeHtml(state.message)}</div>
-          <div class="wdimtm-actions">${errorActions(state.code)}</div>
+          <div class="wdimtm-error">${escapeHtml(errorText(state))}</div>
+          <div class="wdimtm-actions">${errorActions(state.code, state.reason)}</div>
         </div>`;
     }
 
@@ -1156,6 +1158,7 @@ import { CONTENT_CSS } from "./styles.inline.js";
         if (action === "top-up" && topUpUrl) {
           window.open(topUpUrl, "_blank", "noopener,noreferrer");
         }
+        if (action === "buy-credits") openBuyCredits(state.checkoutUrl);
         if (action === "mem-accept") acceptMemorySuggestion();
         if (action === "mem-dismiss") dismissMemorySuggestion();
         if (action === "copy") copyAnswer();
@@ -1190,6 +1193,82 @@ import { CONTENT_CSS } from "./styles.inline.js";
   }
 
   /**
+   * One quiet line under a hosted answer about where more credits come from
+   * (#40). Below the answer and its toolbar, never in place of them: the user
+   * got what they asked for first.
+   * @param {{ kind?: string, remaining?: number } | undefined} nudge
+   */
+  function creditNudgeLine(nudge) {
+    if (!nudge?.kind) return "";
+    const n = String(Math.max(0, Number(nudge.remaining) || 0));
+    const text =
+      nudge.kind === "empty"
+        ? tr("nudgeEmpty", "That was your last WDIMTM credit for now.")
+        : nudge.kind === "low"
+          ? tr("nudgeLow", "{n} WDIMTM credits left.").replace("{n}", n)
+          : tr(
+              "nudgeFirst",
+              "{n} WDIMTM credits left. Free credits reset every month; buy a credit pack when you need more."
+            ).replace("{n}", n);
+    return `<div class="wdimtm-nudge" role="status"><span>${escapeHtml(text)}</span>
+      <button type="button" class="wdimtm-btn wdimtm-btn-ghost" data-action="buy-credits">${escapeHtml(
+        tr("buyCredits", "Buy credits")
+      )}</button></div>`;
+  }
+
+  /**
+   * The error in the page's language. A 402 is worded by its reason (#75);
+   * everything else keeps the background's message.
+   * @param {{ message?: string, code?: string, reason?: string }} state
+   */
+  function errorText(state) {
+    if (state.code === "sign_in_required") {
+      return tr(
+        "errSignInRequired",
+        "Sign in to WDIMTM Cloud in Settings to start with free monthly credits, or use your own API key."
+      );
+    }
+    if (state.code === "payment_required") {
+      if (state.reason === "budget_exhausted") {
+        return tr(
+          "errBudgetExhausted",
+          "WDIMTM Cloud is paused for now: the service budget is used up. Try again later, or use your own API key."
+        );
+      }
+      if (state.reason === "insufficient_credits") {
+        return tr(
+          "errInsufficientCredits",
+          "You don't have enough WDIMTM credits for this. Buy a credit pack, or use your own API key."
+        );
+      }
+      return tr(
+        "errAllowanceExhausted",
+        "You've used this month's free WDIMTM credits. Buy a credit pack to keep going, or use your own API key."
+      );
+    }
+    return state.message || "";
+  }
+
+  /**
+   * Where "Buy credits" goes: the checkout the server named, else the Cloud
+   * packages in Settings, where the user picks one (#75).
+   * @param {string} [checkoutUrl]
+   */
+  function openBuyCredits(checkoutUrl) {
+    if (checkoutUrl && /^https:\/\//.test(checkoutUrl)) {
+      window.open(checkoutUrl, "_blank", "noopener,noreferrer");
+      return;
+    }
+    try {
+      chrome.runtime
+        .sendMessage({ type: MSG.OPEN_OPTIONS, payload: { section: "cloud" } })
+        .catch(() => {});
+    } catch {
+      /* ignore */
+    }
+  }
+
+  /**
    * What the user can actually do about this failure (#18, #41).
    *
    * Running out of credits is not the same kind of problem as a wrong key or a
@@ -1197,19 +1276,37 @@ import { CONTENT_CSS } from "./styles.inline.js";
    * the buttons mean nothing.
    *
    * @param {string} [code] from classifyRuntimeError
+   * @param {string} [reason] why a 402 was refused
    */
-  function errorActions(code) {
+  function errorActions(code, reason) {
     const btn = (action, key, fallback, primary = false) =>
       `<button type="button" class="wdimtm-btn${
         primary ? "" : " wdimtm-btn-ghost"
       }" data-action="${action}">${escapeHtml(tr(key, fallback))}</button>`;
 
+    if (code === "payment_required") {
+      // Paying does not restart a service the operator's budget stopped.
+      if (reason === "budget_exhausted") {
+        return btn("options", "useOwnKey", "Use my own API key", true) + btn("retry", "retry", "Retry");
+      }
+      return (
+        btn("buy-credits", "buyCredits", "Buy credits", true) +
+        btn("options", "useOwnKey", "Use my own API key")
+      );
+    }
     if (code === "quota") {
       // Two real ways out, and neither of them is retrying the same request.
       return (
         (topUpUrl ? btn("top-up", "topUp", "Top up credits", true) : "") +
         btn("options", "useOwnKey", "Use my own API key", !topUpUrl) +
         btn("retry", "retry", "Retry")
+      );
+    }
+    if (code === "sign_in_required") {
+      // A new install on Cloud: signing in is the free path, BYOK the other.
+      return (
+        btn("buy-credits", "signInCloud", "Sign in to WDIMTM Cloud", true) +
+        btn("options", "useOwnKey", "Use my own API key")
       );
     }
     if (code === "unauthorized" || code === "missing_key" || code === "forbidden") {
@@ -2575,7 +2672,10 @@ import { CONTENT_CSS } from "./styles.inline.js";
         "Extension was reloaded — refresh this page, then open chat again."
       );
     }
-    const msg = err instanceof Error ? err.message : String(err || "Chat failed.");
+    const msg =
+      err instanceof Error
+        ? errorText({ message: err.message, code: err.code, reason: err.reason })
+        : String(err || "Chat failed.");
     return msg.startsWith("Error:") ? msg : `Error: ${msg}`;
   }
 
@@ -2588,7 +2688,12 @@ import { CONTENT_CSS } from "./styles.inline.js";
         type: "wdimtm:chat",
         payload: chatPayload(),
       });
-      if (!res?.ok) throw new Error(res?.error || "Chat failed.");
+      if (!res?.ok) {
+        const err = new Error(res?.error || "Chat failed.");
+        err.code = res?.code || "";
+        err.reason = res?.reason || "";
+        throw err;
+      }
       setLastAssistantContent(
         res.data.reply || res.data.explanation || "",
         res.data.webSearch,
@@ -2984,6 +3089,8 @@ import { CONTENT_CSS } from "./styles.inline.js";
         // The background already classified this; keep the code so the popover
         // can offer the right way out instead of a generic Retry.
         err.code = res?.code || "";
+        err.reason = res?.reason || "";
+        err.checkoutUrl = res?.checkoutUrl || "";
         throw err;
       }
       lastExplanation = res.data.explanation;
@@ -2999,6 +3106,7 @@ import { CONTENT_CSS } from "./styles.inline.js";
         runtime: res.data.runtime,
         lensId: activeLensId,
         truncated: lastTruncated,
+        nudge: res.data.nudge,
       });
       positionPopover(rect);
     } catch (err) {
@@ -3006,6 +3114,8 @@ import { CONTENT_CSS } from "./styles.inline.js";
         kind: "error",
         message: err instanceof Error ? err.message : String(err),
         code: err instanceof Error ? err.code || "" : "",
+        reason: err instanceof Error ? err.reason || "" : "",
+        checkoutUrl: err instanceof Error ? err.checkoutUrl || "" : "",
       });
     }
   }
@@ -3046,6 +3156,7 @@ import { CONTENT_CSS } from "./styles.inline.js";
         runtime: data?.runtime,
         lensId: activeLensId,
         truncated: lastTruncated,
+        nudge: data?.nudge,
       });
       positionPopover(rect);
     };
@@ -3082,6 +3193,8 @@ import { CONTENT_CSS } from "./styles.inline.js";
           kind: "error",
           message: err.message || "Explain failed.",
           code: err.code || "",
+          reason: err.reason || "",
+          checkoutUrl: err.checkoutUrl || "",
         });
       },
       onClosed: () => {

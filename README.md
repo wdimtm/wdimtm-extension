@@ -202,7 +202,8 @@ interface ExplainRequest {
 - No extra permissions — the extension never captures your screen itself
 
 ### Web evidence (optional)
-- Providers: `tavily` | `brave` | `serper` | `none`, under your own key
+- Providers: `tavily` | `brave` | `serper` | `none`, under your own key (BYOK)
+- WDIMTM Cloud includes search: no key; Verify, Research and the fact-check lens always search, page chat when the switch is on
 - Used by **Verify**, **Research** and page chat; injected as `WEB EVIDENCE` with URLs to cite
 - Ordinary Explain stays offline and single-shot; when evidence is missing the answer says so
 - Off by default

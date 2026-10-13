@@ -39,6 +39,10 @@ export const PRIVATE = [
   "tests/unit/cloud-packages.test.mjs",
   "tests/unit/cloud-research.test.mjs",
   "tests/unit/cloud-worker.test.mjs",
+  "tests/unit/cloud-search.test.mjs",
+  "tests/unit/cloud-redeem.test.mjs",
+  "tests/unit/cloud-paid-flow.test.mjs",
+  "tests/unit/cloud-webhook.test.mjs",
   // Stands in for the private backend.
   "scripts/wdimtm-cloud-mock-server.mjs",
 ];
@@ -50,6 +54,8 @@ export const DROP_SCRIPTS = [
   "cloud:deploy",
   "cloud:migrate",
   "cloud:migrate:remote",
+  "test:cloud",
+  "check:agentaab",
 ];
 
 /**

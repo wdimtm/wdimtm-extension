@@ -126,8 +126,8 @@ Checked against the PromptaaS API reference rather than assumed:
 | Response mode | `blocking` only — no streaming, no async run handle |
 | Run status | **No endpoint.** The answer comes back from the execute call |
 | Cancel | **No endpoint** |
-| Auth | `Authorization: Bearer pk_app_…` public runtime token |
-| Attribution | `user` field — WDIMTM sends `auth:wdimtm:{userId}` so quota and credits are per user |
+| Auth | `Authorization: Bearer sk_app_…` server key (`UPSTREAM_API_KEY`), no `Origin` header — the gateway refuses an `sk_app_` that carries one |
+| Attribution | `on_behalf_of` field — WDIMTM sends `auth:wdimtm:{userId}` so quota and credits are per user. The gateway only honors it from an `sk_app_` (#129) |
 | Denial | `402` with `reason: free_quota_exhausted` (end user) or `budget_cap_exhausted` (creator) |
 
 So the adapter declares `execution: "blocking"` and returns the terminal state from

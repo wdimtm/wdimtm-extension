@@ -16,6 +16,8 @@ import {
 } from "../lib/settings.js";
 import {
   buildUserDataSnapshot,
+  clearRejectedCloudSession,
+  forgetCloudSession,
   getAccountMode,
   getAuthProvider,
   getSyncProvider,
@@ -31,7 +33,13 @@ import {
   saveThread,
 } from "../lib/chat.js";
 import { sanitizeThreadAttachments } from "../../core/images.js";
-import { fetchCloudAccount, resolveCloudConfig } from "../../core/cloud.js";
+import {
+  deleteCloudAccount,
+  exportCloudAccount,
+  fetchCloudAccount,
+  onCloudSessionRejected,
+  resolveCloudConfig,
+} from "../../core/cloud.js";
 import {
   cancelResearchJob,
   createResearchJobFromExplain,
@@ -44,10 +52,15 @@ import { buildMergePrompt, parseMergeResponse } from "../../core/memory-import/m
 import { buildProfilePrompt, parseProfileResponse } from "../../core/memory-import/profile.js";
 import { classifyImportFailure } from "../../core/memory-import/runner.js";
 import { classifyRuntimeError } from "../../core/runtime-errors.js";
+import { creditNudge } from "../../core/funnel.js";
 import { resolveServiceMode } from "../../core/service-mode.js";
 import { testRuntimeConnection } from "../../core/runtime-test.js";
 import { chat, explain } from "../../core/runtime/adapter.js";
 import { complete, importRuntimeStatus } from "../../core/runtime/completion.js";
+
+// An expired or revoked Cloud session is forgotten on the first 401 (#139),
+// so Settings asks for sign-in instead of showing a dead "Signed in as …".
+onCloudSessionRejected(clearRejectedCloudSession);
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   handleMessage(msg)
@@ -56,7 +69,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       // Same classification as the streaming path — the non-streaming explain
       // and every options action land here, and a raw string helps nobody (#18).
       const classified = await classifyForCurrentMode(err);
-      sendResponse({ ok: false, error: classified.message, code: classified.code });
+      sendResponse({ ok: false, ...errorPayload(classified) });
     });
   return true;
 });
@@ -76,9 +89,55 @@ async function runtimeDeps() {
   };
 }
 
+/** Local first-run funnel state (#40). Never leaves the browser. */
+const FUNNEL_KEY = "wdimtm.funnel";
+
+/**
+ * Attach the top-up line, if any, to a hosted answer (#40). The first hosted
+ * answer is remembered so its "credits are there when you need more" line
+ * shows once. A storage failure costs the line, never the answer.
+ * @template {{ runtime?: string, meta?: any }} R
+ * @param {R} response
+ * @returns {Promise<R>}
+ */
+async function withCreditNudge(response) {
+  if (response?.runtime !== "wdimtm-cloud") return response;
+  try {
+    const { [FUNNEL_KEY]: funnel } = await chrome.storage.local.get({ [FUNNEL_KEY]: {} });
+    const firstHostedAnswer = !funnel?.firstHostedAnswerAt;
+    if (firstHostedAnswer) {
+      await chrome.storage.local.set({
+        [FUNNEL_KEY]: { ...funnel, firstHostedAnswerAt: new Date().toISOString() },
+      });
+    }
+    const nudge = creditNudge({
+      runtime: response.runtime,
+      entitlement: response.meta?.entitlement,
+      firstHostedAnswer,
+    });
+    return nudge ? { ...response, nudge } : response;
+  } catch {
+    return response;
+  }
+}
+
+/**
+ * What a classified error carries to a page: the words, the code that picks
+ * its buttons, and for a 402 why it was refused and where to pay (#75).
+ * @param {import('../../core/runtime-errors.js').ClassifiedRuntimeError} classified
+ */
+function errorPayload(classified) {
+  return {
+    error: classified.message,
+    code: classified.code,
+    ...(classified.reason ? { reason: classified.reason } : {}),
+    ...(classified.checkoutUrl ? { checkoutUrl: classified.checkoutUrl } : {}),
+  };
+}
+
 /**
  * @param {unknown} err
- * @returns {Promise<{ code: string, message: string }>}
+ * @returns {Promise<import('../../core/runtime-errors.js').ClassifiedRuntimeError>}
  */
 async function classifyForCurrentMode(err) {
   const settings = await getSettings().catch(() => null);
@@ -100,11 +159,13 @@ chrome.runtime.onConnect.addListener((port) => {
       await servePortStream(port, {
         validate: () => (request?.selection ? null : "Missing selection."),
         run: async ({ onChunk }) =>
-          explain(request, {
-            ...(await runtimeDeps()),
-            signal: canceler.signal,
-            onChunk,
-          }),
+          withCreditNudge(
+            await explain(request, {
+              ...(await runtimeDeps()),
+              signal: canceler.signal,
+              onChunk,
+            })
+          ),
         textOf: (response) => response.explanation,
         onError: (err) => postRuntimeError(port, err, canceler.signal),
       });
@@ -158,11 +219,7 @@ async function postRuntimeError(port, err, canceled) {
   if (canceled.aborted) return;
 
   const classified = await classifyForCurrentMode(err);
-  safePortPost(port, {
-    type: "error",
-    error: classified.message,
-    code: classified.code,
-  });
+  safePortPost(port, { type: "error", ...errorPayload(classified) });
 }
 
 /**
@@ -173,7 +230,7 @@ async function handleMessage(msg) {
     case MSG.EXPLAIN: {
       const request = msg.payload;
       if (!request?.selection) return { ok: false, error: "Missing selection." };
-      const response = await explain(request, await runtimeDeps());
+      const response = await withCreditNudge(await explain(request, await runtimeDeps()));
       return { ok: true, data: response };
     }
 
@@ -241,6 +298,11 @@ async function handleMessage(msg) {
     }
 
     case MSG.OPEN_OPTIONS: {
+      // "Buy credits" lands on the Cloud packages, not the top of Settings (#75).
+      if (msg.payload?.section === "cloud") {
+        await chrome.tabs.create({ url: chrome.runtime.getURL("options/options.html#cloud") });
+        return { ok: true };
+      }
       await chrome.runtime.openOptionsPage();
       return { ok: true };
     }
@@ -511,8 +573,12 @@ async function handleMessage(msg) {
     case MSG.ACCOUNT_STATUS: {
       const mode = await getAccountMode();
       const auth = await getAuthProvider();
-      const session = await auth.getSession();
+      const stored = await auth.getSession();
       const settings = await getSettings();
+      const account = await cloudAccountSummary(settings, stored);
+      // A 401 from that call has just cleared an expired session (#139), so
+      // report what is stored now rather than what was read before it.
+      const session = stored && !account ? await auth.getSession() : stored;
       return {
         ok: true,
         data: {
@@ -532,7 +598,7 @@ async function handleMessage(msg) {
           // #51: a configured cloud endpoint (hosted or self-hosted) makes
           // sign-in real rather than a stub.
           cloudReady: Boolean(settings.cloudBaseUrl?.trim()),
-          account: await cloudAccountSummary(settings, session),
+          account,
         },
       };
     }
@@ -589,6 +655,24 @@ async function handleMessage(msg) {
     case MSG.ACCOUNT_SIGN_OUT: {
       const auth = await getAuthProvider();
       await auth.signOut();
+      return { ok: true };
+    }
+
+    case MSG.ACCOUNT_EXPORT:
+    case MSG.ACCOUNT_DELETE: {
+      const settings = await getSettings();
+      const session = await (await getAuthProvider()).getSession();
+      if (!session?.accessToken || !settings.cloudBaseUrl?.trim()) {
+        return { ok: false, error: "Sign in to WDIMTM Cloud first." };
+      }
+      const config = { baseUrl: settings.cloudBaseUrl, accessToken: session.accessToken };
+      if (msg.type === MSG.ACCOUNT_EXPORT) {
+        return { ok: true, data: await exportCloudAccount(config) };
+      }
+      await deleteCloudAccount(config);
+      // Local data stays: deleting the Cloud account is not a device reset.
+      await forgetCloudSession();
+      await setAccountMode("local");
       return { ok: true };
     }
 

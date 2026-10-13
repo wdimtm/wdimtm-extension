@@ -94,15 +94,15 @@ describe("request deadlines reach the runtimes", () => {
 });
 
 describe("quota exhaustion offers a way out (#41)", () => {
-  it("classifies a hosted 402 as a quota problem in cloud mode", () => {
+  it("classifies a hosted 402 as a payment problem in cloud mode", () => {
     const classified = classifyRuntimeError(
       new Error("WDIMTM Cloud request failed (402): insufficient_credits"),
       "cloud"
     );
-    assert.equal(classified.code, "quota");
+    assert.equal(classified.code, "payment_required");
     assert.match(classified.message, /credits/i);
     // Never a dead end: the copy names the alternatives.
-    assert.match(classified.message, /own API key|plan|reset/i);
+    assert.match(classified.message, /own API key/i);
   });
 
   it("points top-up at whichever paid path the user is actually on", () => {

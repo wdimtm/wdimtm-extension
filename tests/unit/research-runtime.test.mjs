@@ -119,7 +119,6 @@ describe("PromptAAS research runtime adapter", () => {
         const runtime = createPromptAASResearchRuntime({
           baseUrl,
           appSlug: "wdimtm-research",
-          publicToken: "pk_app_token",
           serverToken: "sk_app_token",
           userId: "usr_1",
         });
@@ -161,6 +160,18 @@ describe("PromptAAS research runtime adapter", () => {
     assert.match(sent.inputs.messages[1].content, /SELECTION\nSovereign AI budgets are rising/);
   });
 
+  it("refuses to run without the server key, even given a public token (#129)", () => {
+    // on_behalf_of is only honored from an sk_app_; a pk_app_ fallback would let
+    // anyone holding the public token spend as any user.
+    assert.throws(
+      () =>
+        createPromptAASResearchRuntime(
+          /** @type {any} */ ({ baseUrl: "https://p.example", appSlug: "r", publicToken: "pk" })
+        ),
+      /server key/
+    );
+  });
+
   it("can target a Workflow app instead of a Single Agent", async () => {
     /** @type {string[]} */
     const calls = [];
@@ -175,7 +186,7 @@ describe("PromptAAS research runtime adapter", () => {
         createPromptAASResearchRuntime({
           baseUrl,
           appSlug: "r",
-          publicToken: "pk",
+          serverToken: "sk_app_test",
           endpoint: "workflow",
         }).start(INPUT)
     );
@@ -196,7 +207,7 @@ describe("PromptAAS research runtime adapter", () => {
         );
       },
       (baseUrl) =>
-        createPromptAASResearchRuntime({ baseUrl, appSlug: "r", publicToken: "pk" }).start(
+        createPromptAASResearchRuntime({ baseUrl, appSlug: "r", serverToken: "sk_app_test" }).start(
           INPUT
         )
     );
@@ -226,7 +237,7 @@ describe("PromptAAS research runtime adapter", () => {
           const runtime = createPromptAASResearchRuntime({
             baseUrl,
             appSlug: "r",
-            publicToken: "pk",
+            serverToken: "sk_app_test",
           });
           const ref = await runtime.start(INPUT);
           assert.equal(ref.state.state, "failed");
@@ -246,7 +257,7 @@ describe("PromptAAS research runtime adapter", () => {
         const runtime = createPromptAASResearchRuntime({
           baseUrl,
           appSlug: "r",
-          publicToken: "pk",
+          serverToken: "sk_app_test",
         });
         const ref = await runtime.start(INPUT);
         assert.equal(ref.state.state, "failed");
@@ -259,7 +270,7 @@ describe("PromptAAS research runtime adapter", () => {
     const runtime = createPromptAASResearchRuntime({
       baseUrl: "https://p.example",
       appSlug: "r",
-      publicToken: "pk",
+      serverToken: "sk_app_test",
     });
     // PromptaaS has no cancel endpoint; WDIMTM stops waiting, it does not stop
     // the run. Pretending otherwise would bill a user for work they canceled
@@ -279,7 +290,7 @@ describe("PromptAAS research runtime adapter", () => {
       },
       (baseUrl) =>
         runResearchToCompletion(
-          createPromptAASResearchRuntime({ baseUrl, appSlug: "r", publicToken: "pk" }),
+          createPromptAASResearchRuntime({ baseUrl, appSlug: "r", serverToken: "sk_app_test" }),
           INPUT,
           { pollMs: 0 }
         )

@@ -156,6 +156,11 @@ Concrete question 2?
 
 Settings: `webSearchEnabled`, `webSearchProvider` (`tavily` \| `brave` \| `serper`), `webSearchApiKey`.
 
+These configure **BYOK** search only. In WDIMTM Cloud mode the extension does not search:
+Cloud searches server-side with its own key (#141, see
+[`cloud-api-contract.md`](cloud-api-contract.md)), and `webSearchEnabled` only decides
+whether page chat searches each turn.
+
 When enabled and mode is `verify` / `research` / `chat` (or fact-check lens on explain):
 
 1. Build query from selection (+ title), or for chat: latest user message (+ selection/title)

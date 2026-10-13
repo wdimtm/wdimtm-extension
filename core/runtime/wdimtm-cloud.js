@@ -79,9 +79,18 @@ export async function explainWithWdimtmCloud(request, config) {
 
 /**
  * Page chat over the same cloud contract.
+ *
+ * `cloudSearch` asks the server to run this turn's web search (#141). The
+ * server builds the query from the last user turn plus the selection and page
+ * title, so those ride along; the system prompt arrives without a search
+ * section and the server appends one.
  * @param {{
  *   system: string,
  *   messages: Array<{ role: 'user' | 'assistant', content: string }>,
+ *   selection?: string,
+ *   page?: { title?: string },
+ *   answerLanguage?: string,
+ *   cloudSearch?: { enabled: boolean },
  * }} request
  * @param {{
  *   baseUrl: string,
@@ -89,9 +98,19 @@ export async function explainWithWdimtmCloud(request, config) {
  *   onChunk?: (text: string) => void,
  *   signal?: AbortSignal,
  * }} config
- * @returns {Promise<{ reply: string, runtime: string, truncated: boolean }>}
+ * @returns {Promise<{ reply: string, runtime: string, truncated: boolean, webSearch?: object }>}
  */
 export async function chatWithWdimtmCloud(request, config) {
+  const search = request.cloudSearch
+    ? {
+        search: {
+          enabled: request.cloudSearch.enabled === true,
+          selection: String(request.selection || "").slice(0, 4000),
+          pageTitle: String(request.page?.title || "").slice(0, 300),
+          ...(request.answerLanguage ? { answerLanguage: request.answerLanguage } : {}),
+        },
+      }
+    : {};
   const wantStream = typeof config.onChunk === "function";
   const deadline = createRequestTimeout({ externalSignal: config.signal });
   const res = await cloudFetch(
@@ -100,7 +119,7 @@ export async function chatWithWdimtmCloud(request, config) {
     {
       method: "POST",
       accept: wantStream ? "text/event-stream, application/json" : "application/json",
-      body: { system: request.system, messages: request.messages, stream: wantStream },
+      body: { system: request.system, messages: request.messages, stream: wantStream, ...search },
       signal: deadline.signal,
     }
   ).catch((err) => {
@@ -121,6 +140,7 @@ export async function chatWithWdimtmCloud(request, config) {
         reply: streamed.explanation,
         runtime: "wdimtm-cloud",
         truncated: Boolean(streamed.truncated),
+        ...cloudWebSearch(streamed.meta),
       };
     } catch (err) {
       throw deadline.signal.aborted ? describeAbort(deadline) : err;
@@ -132,7 +152,21 @@ export async function chatWithWdimtmCloud(request, config) {
   const data = await res.json().finally(() => deadline.settle());
   const reply = data.reply || data.explanation || data.content || "";
   if (!reply) throw new Error("WDIMTM Cloud chat response was empty.");
-  return { reply, runtime: "wdimtm-cloud", truncated: data.truncated === true };
+  return {
+    reply,
+    runtime: "wdimtm-cloud",
+    truncated: data.truncated === true,
+    ...cloudWebSearch(data.meta),
+  };
+}
+
+/**
+ * The search the server ran for this chat turn, when it reports one.
+ * @param {unknown} meta
+ */
+function cloudWebSearch(meta) {
+  const webSearch = /** @type {{ webSearch?: unknown } | undefined} */ (meta)?.webSearch;
+  return webSearch && typeof webSearch === "object" ? { webSearch } : {};
 }
 
 /**

@@ -89,6 +89,14 @@
             </button>
           </div>
           <p class="hint" id="account-sync-meta"></p>
+          <div class="actions">
+            <button type="button" id="account-export" class="btn ghost" data-i18n="accountExport">
+              Download my Cloud data
+            </button>
+            <button type="button" id="account-delete" class="btn ghost danger" data-i18n="accountDelete">
+              Delete Cloud account
+            </button>
+          </div>
         </div>
         <p class="hint" data-i18n="accountExportHint">
           Export / Import below moves data between browsers without an account.
@@ -294,6 +302,28 @@
           <div id="cloud-packages" class="cloud-packages" aria-live="polite"></div>
           <p id="cloud-packages-meta" class="hint" hidden></p>
 
+          <div id="cloud-redeem" class="cloud-redeem" hidden>
+            <label class="field">
+              <span data-i18n="cloudRedeemLabel">Have a code? Redeem it for Cloud access.</span>
+              <span class="cloud-redeem-row">
+                <input
+                  type="text"
+                  id="cloud-redeem-code"
+                  autocomplete="off"
+                  autocapitalize="characters"
+                  spellcheck="false"
+                  maxlength="80"
+                  data-i18n-placeholder="cloudRedeemPlaceholder"
+                  placeholder="Enter your code"
+                />
+                <button type="button" id="cloud-redeem-btn" class="btn" data-i18n="cloudRedeemButton">
+                  Redeem
+                </button>
+              </span>
+            </label>
+            <p id="cloud-redeem-status" class="hint" role="status" aria-live="polite"></p>
+          </div>
+
           <details id="cloud-advanced" class="cloud-advanced">
             <summary data-i18n="cloudAdvanced">Advanced / self-hosted</summary>
             <p class="hint" data-i18n="cloudSelfHosted">
@@ -346,14 +376,21 @@
         </label>
 
         <h2 id="sec-web-search" data-i18n="webSearchTitle">Web search (Verify / Research / Chat)</h2>
-        <p class="hint" data-i18n="webSearchHint">
+        <p class="hint" id="web-search-byok-hint" data-i18n="webSearchHint">
           Optional. When enabled, Verify, Research, and page chat fetch live snippets and inject them as WEB
           EVIDENCE. Normal Explain stays offline single-shot.
         </p>
+        <!-- WDIMTM Cloud searches server-side with its own key (#141). -->
+        <p class="hint" id="web-search-cloud-note" data-i18n="webSearchCloudIncluded" hidden>
+          Included with WDIMTM Cloud — no search API key needed. Verify, Research, and the fact-check
+          lens always search the web. Turn on the switch below to also search on each page-chat turn.
+        </p>
         <label class="field row">
           <input type="checkbox" name="webSearchEnabled" id="webSearchEnabled" />
-          <span data-i18n="webSearchEnabled">Enable web search for Verify / Research / Chat</span>
+          <span id="web-search-enabled-byok" data-i18n="webSearchEnabled">Enable web search for Verify / Research / Chat</span>
+          <span id="web-search-enabled-cloud" data-i18n="webSearchEnabledCloud" hidden>Search the web on each page-chat turn</span>
         </label>
+        <div id="web-search-byok-fields">
         <label class="field">
           <span data-i18n="webSearchProvider">Provider</span>
           <select name="webSearchProvider" id="webSearchProvider">
@@ -385,6 +422,7 @@
             value="5"
           />
         </label>
+        </div>
 
         <h2 id="sec-language" data-i18n="languageTitle">Language</h2>
         <p class="hint" data-i18n="languageHint">
@@ -646,6 +684,11 @@
           <li data-i18n="privacy4b">
             WDIMTM Cloud: the explain payload goes to cloud.wdimtm.com, which runs the model and
             meters credits. Sign-in uses your Google account email and id only.
+          </li>
+          <li data-i18n="privacy4c">
+            WDIMTM Cloud web search: for Verify, Research, the fact-check lens, and page chat with web
+            search on, Cloud sends a search query built from your selection, page title, and chat
+            message to its search provider (Tavily) on your behalf.
           </li>
           <li data-i18n="privacy5">
             Local memories live in chrome.storage.local. Nothing is auto-remembered.

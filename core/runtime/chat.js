@@ -21,7 +21,8 @@ import { runtimeForExecution } from "./registry.js";
  *   messages: Array<{ role: 'user' | 'assistant', content: string }>,
  *   answerLanguage?: string,
  *   webEvidence?: string,
- *   webSearchMeta?: { used?: boolean, provider?: string, error?: string, resultCount?: number },
+ *   webSearchMeta?: { used?: boolean, status?: string, provider?: string, error?: string, resultCount?: number },
+ *   cloudSearch?: { enabled: boolean },
  * }} request
  * @param {{
  *   runtime: string,
@@ -78,8 +79,10 @@ export async function runChat(request, config) {
     }
   );
 
+  // WDIMTM Cloud runs the search itself and reports it (#141); every other
+  // runtime gets the verdict of the search the extension ran.
   return {
     ...result,
-    webSearch: request.webSearchMeta || { used: false },
+    webSearch: result.webSearch || request.webSearchMeta || { used: false },
   };
 }

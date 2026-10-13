@@ -146,6 +146,43 @@ export async function runWebSearch(opts) {
 }
 
 /**
+ * The page-chat verdict for one search run: what the chat prompt's
+ * WEB SEARCH STATUS block and the chat UI's search label read. Shared by the
+ * extension (BYOK) and WDIMTM Cloud so both describe a search the same way.
+ * @param {WebSearchResult} result
+ * @param {{ zh?: boolean }} [opts]
+ */
+export function chatSearchMeta(result, opts = {}) {
+  if (result.used && result.hits?.length) {
+    return {
+      used: true,
+      status: "ok",
+      provider: result.provider,
+      resultCount: result.hits.length,
+      query: result.query,
+    };
+  }
+  if (result.error) {
+    return {
+      used: false,
+      status: "failed",
+      provider: result.provider,
+      error: result.error,
+      humanError: humanizeSearchError(result.error, { zh: Boolean(opts.zh) }),
+      resultCount: 0,
+      query: result.query,
+    };
+  }
+  return {
+    used: false,
+    status: "empty",
+    provider: result.provider,
+    resultCount: 0,
+    query: result.query,
+  };
+}
+
+/**
  * Format hits for the model context builder.
  * @param {WebSearchResult} result
  * @returns {string}
@@ -208,6 +245,11 @@ export function humanizeSearchError(error, opts = {}) {
     return zh
       ? "缺少搜索 API Key（Options → Web search）"
       : "Missing search API key (Options → Web search)";
+  }
+  if (e === "search_unavailable") {
+    // WDIMTM Cloud has no search provider configured (or it is down). There is
+    // nothing for the user to fix in Options, so do not send them there.
+    return zh ? "WDIMTM Cloud 网页搜索暂不可用" : "WDIMTM Cloud web search is temporarily unavailable";
   }
   if (e === "empty_query") {
     return zh ? "搜索词为空" : "Empty search query";

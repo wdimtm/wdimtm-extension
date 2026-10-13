@@ -88,6 +88,8 @@ export function consumePortStream(port, handlers = {}) {
       // The worker already classified this; the code is what lets the UI offer
       // the right way out instead of a generic Retry.
       if (msg.code) /** @type {any} */ (err).code = msg.code;
+      if (msg.reason) /** @type {any} */ (err).reason = msg.reason;
+      if (msg.checkoutUrl) /** @type {any} */ (err).checkoutUrl = msg.checkoutUrl;
       fail(err);
     }
   });

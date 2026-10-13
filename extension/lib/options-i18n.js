@@ -41,6 +41,12 @@ export const OPTIONS_STRINGS = {
     syncNow: "Sync now",
     accountExportHint:
       "Export / Import below moves data between browsers without an account.",
+    accountExport: "Download my Cloud data",
+    accountDelete: "Delete Cloud account",
+    accountDeleteConfirm:
+      "Delete your WDIMTM Cloud account? This erases your synced memories, usage history, research jobs and any unspent purchased credits on WDIMTM Cloud. Data on this browser is kept. This cannot be undone.",
+    accountDeleted: "Cloud account deleted. Local data kept.",
+    accountExported: "Cloud data downloaded.",
 
     productTitle: "Product",
     enableGlobal: "Enable WDIMTM globally",
@@ -74,6 +80,9 @@ export const OPTIONS_STRINGS = {
     webSearchApiKey: "Search API key",
     webSearchApiKeyPlaceholder: "Tavily / Brave / Serper key",
     webSearchMaxResults: "Max results",
+    webSearchCloudIncluded:
+      "Included with WDIMTM Cloud — no search API key needed. Verify, Research, and the fact-check lens always search the web. Turn on the switch below to also search on each page-chat turn.",
+    webSearchEnabledCloud: "Search the web on each page-chat turn",
 
     aiAccessTitle: "AI access",
     aiAccessHint:
@@ -108,6 +117,22 @@ export const OPTIONS_STRINGS = {
     cloudPurchasesEmpty: "No purchases yet.",
     cloudCreditsUnit: "credits",
     cloudRefreshCredits: "I have paid — check now",
+    cloudRedeemLabel: "Have a code? Redeem it for Cloud access.",
+    cloudRedeemPlaceholder: "Enter your code",
+    cloudRedeemButton: "Redeem",
+    cloudRedeemWorking: "Redeeming…",
+    cloudRedeemEmpty: "Enter a code first.",
+    cloudRedeemSuccess: "Cloud access activated until {date}.",
+    cloudRedeemInvalid: "That code is not valid. Check it and try again.",
+    cloudRedeemAlready: "This account has already used this code.",
+    cloudRedeemExpired: "This code has expired.",
+    cloudRedeemExhausted: "This code has reached its redemption limit.",
+    cloudRedeemRateLimited: "Too many attempts. Try again in {minutes} min.",
+    cloudRedeemUnconfirmed:
+      "We could not confirm the redemption. Try again: a code is never applied twice.",
+    cloudRedeemUnavailable: "Codes cannot be redeemed right now. Try again shortly.",
+    cloudRedeemFailed: "Could not redeem the code. Try again later.",
+    cloudAccessUntil: "Cloud access until {date}",
     cloudAdvanced: "Advanced / self-hosted",
     byokPreset: "Provider",
     byokPresetCustom: "Custom…",
@@ -381,6 +406,8 @@ export const OPTIONS_STRINGS = {
       "BYOK: the explain payload (including relevant memories + lens) is sent to your configured OpenAI-compatible endpoint. Keys live in chrome.storage and are not product-cloud by default.",
     privacy4b:
       "WDIMTM Cloud: the explain payload goes to cloud.wdimtm.com, which runs the model and meters credits. Sign-in uses your Google account email and id only.",
+    privacy4c:
+      "WDIMTM Cloud web search: for Verify, Research, the fact-check lens, and page chat with web search on, Cloud sends a search query built from your selection, page title, and chat message to its search provider (Tavily) on your behalf.",
     privacy5:
       "Local memories live in chrome.storage.local. Nothing is auto-remembered from what you read — only explicit Remember this or settings entries.",
     privacy6:
@@ -429,6 +456,12 @@ export const OPTIONS_STRINGS = {
     syncNow: "立即同步",
     accountExportHint:
       "不想登录的话，可以用下方的「导出 / 导入」在浏览器之间迁移数据。",
+    accountExport: "下载我的云端数据",
+    accountDelete: "删除云端账户",
+    accountDeleteConfirm:
+      "确定删除 WDIMTM Cloud 账户？云端同步的记忆、用量记录、研究任务以及尚未用完的已购点数都会被删除。本浏览器里的数据会保留。此操作无法撤销。",
+    accountDeleted: "云端账户已删除，本地数据仍保留。",
+    accountExported: "云端数据已下载。",
 
     navContents: "目录",
     navAccount: "账户",
@@ -477,6 +510,9 @@ export const OPTIONS_STRINGS = {
     webSearchApiKey: "搜索 API Key",
     webSearchApiKeyPlaceholder: "Tavily / Brave / Serper 密钥",
     webSearchMaxResults: "最多结果条数",
+    webSearchCloudIncluded:
+      "WDIMTM Cloud 已包含网页搜索，无需搜索 API Key。核实、研究与事实核查镜头始终会搜索网页；打开下面的开关，页面对话每一轮也会搜索。",
+    webSearchEnabledCloud: "页面对话每一轮都搜索网页",
 
     aiAccessTitle: "AI 接入",
     aiAccessHint:
@@ -508,6 +544,21 @@ export const OPTIONS_STRINGS = {
     cloudPurchasesEmpty: "还没有购买记录。",
     cloudCreditsUnit: "额度",
     cloudRefreshCredits: "我已付款 — 立即检查",
+    cloudRedeemLabel: "有兑换码？兑换 Cloud 使用权。",
+    cloudRedeemPlaceholder: "输入兑换码",
+    cloudRedeemButton: "兑换",
+    cloudRedeemWorking: "正在兑换…",
+    cloudRedeemEmpty: "请先输入兑换码。",
+    cloudRedeemSuccess: "Cloud 使用权已开通，有效期至 {date}。",
+    cloudRedeemInvalid: "兑换码无效，请检查后重试。",
+    cloudRedeemAlready: "这个账号已经用过这个兑换码。",
+    cloudRedeemExpired: "这个兑换码已过期。",
+    cloudRedeemExhausted: "这个兑换码的兑换次数已用完。",
+    cloudRedeemRateLimited: "尝试次数过多，请 {minutes} 分钟后再试。",
+    cloudRedeemUnconfirmed: "未能确认兑换结果。请重试：同一个兑换码不会被重复使用。",
+    cloudRedeemUnavailable: "暂时无法兑换，请稍后再试。",
+    cloudRedeemFailed: "兑换失败，请稍后再试。",
+    cloudAccessUntil: "Cloud 使用权有效期至 {date}",
     cloudAdvanced: "高级 / 自托管",
     byokPreset: "服务商",
     byokPresetCustom: "自定义…",
@@ -772,6 +823,8 @@ export const OPTIONS_STRINGS = {
       "自备密钥（BYOK）：解释请求（含相关记忆与镜头）会发往你配置的 OpenAI 兼容端点。密钥保存在 chrome.storage，默认不同步到产品云。",
     privacy4b:
       "WDIMTM Cloud：解释请求发往 cloud.wdimtm.com，由它调用模型并扣减额度。登录只读取 Google 账号的邮箱和 ID。",
+    privacy4c:
+      "WDIMTM Cloud 网页搜索：在核实、研究、事实核查镜头，以及开启网页搜索的页面对话中，Cloud 会把由你的选区、页面标题和对话消息生成的搜索词，代你发送给它的搜索服务商（Tavily）。",
     privacy5:
       "本地记忆保存在 chrome.storage.local。不会自动记住你读过的内容——只有显式的「记住这个」或设置里的条目。",
     privacy6:
@@ -804,6 +857,37 @@ export const OPTIONS_STRINGS = {
  * @param {string} key
  * @param {'en' | 'zh_CN'} locale
  */
+/**
+ * The string key for a refused redemption (#135). Anything unexpected falls
+ * back to a generic failure rather than echoing a server message.
+ * @param {string | undefined} error the `error` code from POST /v1/redeem
+ */
+export function redeemErrorKey(error) {
+  switch (error) {
+    case "code_required":
+      return "cloudRedeemEmpty";
+    case "invalid_code":
+      return "cloudRedeemInvalid";
+    case "already_redeemed":
+      return "cloudRedeemAlready";
+    case "code_expired":
+      return "cloudRedeemExpired";
+    case "code_exhausted":
+      return "cloudRedeemExhausted";
+    case "rate_limited":
+      return "cloudRedeemRateLimited";
+    case "redeem_unconfirmed":
+      return "cloudRedeemUnconfirmed";
+    case "redeem_unavailable":
+    case "redeem_not_configured":
+      return "cloudRedeemUnavailable";
+    case "unauthorized":
+      return "cloudNeedSignIn";
+    default:
+      return "cloudRedeemFailed";
+  }
+}
+
 export function ot(key, locale = "en") {
   const table = OPTIONS_STRINGS[locale] || OPTIONS_STRINGS.en;
   return table[key] || OPTIONS_STRINGS.en[key] || key;

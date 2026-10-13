@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Payment received — WDIMTM</title>
+    <meta name="robots" content="noindex" />
+    <meta name="theme-color" content="#f3f2f2" />
+    <link rel="icon" href="../favicon.png" type="image/png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Lora:ital,wght@0,400;0,600;1,400&family=Noto+Serif+SC:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../styles.css" />
+    <script>
+      (function () {
+        try {
+          var q = new URLSearchParams(location.search).get("lang");
+          var stored = localStorage.getItem("wdimtm-landing-lang");
+          var nav = (navigator.languages && navigator.languages[0]) || navigator.language || "en";
+          var zh = /^zh/i.test(String(q || stored || nav || "en").replace(/_/g, "-"));
+          document.documentElement.lang = zh ? "zh-CN" : "en";
+          document.documentElement.dataset.lang = zh ? "zh_CN" : "en";
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <header class="site-header" id="top">
+      <div class="wrap nav">
+        <a class="brand" href="../" aria-label="WDIMTM home"><span>WDIMTM</span></a>
+      </div>
+    </header>
+
+    <!--
+      Agentaab's checkout returns here (#139). Credits are granted by the
+      payment itself, not by this page: the extension picks them up on its
+      own, or when the user clicks "I have paid" in Settings.
+    -->
+    <main>
+      <section class="wrap legal" id="paid">
+        <p class="kicker" data-en="WDIMTM Cloud" data-zh="WDIMTM Cloud">WDIMTM Cloud</p>
+        <h1 data-en="Payment received" data-zh="付款已完成">Payment received</h1>
+        <p
+          class="lede"
+          data-en="Your credits are on their way to your WDIMTM account. You can close this tab and go back to what you were reading."
+          data-zh="点数正在加到你的 WDIMTM 账户。你可以关闭这个标签页，回到刚才在读的内容。"
+        >
+          Your credits are on their way to your WDIMTM account. You can close this tab.
+        </p>
+        <p
+          data-en="The extension adds them within a minute or two. If the balance in Settings has not changed after that, open Settings → AI access and click “I have paid — check now”."
+          data-zh="扩展会在一两分钟内把点数加上。如果之后设置里的余额还没有变化，打开「设置 → AI 接入」，点「我已付款 — 立即检查」。"
+        >
+          The extension adds them within a minute or two.
+        </p>
+      </section>
+
+      <section class="wrap legal" id="cancelled" hidden>
+        <p class="kicker" data-en="WDIMTM Cloud" data-zh="WDIMTM Cloud">WDIMTM Cloud</p>
+        <h1 data-en="Payment cancelled" data-zh="付款已取消">Payment cancelled</h1>
+        <p
+          class="lede"
+          data-en="Nothing was charged. You can close this tab; buy a pack again from Settings → AI access whenever you like."
+          data-zh="没有产生任何扣款。你可以关闭这个标签页，之后随时在「设置 → AI 接入」重新购买。"
+        >
+          Nothing was charged. You can close this tab.
+        </p>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap footer-row">
+        <div class="brand">WDIMTM</div>
+        <div class="footer-links">
+          <a href="../">Home</a>
+          <a href="../privacy">Privacy</a>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      (function () {
+        var cancelled = new URLSearchParams(location.search).get("cancelled") === "1";
+        document.getElementById("paid").hidden = cancelled;
+        document.getElementById("cancelled").hidden = !cancelled;
+        if (cancelled) document.title = "Payment cancelled — WDIMTM";
+        var zh = document.documentElement.dataset.lang === "zh_CN";
+        document.querySelectorAll("[data-en]").forEach(function (el) {
+          var next = zh ? el.getAttribute("data-zh") : el.getAttribute("data-en");
+          if (next) el.textContent = next;
+        });
+      })();
+    </script>
+  </body>
+</html>

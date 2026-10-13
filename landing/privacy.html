@@ -6,7 +6,7 @@
     <title>Privacy Policy — WDIMTM</title>
     <meta
       name="description"
-      content="What WDIMTM does and does not do with your data. There is no WDIMTM server: explain requests go directly from your browser to the AI endpoint you configure."
+      content="What WDIMTM does with your data: what WDIMTM Cloud stores and for how long, what goes to your own AI endpoint in bring-your-own-key mode, and how to export or delete it."
     />
     <meta name="theme-color" content="#f3f2f2" />
     <link rel="icon" href="./favicon.png" type="image/png" />
@@ -51,26 +51,26 @@
         <p class="kicker" data-en="Privacy" data-zh="隐私">Privacy</p>
         <h1 data-en="Privacy Policy" data-zh="隐私政策">Privacy Policy</h1>
         <p class="legal-meta">
-          <span data-en="Last updated" data-zh="最后更新">Last updated</span>: 2026-08-19
+          <span data-en="Last updated" data-zh="最后更新">Last updated</span>: 2026-10-11
         </p>
 
         <p
           class="lede"
-          data-en="By default WDIMTM has no server: it is a browser extension that talks directly to an AI endpoint you choose and pay for, and we do not receive, store, or see anything you select, read, or ask. WDIMTM Cloud is a separate, opt-in mode — if you sign in and use it, your requests do pass through our backend, and this page says exactly what that means."
-          data-zh="默认情况下 WDIMTM 没有服务器：它是一个浏览器扩展，直接与你自己选择并付费的 AI 端点通信；你选中的内容、阅读的页面、提出的问题，我们既不接收、不存储，也看不到。WDIMTM Cloud 是一个独立的、需要你主动选择的模式 —— 如果你登录并使用它，请求确实会经过我们的后端，本页会明确说明那意味着什么。"
+          data-en="WDIMTM is a browser extension with two ways to reach an AI model. WDIMTM Cloud, the default, is our hosted service at cloud.wdimtm.com: you sign in with Google, and your requests pass through it on their way to a model. Bring your own key (BYOK) sends requests straight from your browser to an AI endpoint you choose, and then nothing you select, read, or ask reaches us. This page says exactly what each mode sends and what we keep."
+          data-zh="WDIMTM 是一个浏览器扩展，有两种方式连接 AI 模型。默认的 WDIMTM Cloud 是我们托管在 cloud.wdimtm.com 的服务：你用 Google 登录，请求经过它再转给模型。自备密钥（BYOK）模式则从你的浏览器直接把请求发到你选择的 AI 端点，你选中、阅读、提问的内容都不会到达我们这里。本页会逐项说明每种模式发送什么、我们保留什么。"
         >
-          WDIMTM has no server.
+          WDIMTM Cloud is our hosted service. Bring your own key sends nothing to us.
         </p>
 
         <h2 data-en="What leaves your device" data-zh="哪些数据会离开你的设备">
           What leaves your device
         </h2>
         <p
-          data-en="When you ask for an explanation, the extension sends the following to the AI endpoint configured in its settings — and nowhere else:"
-          data-zh="当你请求一次解释时，扩展会把以下内容发送到你在设置中配置的 AI 端点 —— 不会发往任何其他地方："
+          data-en="When you ask for an explanation, the extension sends the following to WDIMTM Cloud or, in bring-your-own-key mode, to the AI endpoint configured in its settings — and nowhere else:"
+          data-zh="当你请求一次解释时，扩展会把以下内容发送到 WDIMTM Cloud；在自备密钥模式下则发送到你在设置中配置的 AI 端点 —— 不会发往任何其他地方："
         >
-          When you ask for an explanation, the extension sends the following to the AI endpoint
-          configured in its settings — and nowhere else:
+          When you ask for an explanation, the extension sends the following to WDIMTM Cloud or to
+          the AI endpoint you configured — and nowhere else:
         </p>
         <ul>
           <li data-en="The text you selected." data-zh="你选中的文字。">The text you selected.</li>
@@ -97,16 +97,16 @@
           </li>
         </ul>
         <p
-          data-en="That endpoint is whichever provider you point the extension at — OpenAI, OpenRouter, a gateway, or a model running on your own machine. Your data is then subject to that provider's privacy policy, not ours. Choose a provider you trust."
-          data-zh="这个端点是你让扩展指向的任何服务商 —— OpenAI、OpenRouter、某个网关，或是跑在你自己机器上的模型。你的数据随后适用该服务商的隐私政策，而非本政策。请选择你信任的服务商。"
+          data-en="In bring-your-own-key mode that endpoint is whichever provider you point the extension at — OpenAI, OpenRouter, a gateway, or a model running on your own machine. Your data is then subject to that provider's privacy policy, not ours. Choose a provider you trust. What WDIMTM Cloud does with a request is described in its own section below."
+          data-zh="在自备密钥模式下，这个端点是你让扩展指向的任何服务商 —— OpenAI、OpenRouter、某个网关，或是跑在你自己机器上的模型。你的数据随后适用该服务商的隐私政策，而非本政策。请选择你信任的服务商。WDIMTM Cloud 如何处理请求，见下文专门的一节。"
         >
-          That endpoint is whichever provider you point the extension at.
+          In bring-your-own-key mode that endpoint is whichever provider you point the extension at.
         </p>
         <p
-          data-en="If you attach an image in page chat — a screenshot you took with your operating system and pasted in, or a file you uploaded or dragged in — it is sent to that same AI endpoint, and only when you send that message. The extension cannot and does not capture your screen itself; an image reaches it only because you put it there."
-          data-zh="如果你在页面对话里附加图片 —— 无论是你用系统截图后粘贴进来的，还是上传、拖拽的文件 —— 它都会发往同一个 AI 端点，且只在你发送那条消息时发送。扩展本身无法也不会截取你的屏幕；图片进入对话，只因为是你放进去的。"
+          data-en="If you attach an image in page chat — a screenshot you took with your operating system and pasted in, or a file you uploaded or dragged in — it is sent the same way as the text, and only when you send that message. The extension cannot and does not capture your screen itself; an image reaches it only because you put it there."
+          data-zh="如果你在页面对话里附加图片 —— 无论是你用系统截图后粘贴进来的，还是上传、拖拽的文件 —— 它会和文字走同一条路径发送，且只在你发送那条消息时发送。扩展本身无法也不会截取你的屏幕；图片进入对话，只因为是你放进去的。"
         >
-          Images you attach in page chat are sent to that same AI endpoint, only when you send that
+          Images you attach in page chat are sent the same way as the text, only when you send that
           message. The extension never captures your screen itself.
         </p>
         <p
@@ -198,23 +198,92 @@
           </li>
         </ul>
 
-        <h2 data-en="WDIMTM Cloud (opt-in)" data-zh="WDIMTM Cloud（需主动选择）">
-          WDIMTM Cloud (opt-in)
-        </h2>
+        <h2 data-en="WDIMTM Cloud" data-zh="WDIMTM Cloud">WDIMTM Cloud</h2>
         <p
-          data-en="WDIMTM Cloud is an optional hosted mode, still under development. It is off unless you choose it. If you do: you sign in with Google so a credit balance can be attached to an account, and your requests pass through the WDIMTM Cloud backend on their way to a model provider. The default local and bring-your-own-key modes never contact it, and remain available."
-          data-zh="WDIMTM Cloud 是一个可选的托管模式，目前仍在开发中。除非你主动选择，否则它不会启用。如果你选择了：你会用 Google 登录，以便把额度绑定到账户上；你的请求会经过 WDIMTM Cloud 后端再转发给模型商。默认的本地模式和自带密钥模式从不与它通信，并且始终可用。"
+          data-en="WDIMTM Cloud runs at cloud.wdimtm.com on Cloudflare. Using it requires signing in with Google. The sign-in shares only your email address and your Google account id with us; we never see your Google password."
+          data-zh="WDIMTM Cloud 运行在 Cloudflare 上，地址是 cloud.wdimtm.com。使用它需要用 Google 登录。登录只向我们提供你的邮箱地址和 Google 账户 ID；我们永远看不到你的 Google 密码。"
         >
-          WDIMTM Cloud is optional and off by default.
+          WDIMTM Cloud runs at cloud.wdimtm.com and requires signing in with Google.
+        </p>
+        <p data-en="What WDIMTM Cloud stores for your account:" data-zh="WDIMTM Cloud 为你的账户保存：">
+          What WDIMTM Cloud stores for your account:
+        </p>
+        <ul>
+          <li
+            data-en="Your account: email address, Google account id, plan, and when you signed up."
+            data-zh="账户信息：邮箱地址、Google 账户 ID、套餐，以及注册时间。"
+          >
+            Your account: email, Google account id, plan, sign-up date.
+          </li>
+          <li
+            data-en="Sign-in sessions, as a one-way hash of the session token. Sessions expire after 30 days."
+            data-zh="登录会话，只保存会话令牌的单向哈希。会话 30 天后过期。"
+          >
+            Sign-in sessions, stored only as a hash.
+          </li>
+          <li
+            data-en="A credit ledger: for each request, the mode (explain, chat, research…), the credits charged, the number of tokens used, the model, and the time. It does not contain what you selected or asked."
+            data-zh="额度账本：每次请求的模式（解释、对话、研究等）、扣除的额度、使用的 token 数、模型和时间。其中不包含你选中或提问的内容。"
+          >
+            A credit ledger of modes, credits, token counts and times — not content.
+          </li>
+          <li
+            data-en="Purchases: how many credits you bought or were refunded, and when."
+            data-zh="购买记录：你购买或被退回了多少额度，以及时间。"
+          >
+            Purchases: credits bought or refunded, and when.
+          </li>
+          <li
+            data-en="If sync is on: a snapshot of your profile text, lenses, saved memories and preferences, so another browser can pick them up. API keys are never part of it."
+            data-zh="如果开启了同步：你的个人画像文字、镜头、已保存的记忆和偏好设置的快照，以便在另一个浏览器上取回。API 密钥永远不在其中。"
+          >
+            If sync is on: your profile, lenses, memories and preferences, never API keys.
+          </li>
+          <li
+            data-en="Research jobs you start: the question, the selected text and page context sent with it, and the result, so you can come back to a job after closing the tab."
+            data-zh="你发起的研究任务：问题、随之发送的选中文字和页面上下文，以及结果，这样关掉标签页后仍能回来查看。"
+          >
+            Research jobs you start, with their context and results.
+          </li>
+        </ul>
+        <p
+          data-en="Explanations and page chat are not stored. WDIMTM Cloud forwards each request to its model provider through Agentaab (api.agentaab.com), which runs the model, and sends the answer back to your browser. Error logs record that a request failed and why, not what it contained."
+          data-zh="解释和页面对话的内容不会被保存。WDIMTM Cloud 通过 Agentaab（api.agentaab.com）把每个请求转给模型服务商运行，再把答案返回给你的浏览器。错误日志只记录某个请求失败以及失败原因，不记录请求内容。"
+        >
+          Explanations and page chat are forwarded to a model and not stored.
+        </p>
+        <p
+          data-en="Payments are taken by Agentaab, with cards processed by Stripe. We never see your card details. Agentaab knows your WDIMTM account only by an internal id, which is how a purchase finds its way back to your balance."
+          data-zh="付款由 Agentaab 收取，银行卡由 Stripe 处理。我们永远看不到你的卡信息。Agentaab 只通过一个内部 ID 认识你的 WDIMTM 账户，购买的额度正是靠它回到你的余额里。"
+        >
+          Payments are taken by Agentaab and Stripe. We never see your card.
+        </p>
+        <p
+          data-en="To limit abuse, requests are rate limited by account and by IP address. The IP address is used for that check and is not stored in your account."
+          data-zh="为了防止滥用，请求会按账户和 IP 地址限流。IP 地址只用于这项检查，不会保存在你的账户中。"
+        >
+          Requests are rate limited by account and IP address.
+        </p>
+        <p
+          data-en="We keep this data until you delete your account. Deleting it (Settings → Account → Delete Cloud account) erases everything above from WDIMTM Cloud straight away, including credits you bought and have not spent. Agentaab and Stripe keep the payment records they are required to keep by law."
+          data-zh="这些数据会一直保留，直到你删除账户。删除账户（设置 → 账户 → 删除云端账户）会立即从 WDIMTM Cloud 抹去上述全部内容，包括已购买但尚未用完的额度。Agentaab 和 Stripe 会依法保留其必须保留的付款记录。"
+        >
+          We keep this data until you delete your account.
+        </p>
+        <p
+          data-en="In WDIMTM Cloud, web search is included and runs on the WDIMTM Cloud backend: for Verify, Research, the fact-check lens, and page chat with web search turned on, a search query built from your selection, the page title, and your chat message is sent to our search provider (Tavily) on your behalf. You do not need a search key of your own in this mode."
+          data-zh="在 WDIMTM Cloud 中，网页搜索已包含在内，并在 WDIMTM Cloud 后端运行：在核实、研究、事实核查镜头，以及开启网页搜索的页面对话中，由你的选区、页面标题和对话消息生成的搜索词，会由我们代你发送给我们的搜索服务商（Tavily）。在此模式下你不需要自己的搜索密钥。"
+        >
+          In WDIMTM Cloud, web search runs on the Cloud backend and queries go to Tavily on your behalf.
         </p>
 
         <h2 data-en="What we do not do" data-zh="我们不做什么">What we do not do</h2>
         <ul>
           <li
-            data-en="We operate no server and receive no data from the extension."
-            data-zh="我们不运营任何服务器，也不从扩展接收任何数据。"
+            data-en="In bring-your-own-key mode, we receive no data from the extension."
+            data-zh="在自备密钥模式下，我们不从扩展接收任何数据。"
           >
-            We operate no server and receive no data from the extension.
+            In bring-your-own-key mode, we receive no data from the extension.
           </li>
           <li
             data-en="No analytics, no telemetry, no crash reporting, no tracking pixels, no cookies set by the extension."
@@ -223,8 +292,8 @@
             No analytics, no telemetry, no crash reporting, no tracking.
           </li>
           <li
-            data-en="We do not sell, rent, or share your data. There is nothing for us to sell."
-            data-zh="我们不出售、不出租、不共享你的数据。我们手上没有任何可以出售的东西。"
+            data-en="We do not sell, rent, or share your data. It goes only to the services named on this page, to run the features you use."
+            data-zh="我们不出售、不出租、不共享你的数据。它只会发往本页列出的服务，用于运行你所使用的功能。"
           >
             We do not sell, rent, or share your data.
           </li>
@@ -274,12 +343,24 @@
           >
             Export your settings and memories at any time.
           </li>
+          <li
+            data-en="Download everything WDIMTM Cloud stores for your account from Settings → Account → Download my Cloud data."
+            data-zh="在「设置 → 账户 → 下载我的云端数据」下载 WDIMTM Cloud 为你的账户保存的全部数据。"
+          >
+            Download everything WDIMTM Cloud stores for your account.
+          </li>
+          <li
+            data-en="Delete your WDIMTM Cloud account and its data from Settings → Account → Delete Cloud account. Data on your browser is kept."
+            data-zh="在「设置 → 账户 → 删除云端账户」删除你的 WDIMTM Cloud 账户及其数据。浏览器里的数据会保留。"
+          >
+            Delete your WDIMTM Cloud account and its data.
+          </li>
         </ul>
 
         <h2 data-en="Children" data-zh="儿童">Children</h2>
         <p
-          data-en="WDIMTM is not directed at children under 13 and we do not knowingly handle their data. Since we collect nothing, there is nothing for us to delete — but the controls above remove everything held locally."
-          data-zh="WDIMTM 不面向 13 岁以下儿童，我们也不会有意处理他们的数据。由于我们不收集任何内容，也就没有需要我们删除的东西 —— 但上述控制项可以清除本地保存的一切。"
+          data-en="WDIMTM is not directed at children under 13 and we do not knowingly handle their data. If you believe a child has a WDIMTM Cloud account, delete it from Settings or contact us and we will delete it."
+          data-zh="WDIMTM 不面向 13 岁以下儿童，我们也不会有意处理他们的数据。如果你认为有儿童注册了 WDIMTM Cloud 账户，可以在设置中删除它，或联系我们，我们会将其删除。"
         >
           WDIMTM is not directed at children under 13.
         </p>

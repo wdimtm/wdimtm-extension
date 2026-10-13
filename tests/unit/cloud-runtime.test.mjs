@@ -281,10 +281,10 @@ describe("cloud sign-in exchange", () => {
     assert.equal(out.user.email, "user@example.com");
   });
 
-  it("classifies an insufficient-credits response as a quota problem", () => {
+  it("classifies an insufficient-credits response as a payment problem", () => {
     const err = new Error("WDIMTM Cloud request failed (402): insufficient_credits");
     const classified = classifyRuntimeError(err, "cloud");
-    assert.equal(classified.code, "quota");
+    assert.equal(classified.code, "payment_required");
     assert.match(classified.message, /credit/i);
   });
 });
@@ -340,5 +340,65 @@ describe("cloud access mode wiring", () => {
     );
     assert.equal(result.ok, true);
     assert.match(result.message, /cloud/i);
+  });
+});
+
+describe("expired cloud session (#139)", () => {
+  it("tells the host which token the server rejected, once per 401", async () => {
+    const { cloudFetch, onCloudSessionRejected } = await import("../../core/cloud.js");
+    const original = globalThis.fetch;
+    /** @type {string[]} */
+    const rejected = [];
+    onCloudSessionRejected((token) => {
+      rejected.push(token);
+    });
+    try {
+      globalThis.fetch = async () =>
+        new Response(JSON.stringify({ error: "Session expired. Sign in again." }), { status: 401 });
+      await assert.rejects(
+        cloudFetch({ baseUrl: "https://cloud.test", accessToken: "tok-old" }, "/me"),
+        /401/
+      );
+      assert.deepEqual(rejected, ["tok-old"]);
+
+      // No token sent: nothing to forget.
+      await assert.rejects(cloudFetch({ baseUrl: "https://cloud.test" }, "/me"), /401/);
+      assert.deepEqual(rejected, ["tok-old"]);
+
+      globalThis.fetch = async () => new Response("{}", { status: 500 });
+      await assert.rejects(
+        cloudFetch({ baseUrl: "https://cloud.test", accessToken: "tok-new" }, "/me"),
+        /500/
+      );
+      assert.deepEqual(rejected, ["tok-old"], "only a 401 means the session is dead");
+    } finally {
+      globalThis.fetch = original;
+      onCloudSessionRejected(null);
+    }
+  });
+
+  it("still reports the 401 when the host handler fails", async () => {
+    const { cloudFetch, onCloudSessionRejected } = await import("../../core/cloud.js");
+    const original = globalThis.fetch;
+    onCloudSessionRejected(async () => {
+      throw new Error("storage unavailable");
+    });
+    try {
+      globalThis.fetch = async () => new Response("{}", { status: 401 });
+      await assert.rejects(
+        cloudFetch({ baseUrl: "https://cloud.test", accessToken: "t" }, "/me"),
+        /401/
+      );
+    } finally {
+      globalThis.fetch = original;
+      onCloudSessionRejected(null);
+    }
+  });
+
+  it("says a rate limit is not an empty balance", () => {
+    const err = new Error('WDIMTM Cloud request failed (429): {"code":"rate_limited"}');
+    const classified = classifyRuntimeError(err, "cloud");
+    assert.equal(classified.code, "rate_limited");
+    assert.match(classified.message, /wait a minute/i);
   });
 });

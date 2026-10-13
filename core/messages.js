@@ -24,6 +24,8 @@ export const MSG = {
   ACCOUNT_SIGN_IN: "wdimtm:account-sign-in",
   ACCOUNT_SIGN_OUT: "wdimtm:account-sign-out",
   ACCOUNT_SYNC_NOW: "wdimtm:account-sync-now",
+  ACCOUNT_EXPORT: "wdimtm:account-export",
+  ACCOUNT_DELETE: "wdimtm:account-delete",
   TEST_RUNTIME: "wdimtm:test-runtime",
   RUNTIME_STATUS: "wdimtm:runtime-status",
   // Conversation import (#49). The page drives the job; these handlers are
