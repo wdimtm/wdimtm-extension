@@ -10,7 +10,7 @@
  * costs a file re-selection, never the tokens already spent.
  */
 
-import { MSG } from "../../core/messages.js";
+import { MSG, createSender } from "../../core/messages.js";
 import {
   buildDistillBatches,
   estimateBatchTokens,
@@ -122,6 +122,8 @@ function typeLabel(type) {
   return t(keys[type] || "memNote");
 }
 
+const sendToWorker = createSender((message) => chrome.runtime.sendMessage(message));
+
 /**
  * Every message goes through here so a broken round trip looks like an ordinary
  * failure result rather than an unhandled rejection. Without this a worker that
@@ -132,7 +134,7 @@ function typeLabel(type) {
  */
 async function send(type, payload) {
   try {
-    const res = await chrome.runtime.sendMessage({ type, payload });
+    const res = await sendToWorker({ type, payload });
     if (res === undefined) {
       return classifyImportFailure(new Error("No response from the extension background."));
     }

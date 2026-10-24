@@ -91,6 +91,9 @@ async function main() {
 
     // Chromium still does not reliably load MV3 extensions in headless.
     // Prefer headed (default). Headless is best-effort only.
+    // A Chromium other than the one this Playwright pins, e.g. a newer
+    // Chrome for Testing already in the Playwright cache.
+    if (process.env.WDIMTM_E2E_CHROMIUM) launchOpts.executablePath = process.env.WDIMTM_E2E_CHROMIUM;
     const wantHeadless = process.env.WDIMTM_E2E_HEADLESS === "1";
     if (wantHeadless) {
       launchOpts.headless = true;
@@ -116,6 +119,15 @@ async function main() {
     assert.ok(extUrl.startsWith("chrome-extension://"), `unexpected SW url: ${extUrl}`);
     const extensionId = new URL(extUrl).host;
     results.push(`service worker: ok (${extensionId})`);
+
+    // A fresh install opens Settings (onInstalled → openOptionsPage). Newer
+    // Chrome may put it in whichever tab is newest, including the test page,
+    // so let it open and close it before the test takes a tab.
+    const isOptions = (p) => p.url().includes("/options/options.html");
+    const installTab =
+      context.pages().find(isOptions) ||
+      (await context.waitForEvent("page", { predicate: isOptions, timeout: 5000 }).catch(() => null));
+    if (installTab) await installTab.close();
 
     const page = await context.newPage();
     await page.goto(demoUrl, { waitUntil: "domcontentloaded" });
@@ -195,6 +207,96 @@ async function main() {
     await options.waitForTimeout(400);
     await options.screenshot({ path: path.join(OUT_DIR, "04-save-toast.png") });
     await options.close();
+    // ── Cloud subscription checkout (#156) ───────────────────────────
+    // Cloud is stubbed at the network layer. What this proves is the browser
+    // half: Subscribe opens Stripe in a real tab after the awaited checkout
+    // call, which a popup opened at that point could be blocked from doing.
+    const CLOUD = "https://cloud.wdimtm.com/v1";
+    const CHECKOUT = "https://checkout.stripe.test/c/session_e2e";
+    const cloudJson = (route, body) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        headers: { "Access-Control-Allow-Origin": "*" },
+        body: JSON.stringify(body),
+      });
+    const freeAccount = {
+      userId: "usr_e2e",
+      email: "e2e@example.test",
+      plan: "free",
+      quota: { used: 0, limit: 50, remaining: 50, allowanceRemaining: 50, purchasedRemaining: 0 },
+      cloudAccess: { active: false, source: null, until: null, verified: true },
+      purchases: [],
+    };
+    /** @type {any[]} */
+    const subscriptionCheckouts = [];
+    await context.route(`${CLOUD}/**`, (route) => {
+      const req = route.request();
+      const { pathname } = new URL(req.url());
+      if (req.method() === "OPTIONS") {
+        return route.fulfill({
+          status: 204,
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": "*",
+            "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+          },
+        });
+      }
+      if (pathname === "/v1/subscriptions") {
+        return cloudJson(route, {
+          offers: [
+            { id: "off_e2e", name: "WDIMTM Cloud", currency: "USD", amount_minor: 900,
+              currency_decimals: 2, interval: "month", trial_days: 0 },
+          ],
+          checkout_available: true,
+        });
+      }
+      if (pathname === "/v1/subscriptions/checkout") {
+        subscriptionCheckouts.push(req.postDataJSON());
+        return cloudJson(route, { checkout_url: CHECKOUT, payment_id: "pay_e2e", offer_id: "off_e2e" });
+      }
+      if (pathname === "/v1/packages") return cloudJson(route, { packages: [], checkout_available: false });
+      if (pathname === "/v1/me" || pathname === "/v1/credits/reconcile") {
+        return cloudJson(route, { grantsAdded: 0, creditsAdded: 0, ...freeAccount });
+      }
+      return route.fulfill({ status: 404, body: "{}" });
+    });
+    await sw.evaluate(() =>
+      chrome.storage.local.set({ cloudAccessToken: "e2e-session", cloudBaseUrl: "https://cloud.wdimtm.com" })
+    );
+
+    const billing = await context.newPage();
+    await billing.goto(`chrome-extension://${extensionId}/options/options.html`, {
+      waitUntil: "domcontentloaded",
+    });
+    const subscribe = billing.locator("#cloud-subscription button");
+    await subscribe.waitFor({ state: "visible", timeout: 10000 });
+    assert.ok(await subscribe.isEnabled(), "Subscribe should be enabled for a signed-in free account");
+    // The extension opens the tab itself; Playwright attaches to it too late
+    // to route or record its request, and the test host does not resolve. So
+    // the tab ends on Chrome's error page, which names the host it tried.
+    const [checkoutTab] = await Promise.all([context.waitForEvent("page", { timeout: 10000 }), subscribe.click()]);
+    await checkoutTab.waitForLoadState("domcontentloaded");
+    await checkoutTab.locator("body").filter({ hasText: new URL(CHECKOUT).host }).waitFor({ timeout: 10000 });
+    // Polling starts only after the tab opened ("waiting" is never claimed
+    // for a checkout that did not open).
+    let reconciles = 0;
+    const countReconcile = (req) => {
+      if (req.url() === `${CLOUD}/credits/reconcile`) reconciles += 1;
+    };
+    billing.on("request", countReconcile);
+    for (let i = 0; i < 40 && !reconciles; i += 1) await billing.waitForTimeout(250);
+    billing.off("request", countReconcile);
+    assert.ok(reconciles > 0, "Settings should poll for the subscription after checkout opens");
+    assert.deepEqual(subscriptionCheckouts, [{ offerId: "off_e2e" }]);
+    results.push("Settings → Subscribe opens Stripe checkout in a tab: ok");
+    await checkoutTab.close();
+    await billing.screenshot({ path: path.join(OUT_DIR, "05-subscription.png") });
+    await billing.close();
+    await context.unroute(`${CLOUD}/**`);
+    await sw.evaluate(() => chrome.storage.local.remove("cloudAccessToken"));
+
     // Mock is not a product option any more, and Save above stored Cloud.
     // E2E opts back in so the rest of the run needs no account.
     await sw.evaluate(() => chrome.storage.sync.set({ runtime: "mock", devMockRuntime: true }));
@@ -419,12 +521,16 @@ async function main() {
       sel.addRange(range);
       document.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
     });
-    await page.locator("#wdimtm-host").locator("#wdimtm-bubble [data-action='explain']").click({ force: true });
+    // The bubble shows after the content script's mouseup delay; clicking
+    // before then finds it hidden.
+    const explainAgain = page.locator("#wdimtm-host").locator("#wdimtm-bubble [data-action='explain']");
+    await explainAgain.waitFor({ state: "visible", timeout: 8000 });
+    await explainAgain.click({ force: true });
     await page.waitForFunction(
       () => {
         const host = document.getElementById("wdimtm-host");
         const pop = host?.shadowRoot?.getElementById("wdimtm-popover");
-        return pop && !pop.hidden && (pop.innerText || "").includes("Selection");
+        return pop && !pop.hidden && /Selection|选区/.test(pop.innerText || "");
       },
       null,
       { timeout: 15000 }
@@ -438,7 +544,7 @@ async function main() {
       () => {
         const host = document.getElementById("wdimtm-host");
         const pop = host?.shadowRoot?.getElementById("wdimtm-popover");
-        return (pop?.innerText || "").includes("Saved to local memory");
+        return /Saved to local memory|已保存到本地记忆/.test(pop?.innerText || "");
       },
       null,
       { timeout: 8000 }

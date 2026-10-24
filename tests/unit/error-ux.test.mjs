@@ -127,3 +127,15 @@ describe("quota exhaustion offers a way out (#41)", () => {
     assert.ok(!JSON.stringify(pub).includes("sk-secret"));
   });
 });
+
+
+describe("Cloud plan refusals", () => {
+  it("asks for Cloud access rather than telling a subscriber to buy credits", () => {
+    const err = Object.assign(new Error("Cloud failed (403): plan_required"), {
+      status: 403, body: { code: "plan_required", upgradeUrl: "https://wdimtm.com/#cloud" }
+    });
+    assert.deepEqual(classifyRuntimeError(err, "cloud"), {
+      code: "plan_required", message: "Deep research requires WDIMTM Cloud access. Open Settings to upgrade or redeem an access code."
+    });
+  });
+});

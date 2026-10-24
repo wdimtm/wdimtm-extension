@@ -4,8 +4,9 @@
  * The private repository stays the working copy. cloud/ is a second host for
  * core/, and GitHub issues live here, so the open client is developed in this
  * tree. What leaves is every tracked file that is not on the private list
- * below. A new file is public until someone adds it to that list — the
- * opposite of an allow-list, which silently keeps new work private.
+ * below and does not import cloud/src. A new file is public until someone adds
+ * it to that list — the opposite of an allow-list, which silently keeps new
+ * work private.
  *
  * The store zip is built from this tree, not from the private checkout, so
  * the uploaded package cannot contain a file the mirror does not.
@@ -34,15 +35,6 @@ export const PRIVATE = [
   "docs/internal",
   // The publisher. A copy of it on the public repo would try to publish itself.
   ".github/workflows/mirror.yml",
-  // These import cloud/src. A suite that fails on checkout is worse than a smaller one.
-  "tests/unit/cloud-credits.test.mjs",
-  "tests/unit/cloud-packages.test.mjs",
-  "tests/unit/cloud-research.test.mjs",
-  "tests/unit/cloud-worker.test.mjs",
-  "tests/unit/cloud-search.test.mjs",
-  "tests/unit/cloud-redeem.test.mjs",
-  "tests/unit/cloud-paid-flow.test.mjs",
-  "tests/unit/cloud-webhook.test.mjs",
   // Stands in for the private backend.
   "scripts/wdimtm-cloud-mock-server.mjs",
 ];
@@ -59,6 +51,24 @@ export const DROP_SCRIPTS = [
 ];
 
 /**
+ * An import of cloud/src, not a mention of it — the same pattern the mirror
+ * workflow's last gate greps for. A file that imports the closed service cannot
+ * run on the mirror, and a suite that fails on checkout is worse than a smaller
+ * one. These used to be listed by hand above, and a new one (#158) was missed,
+ * so the mirror refused every push from then on.
+ */
+const CLOUD_SRC_IMPORT = /(from|import|require)\s*\(?\s*['"][^'"]*cloud\/src/;
+
+/**
+ * @param {string} source
+ */
+export function importsCloudSrc(source) {
+  return CLOUD_SRC_IMPORT.test(source);
+}
+
+/**
+ * Private by path alone. A file can also be private by what it imports; see
+ * publishableFiles.
  * @param {string} rel
  */
 export function isPrivate(rel) {
@@ -76,6 +86,24 @@ export async function trackedFiles(repoRoot) {
 }
 
 /**
+ * Every tracked file that goes out: not private by path, and — for scripts —
+ * not importing cloud/src.
+ * @param {string} repoRoot
+ * @returns {Promise<string[]>}
+ */
+export async function publishableFiles(repoRoot) {
+  const out = [];
+  for (const rel of await trackedFiles(repoRoot)) {
+    if (isPrivate(rel)) continue;
+    if (/\.m?js$/.test(rel) && importsCloudSrc(await readFile(path.join(repoRoot, rel), "utf8"))) {
+      continue;
+    }
+    out.push(rel);
+  }
+  return out;
+}
+
+/**
  * Copy the publish set into `target`, replacing it. Rewrites package.json so
  * the copy does not advertise scripts or a repository the stranger does not have.
  *
@@ -83,7 +111,7 @@ export async function trackedFiles(repoRoot) {
  * @param {string} [repoRoot]
  */
 export async function assemble(target, repoRoot = root) {
-  const files = (await trackedFiles(repoRoot)).filter((rel) => !isPrivate(rel));
+  const files = await publishableFiles(repoRoot);
   await rm(target, { recursive: true, force: true });
   await mkdir(target, { recursive: true });
 
@@ -109,6 +137,7 @@ async function main() {
   if (process.argv.includes("--list")) {
     console.log("private (stays in this repo):");
     for (const entry of PRIVATE) console.log("   ", entry);
+    console.log("    and every script that imports cloud/src");
     console.log("npm scripts dropped:", DROP_SCRIPTS.join(", "));
     console.log("everything else that is tracked is published");
     return;

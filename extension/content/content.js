@@ -12,6 +12,7 @@ import * as WdimtmImages from "./images.js";
 import * as WdimtmSiteScope from "../../core/site-scope.js";
 import { hideStreamingTrailers } from "../../core/followups.js";
 import { consumePortStream } from "../lib/port-client.js";
+import { MSG, createSender } from "../../core/messages.js";
 import { CONTENT_CSS } from "./styles.inline.js";
 
 (() => {
@@ -21,19 +22,9 @@ import { CONTENT_CSS } from "./styles.inline.js";
   if (window.__WDIMTM_LOADED__) return;
   window.__WDIMTM_LOADED__ = true;
 
-  const MSG = {
-    EXPLAIN: "wdimtm:explain",
-    GET_SETTINGS: "wdimtm:get-settings",
-    OPEN_OPTIONS: "wdimtm:open-options",
-    MEMORY_ADD: "wdimtm:memory-add",
-    SET_DEFAULT_LENS: "wdimtm:set-default-lens",
-    CHAT_LOAD: "wdimtm:chat-load",
-    CHAT_SAVE: "wdimtm:chat-save",
-    CHAT_THREAD_LOAD: "wdimtm:chat-thread-load",
-    CHAT_THREAD_CLEAR: "wdimtm:chat-thread-clear",
-    HISTORY_LOAD: "wdimtm:history-load",
-    HISTORY_APPEND: "wdimtm:history-append",
-  };
+  // Through the bridge, not chrome.runtime directly: a type missing from MSG
+  // fails here instead of reaching the worker as undefined (#163).
+  const sendToWorker = createSender((message) => chrome.runtime.sendMessage(message));
 
   const MAX_SELECTION = 4000;
   const MAX_CONTEXT = 2500;
@@ -357,8 +348,7 @@ import { CONTENT_CSS } from "./styles.inline.js";
 
   function refreshSettings() {
     try {
-      chrome.runtime
-        .sendMessage({ type: MSG.GET_SETTINGS })
+      sendToWorker({ type: MSG.GET_SETTINGS })
         .then((res) => {
           if (!res?.ok || !res.data) return;
           defaultLensId = res.data.defaultLensId || "general";
@@ -812,12 +802,10 @@ import { CONTENT_CSS } from "./styles.inline.js";
             // overwriting the global default (#19).
             if (lensMode === "manual") {
               try {
-                chrome.runtime
-                  .sendMessage({
-                    type: MSG.SET_DEFAULT_LENS,
-                    payload: { id: activeLensId, hostname: location.hostname || "" },
-                  })
-                  .catch(() => {});
+                sendToWorker({
+                  type: MSG.SET_DEFAULT_LENS,
+                  payload: { id: activeLensId, hostname: location.hostname || "" },
+                }).catch(() => {});
               } catch {
                 /* ignore */
               }
@@ -1137,7 +1125,7 @@ import { CONTENT_CSS } from "./styles.inline.js";
         if (action === "retry") runExplain("explain");
         if (action === "options") {
           try {
-            chrome.runtime.sendMessage({ type: MSG.OPEN_OPTIONS }).catch(() => {});
+            sendToWorker({ type: MSG.OPEN_OPTIONS }).catch(() => {});
           } catch {
             /* ignore */
           }
@@ -1228,6 +1216,9 @@ import { CONTENT_CSS } from "./styles.inline.js";
         "Sign in to WDIMTM Cloud in Settings to start with free monthly credits, or use your own API key."
       );
     }
+    if (state.code === "plan_required") {
+      return tr("errPlanRequired", "Deep research requires WDIMTM Cloud access. Open Settings to upgrade or redeem an access code.");
+    }
     if (state.code === "payment_required") {
       if (state.reason === "budget_exhausted") {
         return tr(
@@ -1260,8 +1251,7 @@ import { CONTENT_CSS } from "./styles.inline.js";
       return;
     }
     try {
-      chrome.runtime
-        .sendMessage({ type: MSG.OPEN_OPTIONS, payload: { section: "cloud" } })
+      sendToWorker({ type: MSG.OPEN_OPTIONS, payload: { section: "cloud" } })
         .catch(() => {});
     } catch {
       /* ignore */
@@ -1284,6 +1274,9 @@ import { CONTENT_CSS } from "./styles.inline.js";
         primary ? "" : " wdimtm-btn-ghost"
       }" data-action="${action}">${escapeHtml(tr(key, fallback))}</button>`;
 
+    if (code === "plan_required") {
+      return btn("options", "openSettings", "Open settings", true);
+    }
     if (code === "payment_required") {
       // Paying does not restart a service the operator's budget stopped.
       if (reason === "budget_exhausted") {
@@ -1436,7 +1429,7 @@ import { CONTENT_CSS } from "./styles.inline.js";
     }
 
     try {
-      const res = await chrome.runtime.sendMessage({
+      const res = await sendToWorker({
         type: MSG.RESEARCH_START,
         payload: {
           selection: request.selection,
@@ -1464,7 +1457,7 @@ import { CONTENT_CSS } from "./styles.inline.js";
     if (!id) return;
     researchPollTimer = window.setTimeout(async () => {
       try {
-        const res = await chrome.runtime.sendMessage({
+        const res = await sendToWorker({
           type: MSG.RESEARCH_GET,
           payload: { id },
         });
@@ -1485,7 +1478,7 @@ import { CONTENT_CSS } from "./styles.inline.js";
     stopResearchPolling();
     if (!id) return;
     try {
-      const res = await chrome.runtime.sendMessage({
+      const res = await sendToWorker({
         type: MSG.RESEARCH_CANCEL,
         payload: { id },
       });
@@ -1918,7 +1911,7 @@ import { CONTENT_CSS } from "./styles.inline.js";
     /** @type {Array<{id:string, selection:string, messageCount:number, lensId?:string}>} */
     let threads = [];
     try {
-      const res = await chrome.runtime.sendMessage({
+      const res = await sendToWorker({
         type: MSG.CHAT_LOAD,
         payload: { url: page.url, selection },
       });
@@ -1948,7 +1941,7 @@ import { CONTENT_CSS } from "./styles.inline.js";
     /** @type {Array<{id:string, selection:string, explanation:string, lensId?:string}>} */
     let history = [];
     try {
-      const hRes = await chrome.runtime.sendMessage({
+      const hRes = await sendToWorker({
         type: MSG.HISTORY_LOAD,
         payload: { url: page.url },
       });
@@ -2015,7 +2008,7 @@ import { CONTENT_CSS } from "./styles.inline.js";
     await persistChat();
     let thread = null;
     try {
-      const res = await chrome.runtime.sendMessage({
+      const res = await sendToWorker({
         type: MSG.CHAT_THREAD_LOAD,
         payload: { url: chatState.page?.url || location.href, selection },
       });
@@ -2376,7 +2369,7 @@ import { CONTENT_CSS } from "./styles.inline.js";
       // Drop the stored thread outright — persisting an empty one would leave a
       // zero-turn entry sitting in the page's thread list.
       try {
-        await chrome.runtime.sendMessage({
+        await sendToWorker({
           type: MSG.CHAT_THREAD_CLEAR,
           payload: {
             url: chatState.page?.url || location.href,
@@ -2684,8 +2677,8 @@ import { CONTENT_CSS } from "./styles.inline.js";
       if (isExtensionContextDead()) {
         throw new Error("Extension context invalidated.");
       }
-      const res = await chrome.runtime.sendMessage({
-        type: "wdimtm:chat",
+      const res = await sendToWorker({
+        type: MSG.CHAT,
         payload: chatPayload(),
       });
       if (!res?.ok) {
@@ -2743,7 +2736,7 @@ import { CONTENT_CSS } from "./styles.inline.js";
     };
 
     consumePortStream(port, {
-      request: { type: "wdimtm:chat", payload: chatPayload() },
+      request: { type: MSG.CHAT, payload: chatPayload() },
       onChunk: (acc) => patchChatStreamingBubble(acc),
       onDone: (data, acc) =>
         settle(data?.reply || data?.explanation || acc, data?.webSearch, data?.truncated === true),
@@ -2776,7 +2769,7 @@ import { CONTENT_CSS } from "./styles.inline.js";
   async function persistChat() {
     if (!chatState) return;
     try {
-      const res = await chrome.runtime.sendMessage({
+      const res = await sendToWorker({
         type: MSG.CHAT_SAVE,
         payload: {
           url: chatState.page?.url || location.href,
@@ -2804,7 +2797,7 @@ import { CONTENT_CSS } from "./styles.inline.js";
     const rect = pending?.rect || lastRequest?._rect;
     if (!sug) return;
     try {
-      const res = await chrome.runtime.sendMessage({
+      const res = await sendToWorker({
         type: MSG.MEMORY_ADD,
         payload: {
           type: sug.type || "interest",
@@ -2860,7 +2853,7 @@ import { CONTENT_CSS } from "./styles.inline.js";
         : "");
     const rect = pending?.rect || lastRequest?._rect;
     try {
-      const res = await chrome.runtime.sendMessage({
+      const res = await sendToWorker({
         type: MSG.MEMORY_ADD,
         payload: {
           type: "note",
@@ -3014,20 +3007,18 @@ import { CONTENT_CSS } from "./styles.inline.js";
 
   function recordExplainHistory(request, explanation) {
     if (!request?.selection || !explanation) return;
-    chrome.runtime
-      .sendMessage({
-        type: "wdimtm:history-append",
-        payload: {
-          url: request.page?.url || location.href,
-          entry: {
-            selection: request.selection,
-            explanation,
-            lensId: request.lens?.id || activeLensId,
-            mode: request.mode || "explain",
-          },
+    sendToWorker({
+      type: MSG.HISTORY_APPEND,
+      payload: {
+        url: request.page?.url || location.href,
+        entry: {
+          selection: request.selection,
+          explanation,
+          lensId: request.lens?.id || activeLensId,
+          mode: request.mode || "explain",
         },
-      })
-      .catch(() => {});
+      },
+    }).catch(() => {});
   }
 
   /**
@@ -3074,7 +3065,7 @@ import { CONTENT_CSS } from "./styles.inline.js";
 
   async function explainOnce(request, rect) {
     try {
-      const res = await chrome.runtime.sendMessage({
+      const res = await sendToWorker({
         type: MSG.EXPLAIN,
         payload: {
           selection: request.selection,

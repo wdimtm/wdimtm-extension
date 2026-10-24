@@ -141,6 +141,36 @@ is not configured on the worker. The worker passes `success_url`
 so the buyer lands on a WDIMTM page that says to return to the extension. `CHECKOUT_RETURN_URL`
 on the worker overrides it.
 
+## `GET /v1/subscriptions` (public) · `POST /v1/subscriptions/checkout` (authed)
+
+Cloud subscriptions (#156) are Agentaab Offers priced `subscription` that grant
+`subscription_access`. The catalog lists only those; credit-pack and access-grant offers are
+sold through packages and redemption codes.
+
+```jsonc
+// GET /v1/subscriptions
+{
+  "offers": [
+    { "id": "off_…", "name": "WDIMTM Cloud", "currency": "USD", "amount_minor": 900,
+      "currency_decimals": 2, "interval": "month", "trial_days": 0 }
+  ],
+  "checkout_available": true
+}
+// POST /v1/subscriptions/checkout  → { "offerId": "off_…" }
+{ "checkout_url": "https://checkout.stripe.com/…", "payment_id": "…", "offer_id": "off_…" }
+```
+
+The catalog reads Agentaab `GET /api/app/{slug}/runtime-offers/`; when Agentaab is not
+configured or does not answer it is `{ "offers": [], "checkout_available": false }` (with
+`warning` in the second case). Checkout is proxied to `POST /api/app/{slug}/runtime-offers/checkout/`
+for the session's user, with the same return URLs as package checkout; **404**
+`offer_not_found` for an offer Agentaab has not published, **502** `checkout_failed` otherwise.
+
+Nothing about the subscription is stored here. After payment, Agentaab's webhook grants
+`subscription_access`, and `cloudAccess` reports `kind: "subscription"` with `subscriptionUntil`
+at the end of the paid period. `POST /v1/credits/reconcile` re-reads the entitlement, so the client
+polls it after opening checkout. Cancelling or changing a subscription is not offered here yet.
+
 ## `POST /v1/credits/reconcile` (authed)
 
 Turns any completed payment into spendable credits (#88). Idempotent — a payment is
@@ -237,9 +267,15 @@ out of the allowance first.
 
 `cloudAccess` says whether the account has Cloud access and why (#135):
 `hasCloudAccess = users.plan is "cloud" OR Agentaab reports an active cloud_access
-entitlement`. `source` is `"plan"` (paid), `"entitlement"` (a redeemed code, with `until`),
-or `null`. While an entitlement is active, `plan` and `quota.limit` are the Cloud plan's, on
-the same calendar-month period and usage. The account's own plan and its purchased credits
+or subscription_access entitlement`. `source` is `"plan"` (local), `"entitlement"` (a code or subscription, with `until`),
+or `null`. For an entitlement, `kind` is `"subscription"` when an active `subscription_access`
+is among them, else `"promotion"`. `until` is when Cloud access as a whole ends (null when
+any active grant is open-ended); with a subscription, `subscriptionUntil` is the end of its
+own paid period, which a promotion running alongside may outlast. While an entitlement is active, `plan` and `quota.limit` are the Cloud plan's, on
+the same usage ledger. The allowance period is the UTC calendar month, except for a
+subscription whose Agentaab row reports `current_period_start` / `current_period_end`:
+then usage counts from the period start and `resetAt` is the period end (the renewal time,
+#160). A subscription without that information falls back to the calendar month. The account's own plan and its purchased credits
 are never changed by it, so when it ends the account is back on its own plan with every
 bought credit intact.
 
@@ -357,6 +393,15 @@ present, must be an object whose `enabled` is a boolean.
 Durable research jobs (#52). `POST /v1/research` answers **202** with a queued job and keeps
 working after the response; the extension polls `GET /v1/jobs/:id`. Full shape and runtime
 boundary: [`research-agent-contract.md`](research-agent-contract.md).
+
+Both durable research modes require the `deep_research` entitlement. Without it,
+the server returns **403** `{ code: "plan_required", requiredEntitlement:
+"deep_research", upgradeUrl: "https://wdimtm.com/#access" }` before creating a job,
+searching or running inference. Buying credits alone does not grant Cloud access.
+When Agentaab cannot verify access, the response is **503** `entitlement_unavailable`
+with `Retry-After`, rather than an upgrade prompt. Existing jobs remain readable
+and cancellable by their owner after access ends. In-page explain modes and BYOK
+keep their existing credit and capability rules.
 
 Before the runtime starts, the server runs one web search (question or selection + page
 title) and passes the results as `WEB EVIDENCE` in the research brief (#141). The job keeps

@@ -138,6 +138,12 @@ export function classifyRuntimeError(err, mode = "byok") {
           : "API key rejected (401). Check the key and that it matches the base URL.",
     };
   }
+  if (mode === "cloud" && errorBody(err, raw)?.code === "plan_required") {
+    return {
+      code: "plan_required",
+      message: "Deep research requires WDIMTM Cloud access. Open Settings to upgrade or redeem an access code.",
+    };
+  }
   if (lower.includes("403") || lower.includes("forbidden")) {
     return {
       code: "forbidden",

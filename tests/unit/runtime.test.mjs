@@ -184,7 +184,7 @@ describe("runtime isolation contract", () => {
     );
     assert.equal(content.includes("api.openai.com"), false);
     assert.equal(content.includes("apiKey"), false);
-    assert.ok(content.includes("wdimtm:explain"));
+    assert.ok(content.includes("MSG.EXPLAIN"));
     assert.ok(content.includes("followup"));
   });
 

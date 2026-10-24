@@ -56,6 +56,7 @@ const STRINGS = {
     chatStopped: "Stopped.",
     stop: "Stop",
     topUp: "Top up credits",
+    errPlanRequired: "Deep research requires WDIMTM Cloud access. Open Settings to upgrade or redeem an access code.",
     buyCredits: "Buy credits",
     signInCloud: "Sign in to WDIMTM Cloud",
     errSignInRequired:
@@ -151,6 +152,7 @@ const STRINGS = {
     chatStopped: "已停止。",
     stop: "停止",
     topUp: "充值额度",
+    errPlanRequired: "深度研究需要 WDIMTM Cloud 权益。请打开设置升级或兑换访问码。",
     buyCredits: "购买额度",
     signInCloud: "登录 WDIMTM Cloud",
     errSignInRequired: "在设置中登录 WDIMTM Cloud，即可使用每月免费额度；也可以改用自己的 API Key。",

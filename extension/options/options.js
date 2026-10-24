@@ -16,19 +16,23 @@ import {
   parseDomainLensRules,
 } from "../../core/domain-lenses.js";
 import { getMemoryProvider } from "../lib/memory.js";
-import { MSG } from "../../core/messages.js";
+import { MSG, createSender } from "../../core/messages.js";
 import { applyOptionsI18n, ot } from "../lib/options-i18n.js";
 import { redeemResultView } from "../lib/cloud-redeem.js";
+import { subscriptionView } from "../lib/cloud-subscription.js";
+import { openCheckoutTab } from "../lib/checkout-tab.js";
 import { applyPageTheme, watchSystemTheme } from "../lib/page-theme.js";
 import {
   DEFAULT_CLOUD_BASE_URL,
   fetchCloudAccount,
   onCloudSessionRejected,
   fetchCloudPackages,
+  fetchCloudSubscriptions,
   reconcileCloudCredits,
   redeemCloudCode,
   resolveCloudConfig,
   startCloudPackageCheckout,
+  startCloudSubscriptionCheckout,
 } from "../../core/cloud.js";
 import {
   ANTHROPIC_DEFAULTS,
@@ -43,6 +47,9 @@ import { getRuntime } from "../../core/runtime/registry.js";
 import { runtimeIdForTestMode } from "../../core/runtime-test.js";
 import { DEFAULT_SETTINGS, getSettings, saveSettings, topUpUrlFor } from "../lib/settings.js";
 import { clearRejectedCloudSession } from "../lib/auth/index.js";
+
+/** Unknown message types fail here, not as "Unknown message type" from the worker. */
+const sendToWorker = createSender((message) => chrome.runtime.sendMessage(message));
 
 const form = document.getElementById("settings-form");
 const runtimeEl = document.getElementById("runtime");
@@ -78,6 +85,7 @@ const cloudSessionStatus = document.getElementById("cloud-session-status");
 const cloudPackagesEl = document.getElementById("cloud-packages");
 const cloudPackagesMeta = document.getElementById("cloud-packages-meta");
 const cloudRedeemEl = document.getElementById("cloud-redeem");
+const cloudSubscriptionEl = document.getElementById("cloud-subscription");
 const cloudRedeemInput = document.getElementById("cloud-redeem-code");
 const cloudRedeemBtn = document.getElementById("cloud-redeem-btn");
 const cloudRedeemStatus = document.getElementById("cloud-redeem-status");
@@ -246,6 +254,9 @@ async function refreshCloudPackages() {
       cloudBaseUrl: form.cloudBaseUrl?.value || settings.cloudBaseUrl,
       cloudAccessToken: form.cloudAccessToken?.value || settings.cloudAccessToken,
     });
+    // The subscription loads on its own: an empty package catalog must not
+    // hide it, and a slow offer list must not hold up the packages.
+    refreshCloudSubscription(config);
     // Use the catalog's default currency; UI language only controls presentation.
     const catalog = await fetchCloudPackages(config);
     cloudPackagesEl.textContent = "";
@@ -350,7 +361,11 @@ function renderCloudBalance(account) {
   box.className = "cloud-balance";
   const q = account.quota || {};
   const access = account.cloudAccess;
-  if (access?.active && access.source === "entitlement" && access.until) {
+  // A subscription's period is shown with the subscription
+  // (refreshCloudSubscription); this line is for access that outlasts it,
+  // such as a promotion running past the paid period.
+  const accessOutlastsSubscription = access?.kind !== "subscription" || access.until !== access.subscriptionUntil;
+  if (access?.active && access.source === "entitlement" && access.until && accessOutlastsSubscription) {
     const accessLine = document.createElement("p");
     accessLine.className = "cloud-access-line";
     accessLine.textContent = t("cloudAccessUntil").replace("{date}", formatInstant(access.until));
@@ -457,8 +472,7 @@ async function buyCloudPackage(packageId) {
     flash(t("cloudCheckoutOpening"));
     const result = await startCloudPackageCheckout(config, { packageId });
     const url = result?.checkout_url;
-    if (!url) throw new Error(t("cloudCheckoutFailed"));
-    window.open(url, "_blank", "noopener,noreferrer");
+    if (!url || !(await openCheckoutTab(url))) throw new Error(t("cloudCheckoutFailed"));
     // Payment completes on the provider's page, which cannot talk back to the
     // extension. Nothing here knows the money landed until Cloud is asked.
     flash(t("cloudCheckoutWaiting"));
@@ -466,6 +480,106 @@ async function buyCloudPackage(packageId) {
   } catch (err) {
     flash(err instanceof Error ? err.message : t("cloudCheckoutFailed"), true);
   }
+}
+
+/**
+ * The Cloud subscription block (#156): the active subscription's period, or
+ * the offers a free account can subscribe to. Empty when there are neither.
+ * @param {{ baseUrl: string, accessToken?: string }} config
+ */
+async function refreshCloudSubscription(config) {
+  if (!cloudSubscriptionEl) return;
+  const signedIn = Boolean(config.accessToken);
+  const [catalog, account] = await Promise.all([
+    fetchCloudSubscriptions(config).catch(() => null),
+    signedIn ? fetchCloudAccount(config).catch(() => null) : Promise.resolve(null),
+  ]);
+  const view = subscriptionView(
+    { account, catalog, signedIn },
+    { t, formatInstant, locale: uiLocale === "zh_CN" ? "zh-CN" : "en-US" }
+  );
+  cloudSubscriptionEl.textContent = "";
+  if (view.status) {
+    const line = document.createElement("p");
+    line.className = "cloud-access-line";
+    line.textContent = view.status;
+    cloudSubscriptionEl.appendChild(line);
+  }
+  for (const offer of view.offers) {
+    const row = document.createElement("div");
+    row.className = "cloud-package cloud-subscription-offer";
+    const left = document.createElement("div");
+    const title = document.createElement("div");
+    title.className = "cloud-package-title";
+    title.textContent = offer.title;
+    const meta = document.createElement("div");
+    meta.className = "cloud-package-meta";
+    meta.textContent = offer.meta;
+    left.append(title, meta);
+    const right = document.createElement("div");
+    right.className = "actions";
+    const price = document.createElement("span");
+    price.className = "cloud-package-price";
+    price.textContent = offer.price;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "btn primary";
+    button.textContent = offer.canSubscribe ? t("cloudSubscribe") : t("cloudBuyUnavailable");
+    button.disabled = !offer.canSubscribe;
+    button.title = offer.hint;
+    button.addEventListener("click", () => subscribeToCloud(offer.id));
+    right.append(price, button);
+    row.append(left, right);
+    cloudSubscriptionEl.appendChild(row);
+  }
+  cloudSubscriptionEl.hidden = !view.status && !view.offers.length;
+}
+
+/** @param {string} offerId */
+async function subscribeToCloud(offerId) {
+  try {
+    const settings = await getSettings();
+    const config = resolveCloudConfig({
+      cloudBaseUrl: form.cloudBaseUrl?.value || settings.cloudBaseUrl,
+      cloudAccessToken: form.cloudAccessToken?.value || settings.cloudAccessToken,
+    });
+    if (!config.accessToken) {
+      flash(t("cloudNeedSignIn"), true);
+      return;
+    }
+    flash(t("cloudCheckoutOpening"));
+    const result = await startCloudSubscriptionCheckout(config, { offerId });
+    const url = result?.checkout_url;
+    // Only report "waiting" once the checkout tab is really open.
+    if (!url || !(await openCheckoutTab(url))) throw new Error(t("cloudCheckoutFailed"));
+    flash(t("cloudSubscriptionWaiting"));
+    watchForSubscription(config);
+  } catch (err) {
+    flash(err instanceof Error ? err.message : t("cloudCheckoutFailed"), true);
+  }
+}
+
+/**
+ * Poll after subscription checkout opens, bounded like watchForPayment. The
+ * reconcile route re-reads the entitlement, so the subscription shows as soon
+ * as Agentaab's webhook has granted it.
+ * @param {{ baseUrl: string, accessToken?: string }} config
+ */
+function watchForSubscription(config) {
+  stopWatchingForPayment();
+  let attempts = 0;
+  paymentPoll = setInterval(async () => {
+    attempts += 1;
+    const result = await reconcileCloudCredits(config).catch(() => null);
+    const access = /** @type {any} */ (result)?.cloudAccess;
+    if (access?.active && access.kind === "subscription") {
+      stopWatchingForPayment();
+      flash(t("cloudSubscriptionActive"));
+      await refreshCloudPackages();
+    } else if (attempts >= 24) {
+      stopWatchingForPayment();
+    }
+  }, 5000);
 }
 
 /** @type {ReturnType<typeof setInterval> | null} */
@@ -532,7 +646,7 @@ function watchForPayment() {
 async function refreshCloudSessionStatus() {
   if (!cloudSessionStatus) return;
   try {
-    const res = await chrome.runtime.sendMessage({ type: "wdimtm:account-status" });
+    const res = await sendToWorker({ type: MSG.ACCOUNT_STATUS });
     const email = res?.data?.session?.email || res?.data?.session?.displayName;
     const token = form.cloudAccessToken?.value?.trim();
     if (email || token) {
@@ -981,8 +1095,8 @@ form.addEventListener("submit", async (e) => {
     syncChatHistory: document.getElementById("syncChatHistory").checked,
     syncSecrets: document.getElementById("syncSecrets").checked,
   });
-  await chrome.runtime.sendMessage({
-    type: "wdimtm:account-set-mode",
+  await sendToWorker({
+    type: MSG.ACCOUNT_SET_MODE,
     payload: {
       mode: document.getElementById("accountMode").value === "cloud" ? "cloud" : "local",
     },
@@ -1030,7 +1144,7 @@ async function refreshAccountCard(settings) {
   document.getElementById("syncChatHistory").checked = Boolean(settings.syncChatHistory);
   document.getElementById("syncSecrets").checked = Boolean(settings.syncSecrets);
 
-  const res = await chrome.runtime.sendMessage({ type: "wdimtm:account-status" });
+  const res = await sendToWorker({ type: MSG.ACCOUNT_STATUS });
   if (res?.ok && res.data) {
     const d = res.data;
     if (d.session?.email || d.session?.displayName) {
@@ -1143,7 +1257,7 @@ async function refreshResearchCard(settings) {
   if (!configured) return;
 
   list.textContent = "";
-  const res = await chrome.runtime.sendMessage({ type: MSG.RESEARCH_LIST });
+  const res = await sendToWorker({ type: MSG.RESEARCH_LIST });
   if (!res?.ok) {
     const p = document.createElement("p");
     p.className = "hint";
@@ -1187,7 +1301,7 @@ document.getElementById("research-refresh").addEventListener("click", () => {
 });
 
 document.getElementById("account-sign-in").addEventListener("click", async () => {
-  const res = await chrome.runtime.sendMessage({ type: "wdimtm:account-sign-in" });
+  const res = await sendToWorker({ type: MSG.ACCOUNT_SIGN_IN });
   if (!res?.ok) {
     flash(res?.error || t("signInFailed"), true);
     return;
@@ -1197,13 +1311,13 @@ document.getElementById("account-sign-in").addEventListener("click", async () =>
 });
 
 document.getElementById("account-sign-out").addEventListener("click", async () => {
-  await chrome.runtime.sendMessage({ type: "wdimtm:account-sign-out" });
+  await sendToWorker({ type: MSG.ACCOUNT_SIGN_OUT });
   flash(t("signedOut"));
   await refreshAccountCard();
 });
 
 document.getElementById("account-export").addEventListener("click", async () => {
-  const res = await chrome.runtime.sendMessage({ type: "wdimtm:account-export" });
+  const res = await sendToWorker({ type: MSG.ACCOUNT_EXPORT });
   if (!res?.ok) {
     flash(res?.error || t("exportFailed"), true);
     return;
@@ -1220,7 +1334,7 @@ document.getElementById("account-export").addEventListener("click", async () => 
 
 document.getElementById("account-delete").addEventListener("click", async () => {
   if (!confirm(t("accountDeleteConfirm"))) return;
-  const res = await chrome.runtime.sendMessage({ type: "wdimtm:account-delete" });
+  const res = await sendToWorker({ type: MSG.ACCOUNT_DELETE });
   if (!res?.ok) {
     flash(res?.error || t("accountDelete"), true);
     return;
@@ -1230,7 +1344,7 @@ document.getElementById("account-delete").addEventListener("click", async () => 
 });
 
 document.getElementById("account-sync-now").addEventListener("click", async () => {
-  const res = await chrome.runtime.sendMessage({ type: "wdimtm:account-sync-now" });
+  const res = await sendToWorker({ type: MSG.ACCOUNT_SYNC_NOW });
   if (!res?.ok) {
     flash(res?.error || t("syncFailed"), true);
     return;
@@ -1240,7 +1354,7 @@ document.getElementById("account-sync-now").addEventListener("click", async () =
 });
 
 document.getElementById("export-settings").addEventListener("click", async () => {
-  const res = await chrome.runtime.sendMessage({ type: "wdimtm:export-settings" });
+  const res = await sendToWorker({ type: MSG.EXPORT_SETTINGS });
   if (!res?.ok) {
     flash(res?.error || t("exportFailed"), true);
     return;
@@ -1265,8 +1379,8 @@ document.getElementById("import-file").addEventListener("change", async (e) => {
   try {
     const text = await file.text();
     const json = JSON.parse(text);
-    const res = await chrome.runtime.sendMessage({
-      type: "wdimtm:import-settings",
+    const res = await sendToWorker({
+      type: MSG.IMPORT_SETTINGS,
       payload: json,
     });
     if (!res?.ok) throw new Error(res?.error || t("importFailed"));
@@ -1281,7 +1395,7 @@ document.getElementById("import-file").addEventListener("change", async (e) => {
 
 document.getElementById("reset-all").addEventListener("click", async () => {
   if (!confirm(t("resetConfirm"))) return;
-  const res = await chrome.runtime.sendMessage({ type: "wdimtm:reset-all" });
+  const res = await sendToWorker({ type: MSG.RESET_ALL });
   if (!res?.ok) {
     flash(res?.error || t("resetFailed"), true);
     return;
@@ -1353,11 +1467,11 @@ cloudSignInBtn?.addEventListener("click", async () => {
     runtime: "wdimtm-cloud",
     cloudBaseUrl: form.cloudBaseUrl?.value?.trim() || DEFAULT_CLOUD_BASE_URL,
   });
-  await chrome.runtime.sendMessage({
-    type: "wdimtm:account-set-mode",
+  await sendToWorker({
+    type: MSG.ACCOUNT_SET_MODE,
     payload: { mode: "cloud" },
   });
-  const res = await chrome.runtime.sendMessage({ type: "wdimtm:account-sign-in" });
+  const res = await sendToWorker({ type: MSG.ACCOUNT_SIGN_IN });
   if (!res?.ok) {
     flash(res?.error || t("signInFailed"), true);
     return;
@@ -1390,7 +1504,7 @@ async function runTestConnection(mode, statusElLocal, btn) {
       if (!field) continue;
       payload[key] = String(field.value || "").trim() || TEST_FIELD_FALLBACKS[key] || "";
     }
-    const res = await chrome.runtime.sendMessage({
+    const res = await sendToWorker({
       type: MSG.TEST_RUNTIME,
       payload,
     });

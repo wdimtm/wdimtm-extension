@@ -205,6 +205,30 @@ export async function startCloudPackageCheckout(config, body) {
 }
 
 /**
+ * Cloud subscription offers (#156). Public, like the package catalog.
+ * @param {{ baseUrl?: string, accessToken?: string }} config
+ * @returns {Promise<{ offers: Array<import('../extension/lib/cloud-subscription.js').SubscriptionOffer>, checkout_available?: boolean, warning?: string }>}
+ */
+export async function fetchCloudSubscriptions(config) {
+  const res = await cloudFetch({ baseUrl: config.baseUrl, accessToken: config.accessToken || "" }, "/subscriptions");
+  return res.json();
+}
+
+/**
+ * Start checkout for a Cloud subscription offer. Requires a signed-in session.
+ * @param {{ baseUrl?: string, accessToken?: string }} config
+ * @param {{ offerId: string }} body
+ * @returns {Promise<{ checkout_url: string, payment_id?: string, offer_id?: string }>}
+ */
+export async function startCloudSubscriptionCheckout(config, body) {
+  const res = await cloudFetch(config, "/subscriptions/checkout", {
+    method: "POST",
+    body: { offerId: body.offerId },
+  });
+  return res.json();
+}
+
+/**
  * Ask Cloud to turn any completed payment into credits (#88).
  *
  * Checkout finishes on the payment provider's page, not in the extension, so
