@@ -7,6 +7,8 @@
  * there, and this half never needed to.
  */
 
+import { DEFAULT_CLOUD_BASE_URL } from "./cloud.js";
+
 /** @typedef {import('./lenses.js').LensDef} LensDef */
 
 export const DEFAULT_SETTINGS = {
@@ -30,7 +32,7 @@ export const DEFAULT_SETTINGS = {
    * can override under Advanced. Packages / checkout come from Agentaab via
    * the Cloud API — not from client-side Agentaab URLs.
    */
-  cloudBaseUrl: "https://cloud.wdimtm.com",
+  cloudBaseUrl: DEFAULT_CLOUD_BASE_URL,
   /** Access token for WDIMTM Cloud. Filled by Google sign-in; never pasted by hand for normal users. Never synced. */
   cloudAccessToken: "",
   /** Public manage / top-up URL (optional). Checkout usually goes through package payment. */

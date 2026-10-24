@@ -134,8 +134,9 @@ function chatProblem(payload) {
 async function signedInCloudConfig() {
   const settings = await getSettings();
   const session = await (await getAuthProvider()).getSession();
-  if (!session?.accessToken || !settings.cloudBaseUrl?.trim()) return null;
-  return { baseUrl: settings.cloudBaseUrl, accessToken: session.accessToken };
+  const { baseUrl, configured } = resolveCloudConfig(settings);
+  if (!session?.accessToken || !configured) return null;
+  return { baseUrl, accessToken: session.accessToken };
 }
 
 /** Local first-run funnel state (#40). Never leaves the browser. */
@@ -589,7 +590,7 @@ const handlers = {
         lastSyncedAt: settings.lastSyncedAt || "",
         // #51: a configured cloud endpoint (hosted or self-hosted) makes
         // sign-in real rather than a stub.
-        cloudReady: Boolean(settings.cloudBaseUrl?.trim()),
+        cloudReady: resolveCloudConfig(settings).configured,
         account,
       },
     };
@@ -613,7 +614,7 @@ const handlers = {
     // newer cloud copy (#51). Failing to migrate must not fail the sign-in.
     let migration = null;
     const settings = await getSettings();
-    if (settings.syncPreferences !== false && settings.cloudBaseUrl?.trim()) {
+    if (settings.syncPreferences !== false && resolveCloudConfig(settings).configured) {
       try {
         const sync = await getSyncProvider();
         if (typeof sync.migrateLocalToCloud === "function") {
@@ -709,12 +710,10 @@ const handleMessage = createMessageRouter(handlers);
  * @param {import('../lib/auth/types.js').Session | null} session
  */
 async function cloudAccountSummary(settings, session) {
-  if (!session?.accessToken || !settings.cloudBaseUrl?.trim()) return null;
+  const { baseUrl, configured } = resolveCloudConfig(settings);
+  if (!session?.accessToken || !configured) return null;
   try {
-    const account = await fetchCloudAccount({
-      baseUrl: settings.cloudBaseUrl,
-      accessToken: session.accessToken,
-    });
+    const account = await fetchCloudAccount({ baseUrl, accessToken: session.accessToken });
     return {
       plan: account.plan || "",
       planLabel: account.planLabel || "",

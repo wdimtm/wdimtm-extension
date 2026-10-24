@@ -4,6 +4,7 @@
 
 import { DEFAULT_SETTINGS, getSettings, saveSettings } from "../settings.js";
 import { createCloudAuthProvider, createCloudSyncProvider } from "../../../core/auth/cloud.js";
+import { resolveCloudConfig } from "../../../core/cloud.js";
 import { getGoogleAccessToken } from "./google.js";
 import { createLocalAuthProvider, createLocalSyncProvider, mergeLastWriteWins } from "../../../core/auth/local.js";
 
@@ -31,11 +32,11 @@ export async function getAuthProvider() {
   const mode = await getAccountMode();
   if (mode !== "cloud") return createLocalAuthProvider();
 
-  const settings = await getSettings();
-  if (!settings.cloudBaseUrl?.trim()) return createCloudAuthStub();
+  const cloud = resolveCloudConfig(await getSettings());
+  if (!cloud.configured) return createCloudAuthStub();
 
   return createCloudAuthProvider({
-    config: { baseUrl: settings.cloudBaseUrl, accessToken: settings.cloudAccessToken || "" },
+    config: { baseUrl: cloud.baseUrl, accessToken: cloud.accessToken },
     getGoogleToken: getGoogleAccessToken,
     readSession: readStoredSession,
     persistSession: storeSession,
@@ -96,14 +97,11 @@ export async function getSyncProvider() {
   const mode = await getAccountMode();
   if (mode !== "cloud") return createLocalSyncProvider();
 
-  const settings = await getSettings();
-  if (settings.cloudBaseUrl?.trim()) {
+  const cloud = resolveCloudConfig(await getSettings());
+  if (cloud.configured) {
     // #51: a configured WDIMTM Cloud (or a self-hosted backend implementing the
     // same contract) can sync for real.
-    return createCloudSyncProvider({
-      baseUrl: settings.cloudBaseUrl,
-      accessToken: settings.cloudAccessToken || "",
-    });
+    return createCloudSyncProvider({ baseUrl: cloud.baseUrl, accessToken: cloud.accessToken });
   }
   return createCloudSyncStub();
 }

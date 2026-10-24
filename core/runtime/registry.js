@@ -19,7 +19,7 @@
  * Adding a runtime is adding one entry here. Nothing else should grow a case.
  */
 
-import { DEFAULT_CLOUD_BASE_URL } from "../cloud.js";
+import { resolveCloudConfig } from "../cloud.js";
 import {
   chatWithAnthropic,
   explainWithAnthropic,
@@ -146,22 +146,15 @@ export const RUNTIMES = [
   {
     id: "wdimtm-cloud",
     settingsKeys: ["cloudBaseUrl", "cloudAccessToken"],
-    configFromSettings: (settings, ctx = {}) =>
-      withLanguage(
-        {
-          baseUrl: settings.cloudBaseUrl || "",
-          accessToken: settings.cloudAccessToken || "",
-        },
-        ctx
-      ),
+    configFromSettings: (settings, ctx = {}) => {
+      const { baseUrl, accessToken } = resolveCloudConfig(settings);
+      return withLanguage({ baseUrl, accessToken }, ctx);
+    },
     ready: (settings) => {
-      // Production base URL is the default; users should not type it.
       // Ready = signed in (session token from Google). Packages/checkout are separate.
-      const base = String(settings.cloudBaseUrl || "").trim() || DEFAULT_CLOUD_BASE_URL;
-      if (!base) return { ok: false, reason: "missing_cloud_base" };
-      if (!settings.cloudAccessToken?.trim()) {
-        return { ok: false, reason: "missing_cloud_token" };
-      }
+      const cloud = resolveCloudConfig(settings);
+      if (!cloud.configured) return { ok: false, reason: "missing_cloud_base" };
+      if (!cloud.signedIn) return { ok: false, reason: "missing_cloud_token" };
       return { ok: true, reason: "ready" };
     },
     completion: COMPLETION_VIA_BYOK_KEY,

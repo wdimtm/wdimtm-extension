@@ -7,6 +7,7 @@ import { browserLocale } from "./host-locale.js";
 import { applyOverride, BUILTIN_LENSES } from "../../core/lenses.js";
 import { normalizeRuntimeId } from "../../core/runtime/registry.js";
 import { DEFAULT_SETTINGS, SECRET_KEYS } from "../../core/settings-defaults.js";
+import { resolveCloudConfig } from "../../core/cloud.js";
 import { isHostDenied } from "../../core/site-scope.js";
 
 // Re-exported so every existing import site keeps working; the definitions
@@ -185,10 +186,7 @@ export function publicSettings(settings) {
     // Research is a durable server-side job (#52), so it exists only when a
     // signed-in cloud does. The bubble uses this to decide whether offering
     // "Research this" would be a promise it cannot keep.
-    researchReady: Boolean(
-      (String(settings.cloudBaseUrl || "").trim() || "https://cloud.wdimtm.com") &&
-        String(settings.cloudAccessToken || "").trim()
-    ),
+    researchReady: resolveCloudConfig(settings).signedIn,
     webSearchEnabled: Boolean(settings.webSearchEnabled),
     webSearchProvider: settings.webSearchProvider || "none",
     hasWebSearchKey: Boolean(String(settings.webSearchApiKey || "").trim()),

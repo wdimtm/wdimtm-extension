@@ -17,6 +17,9 @@ import {
 } from "../../core/runtime-presets.js";
 import { testRuntimeConnection } from "../../core/runtime-test.js";
 import { explainWithWdimtmCloud } from "../../core/runtime/wdimtm-cloud.js";
+import { getRuntime } from "../../core/runtime/registry.js";
+import { isCloudConfigured } from "../../core/service-mode.js";
+import { publicSettings } from "../../extension/lib/settings.js";
 
 /**
  * @param {(req: http.IncomingMessage, res: http.ServerResponse, body: any) => void} handler
@@ -64,6 +67,38 @@ describe("cloud config", () => {
     const cfg = resolveCloudConfig({});
     assert.equal(cfg.configured, true);
     assert.equal(cfg.baseUrl, "https://cloud.wdimtm.com");
+  });
+
+  it("treats a whitespace-only base URL as the production Cloud", () => {
+    const cfg = resolveCloudConfig({ cloudBaseUrl: "   ", cloudAccessToken: "" });
+    assert.equal(cfg.baseUrl, "https://cloud.wdimtm.com");
+    assert.equal(cfg.configured, true);
+    assert.equal(cfg.signedIn, false);
+  });
+
+  // Five call sites used to answer "can Cloud be used" separately and
+  // disagreed about a blank base URL (#167). They now all ask resolveCloudConfig.
+  it("gives one readiness answer to every caller", () => {
+    const cases = [
+      { cloudBaseUrl: "", cloudAccessToken: "" },
+      { cloudBaseUrl: "   ", cloudAccessToken: "" },
+      { cloudBaseUrl: "   ", cloudAccessToken: "tok" },
+      { cloudBaseUrl: "https://self.example/", cloudAccessToken: "tok" },
+      { cloudBaseUrl: "https://self.example", cloudAccessToken: "  " },
+    ];
+    const cloud = getRuntime("wdimtm-cloud");
+    for (const settings of cases) {
+      const cfg = resolveCloudConfig(settings);
+      const label = JSON.stringify(settings);
+      assert.equal(isCloudConfigured(settings), cfg.configured, label);
+      assert.equal(cloud.ready(settings).ok, cfg.configured && cfg.signedIn, label);
+      assert.equal(publicSettings(settings).researchReady, cfg.signedIn, label);
+      assert.deepEqual(
+        { baseUrl: cloud.configFromSettings(settings).baseUrl },
+        { baseUrl: cfg.baseUrl },
+        label
+      );
+    }
   });
 
   it("builds versioned paths", () => {

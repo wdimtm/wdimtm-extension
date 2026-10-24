@@ -1252,7 +1252,7 @@ async function refreshResearchCard(settings) {
   if (!settings) settings = await getSettings();
   const card = document.getElementById("research-card");
   const list = document.getElementById("research-jobs");
-  const configured = Boolean(String(settings.cloudBaseUrl || "").trim());
+  const { configured } = resolveCloudConfig(settings);
   card.hidden = !configured;
   if (!configured) return;
 

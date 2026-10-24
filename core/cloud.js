@@ -15,22 +15,29 @@ const SECRET_KEY_PATTERN = /(api[-_]?key|access[-_]?token|secret|password|bearer
  * @typedef {Object} CloudConfig
  * @property {string} baseUrl
  * @property {string} accessToken
- * @property {boolean} configured
+ * @property {boolean} configured  A Cloud endpoint is known (always, given the default).
+ * @property {boolean} signedIn  There is a session token to call it with.
  */
 
-/**
- * @param {{ cloudBaseUrl?: string, cloudAccessToken?: string } | null | undefined} settings
- * @returns {CloudConfig}
- */
 /** Production Cloud origin — also the default in settings. */
 export const DEFAULT_CLOUD_BASE_URL = "https://cloud.wdimtm.com";
 
+/**
+ * The one answer to "where is WDIMTM Cloud, and can this browser use it" (#167).
+ * Five call sites used to answer it separately and disagreed about a blank base
+ * URL. A blank or whitespace-only base URL means the production Cloud: users
+ * never type it, and self-hosters override it.
+ *
+ * @param {{ cloudBaseUrl?: string, cloudAccessToken?: string } | null | undefined} settings
+ * @returns {CloudConfig}
+ */
 export function resolveCloudConfig(settings) {
-  const baseUrl = String(settings?.cloudBaseUrl || DEFAULT_CLOUD_BASE_URL || "")
-    .trim()
-    .replace(/\/+$/, "");
+  const baseUrl = (String(settings?.cloudBaseUrl || "").trim() || DEFAULT_CLOUD_BASE_URL).replace(
+    /\/+$/,
+    ""
+  );
   const accessToken = String(settings?.cloudAccessToken || "").trim();
-  return { baseUrl, accessToken, configured: Boolean(baseUrl) };
+  return { baseUrl, accessToken, configured: Boolean(baseUrl), signedIn: Boolean(accessToken) };
 }
 
 /**

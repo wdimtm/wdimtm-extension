@@ -9,6 +9,8 @@
  * See docs/service-modes.md and docs/cloud-api-contract.md.
  */
 
+import { resolveCloudConfig } from "./cloud.js";
+
 /** @typedef {'local' | 'byok' | 'cloud'} ServiceMode */
 /** @typedef {'full' | 'partial' | 'unavailable'} AvailabilityLevel */
 
@@ -212,9 +214,7 @@ export function serviceModeLabel(mode, locale = "en") {
  * @param {{ cloudBaseUrl?: string } | null | undefined} settings
  */
 export function isCloudConfigured(settings) {
-  // Production base URL is the default — empty settings still mean "Cloud is
-  // reachable" for the product path. Self-hosters override cloudBaseUrl.
-  return Boolean(String(settings?.cloudBaseUrl || "https://cloud.wdimtm.com").trim());
+  return resolveCloudConfig(settings).configured;
 }
 
 /**
