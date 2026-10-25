@@ -31,6 +31,11 @@ const MIME = {
 function startStaticServer() {
   const server = http.createServer((req, res) => {
     const urlPath = decodeURIComponent((req.url || "/").split("?")[0]);
+    if (urlPath === "/favicon.ico") {
+      res.writeHead(204);
+      res.end();
+      return;
+    }
     const rel = urlPath === "/" ? "/demo.html" : urlPath;
     const filePath = path.normalize(path.join(FIXTURES, rel));
     if (!filePath.startsWith(FIXTURES)) {
@@ -63,7 +68,17 @@ async function waitForExtensionServiceWorker(context, timeoutMs = 20000) {
   return context.waitForEvent("serviceworker", { timeout: timeoutMs });
 }
 
+async function screenshot(page, name) {
+  const file = path.join(OUT_DIR, name);
+  const text = await page.evaluate(() => [document.body.innerText,
+    ...[...document.querySelectorAll("*")].filter(el => el.shadowRoot)
+      .map(el => el.shadowRoot.textContent)].join("\n"));
+  fs.writeFileSync(file.replace(/\.png$/, ".page.txt"), `pr-evidence-page-text\n${text}`);
+  await page.screenshot({ path: file, fullPage: name === "04-save-toast.png" });
+}
+
 async function main() {
+  fs.rmSync(OUT_DIR, { recursive: true, force: true });
   fs.mkdirSync(OUT_DIR, { recursive: true });
   fs.rmSync(USER_DATA, { recursive: true, force: true });
   fs.mkdirSync(USER_DATA, { recursive: true });
@@ -74,10 +89,12 @@ async function main() {
   /** @type {import('playwright').BrowserContext | null} */
   let context = null;
   const results = [];
+  const browserErrors = [];
+  let passed = false;
+  let chromiumVersion = null;
 
   try {
-    // Extensions require a persistent context. Prefer headed=false with new headless
-    // when supported; fall back to headed if the environment allows a display.
+    // Extensions require a persistent context and headed Chromium in CI.
     const launchOpts = {
       headless: false,
       args: [
@@ -85,6 +102,8 @@ async function main() {
         `--load-extension=${EXTENSION_PATH}`,
         "--no-first-run",
         "--no-default-browser-check",
+        // Synthetic tests never resolve production services.
+        "--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE localhost, EXCLUDE 127.0.0.1",
       ],
       viewport: { width: 1100, height: 800 },
     };
@@ -101,6 +120,31 @@ async function main() {
     }
 
     context = await chromium.launchPersistentContext(USER_DATA, launchOpts);
+    await context.tracing.start({ screenshots: true, snapshots: true, sources: false });
+    await context.route("https://cloud.wdimtm.com/v1/packages*", (route) => route.fulfill({
+      contentType: "application/json",
+      headers: { "Access-Control-Allow-Origin": "*" },
+      body: JSON.stringify({ packages: [{ id: "synthetic-starter", name: "Synthetic Starter",
+        credits: 200, currency: "USD", price_cents: 500 }], enabled: true,
+        source: "fixture", currency: "USD", checkout_available: false }),
+    }));
+    await context.route("https://cloud.wdimtm.com/v1/subscriptions*", (route) => route.fulfill({
+      contentType: "application/json",
+      headers: { "Access-Control-Allow-Origin": "*" },
+      body: JSON.stringify({ offers: [], checkout_available: false }),
+    }));
+    const watchPage = (page) => {
+      page.on("pageerror", (err) => browserErrors.push(`pageerror: ${err.message}`));
+      page.on("console", (msg) => {
+        if (msg.type() === "error") browserErrors.push(`console: ${msg.text()}`);
+      });
+      page.on("requestfailed", (req) => browserErrors.push(`requestfailed: ${req.url()}`));
+      page.on("response", (res) => {
+        if (res.status() >= 400) browserErrors.push(`HTTP ${res.status()}: ${res.url()}`);
+      });
+    };
+    context.pages().forEach(watchPage);
+    context.on("page", watchPage);
 
     let sw;
     try {
@@ -118,6 +162,7 @@ async function main() {
     const extUrl = sw.url();
     assert.ok(extUrl.startsWith("chrome-extension://"), `unexpected SW url: ${extUrl}`);
     const extensionId = new URL(extUrl).host;
+    chromiumVersion = await sw.evaluate(() => navigator.userAgent);
     results.push(`service worker: ok (${extensionId})`);
 
     // A fresh install opens Settings (onInstalled → openOptionsPage). Newer
@@ -205,7 +250,14 @@ async function main() {
     results.push("saving settings shows a visible toast: ok");
     // Past the 160ms fade, so the screenshot shows the settled toast.
     await options.waitForTimeout(400);
-    await options.screenshot({ path: path.join(OUT_DIR, "04-save-toast.png") });
+    await options.locator("#cloud-sign-in").waitFor({ state: "visible" });
+    await options.locator("#cloud-advanced").evaluate(el => { el.open = true; });
+    await options.locator("#test-cloud").click();
+    await options.locator("#test-cloud-status").filter({ hasText: /Cannot reach WDIMTM Cloud/ }).waitFor();
+    results.push("signed-out Cloud sign-in and connection error: ok");
+    await options.setViewportSize({ width: 390, height: 844 });
+    await options.locator("#test-cloud-status").scrollIntoViewIfNeeded();
+    await screenshot(options, "04-save-toast.png");
     await options.close();
     // ── Cloud subscription checkout (#156) ───────────────────────────
     // Cloud is stubbed at the network layer. What this proves is the browser
@@ -292,7 +344,7 @@ async function main() {
     assert.deepEqual(subscriptionCheckouts, [{ offerId: "off_e2e" }]);
     results.push("Settings → Subscribe opens Stripe checkout in a tab: ok");
     await checkoutTab.close();
-    await billing.screenshot({ path: path.join(OUT_DIR, "05-subscription.png") });
+    await screenshot(billing, "05-subscription.png");
     await billing.close();
     await context.unroute(`${CLOUD}/**`);
     await sw.evaluate(() => chrome.storage.local.remove("cloudAccessToken"));
@@ -366,10 +418,7 @@ async function main() {
       .waitFor({ state: "visible" });
     results.push("selection bubble + lens select visible: ok");
 
-    await page.screenshot({
-      path: path.join(OUT_DIR, "01-bubble.png"),
-      fullPage: false,
-    });
+    await screenshot(page, "01-bubble.png");
 
     // Click the explain button (not the lens <select>).
     await page
@@ -507,6 +556,7 @@ async function main() {
         { timeout: 15000 }
       );
       results.push("chat turn: ok");
+      await screenshot(page, "03-chat.png");
       await page.locator("#wdimtm-host").locator('[data-chat-action="close"]').click({ force: true });
     } else {
       results.push("discuss further: skipped (chip not present after more)");
@@ -551,10 +601,7 @@ async function main() {
     );
     results.push("Remember this: ok");
 
-    await page.screenshot({
-      path: path.join(OUT_DIR, "02-popover.png"),
-      fullPage: false,
-    });
+    await screenshot(page, "02-popover.png");
 
     // Dismiss with Escape — should not navigate away.
     const urlBefore = page.url();
@@ -584,11 +631,6 @@ async function main() {
     assert.ok(typeof after.y === "number");
     results.push("scroll reposition handled: ok");
 
-    await page.screenshot({
-      path: path.join(OUT_DIR, "03-after-scroll.png"),
-      fullPage: false,
-    });
-
     const bounds = await page.evaluate(() => {
       const claim = document.getElementById("target-claim")?.innerText || "";
       return { selectionLen: claim.length, maxSelection: 4000, maxContext: 2500 };
@@ -596,6 +638,8 @@ async function main() {
     assert.ok(bounds.selectionLen < bounds.maxSelection);
     results.push("selection within bounds: ok");
 
+    assert.deepEqual(browserErrors, [], "browser errors must fail the E2E run");
+    passed = true;
     console.log("\nE2E PASS");
     for (const line of results) console.log("  ✓", line);
     console.log(`\nScreenshots: ${OUT_DIR}`);
@@ -608,10 +652,7 @@ async function main() {
       const page = pages[pages.length - 1];
       if (page) {
         try {
-          await page.screenshot({
-            path: path.join(OUT_DIR, "failure.png"),
-            fullPage: true,
-          });
+          await screenshot(page, "failure.png");
           console.error("  screenshot:", path.join(OUT_DIR, "failure.png"));
           console.error("  page url:", page.url());
           console.error(
@@ -625,8 +666,31 @@ async function main() {
     }
     throw err;
   } finally {
+    let traceError;
+    if (context) {
+      try {
+        await context.tracing.stop({ path: path.join(OUT_DIR, "trace.zip") });
+      } catch (err) {
+        passed = false;
+        traceError = err;
+        browserErrors.push(`trace: ${err.message}`);
+      }
+    }
+    fs.writeFileSync(path.join(OUT_DIR, "browser-errors.json"), JSON.stringify(browserErrors, null, 2));
+    fs.writeFileSync(path.join(OUT_DIR, "result.json"), JSON.stringify({
+      fixture: "synthetic-selection-followup-settings-memory",
+      head_sha: process.env.PR_EVIDENCE_HEAD_SHA || null,
+      tested_sha: process.env.GITHUB_SHA || null,
+      status: passed ? "passed" : "failed",
+      headed: process.env.WDIMTM_E2E_HEADLESS !== "1",
+      chromium: chromiumVersion,
+      extension_version: JSON.parse(fs.readFileSync(path.join(EXTENSION_PATH, "manifest.json"))).version,
+      assertions: results,
+      limitations: ["Synthetic mock runtime; no real OAuth, payment or provider calls.", "Desktop viewport only."],
+    }, null, 2));
     if (context) await context.close().catch(() => {});
     await new Promise((r) => server.close(r));
+    if (traceError) throw traceError;
   }
 }
 

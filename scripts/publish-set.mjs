@@ -35,6 +35,13 @@ export const PRIVATE = [
   "docs/internal",
   // The publisher. A copy of it on the public repo would try to publish itself.
   ".github/workflows/mirror.yml",
+  // Private Cloud verification is not runnable in the public client mirror.
+  // These do not import cloud/src, so the import gate below would publish them.
+  ".github/workflows/verify.yml",
+  ".github/vendor",
+  "scripts/pr-evidence.mjs",
+  "scripts/ci-browser-deps.sh",
+  "tests/unit/pr-evidence.test.mjs",
   // Stands in for the private backend.
   "scripts/wdimtm-cloud-mock-server.mjs",
 ];
