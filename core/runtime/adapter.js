@@ -235,15 +235,17 @@ export async function chat(request, opts = {}) {
     settings.customLenses || [],
     settings.lensOverrides || {}
   );
+  const lastUser =
+    [...(request.messages || [])].reverse().find((m) => m.role === "user")?.content ||
+    "";
   const provider = opts.memoryProvider;
-  const query = `${request.selection || ""}\n${request.page?.title || ""}\n${lens.id}`;
+  // The current question leads: a turn that moves to a new topic should pull
+  // the memories for that topic, not the same ones the selection did.
+  const query = `${String(lastUser).slice(0, 500)}\n${request.selection || ""}\n${request.page?.title || ""}\n${lens.id}`;
   const relevant =
     !provider || settings.memoryProvider === "none" ? [] : await provider.search(query, 6);
   const profileText = (settings.profileText || "").trim();
   const memories = toExplainMemories(profileText, relevant);
-  const lastUser =
-    [...(request.messages || [])].reverse().find((m) => m.role === "user")?.content ||
-    "";
   const answerLanguage = resolveAnswerLanguage(
     settings,
     request.selection || lastUser,

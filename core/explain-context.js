@@ -6,6 +6,7 @@
  * use the same sections for consistency.
  */
 
+import { normalizePriorTurns } from "./followup-context.js";
 import { modeInstruction, normalizeMode } from "./modes.js";
 
 /**
@@ -24,6 +25,7 @@ import { modeInstruction, normalizeMode } from "./modes.js";
  * @property {string} [profile]
  * @property {MemoryItem[]} memories  // non-profile durable items
  * @property {string} [followUpQuestion]
+ * @property {import('./followup-context.js').PriorTurn[]} priorTurns  // earlier popover answers on this selection
  * @property {string} [webEvidence]  // formatted search hits for verify/research
  * @property {{ used?: boolean, provider?: string, error?: string }} [webSearchMeta]
  * @property {{ hasProfile: boolean, hasMemories: boolean, personalization: 'none' | 'light' | 'rich', hasWebEvidence: boolean }} flags
@@ -37,6 +39,7 @@ import { modeInstruction, normalizeMode } from "./modes.js";
  *   answerDepth?: string,
  *   languageInstruction?: string,
  *   followUpQuestion?: string,
+ *   priorTurns?: unknown,
  *   profile?: string,
  *   webEvidence?: string,
  *   webSearchMeta?: { used?: boolean, provider?: string, error?: string },
@@ -94,6 +97,7 @@ export function buildExplainContext(request) {
     followUpQuestion: request.followUpQuestion
       ? String(request.followUpQuestion).slice(0, 400)
       : undefined,
+    priorTurns: normalizePriorTurns(request.priorTurns),
     webEvidence: webEvidence || undefined,
     webSearchMeta: request.webSearchMeta,
     flags: { hasProfile, hasMemories, personalization, hasWebEvidence },
@@ -120,6 +124,24 @@ export function buildSystemPrompt(ctx) {
         ? "Personalization: profile + memories are present. Prefer implications that honestly connect to them; never force a weak link."
         : "Personalization: limited user context. Use it when relevant; otherwise explain normally.";
 
+  // A follow-up builds on what was already said; restating the selection on
+  // every chip is what made the popover feel like it repeated itself.
+  const followUp = ctx.mode === "probe" || Boolean(ctx.followUpQuestion) || ctx.priorTurns.length > 0;
+  const answerShape = followUp
+    ? [
+        "This is a follow-up on the same selection. Answer the new question directly:",
+        "- Do not restate what the selection says, and do not repeat points from EARLIER IN THIS THREAD.",
+        "- Build on those earlier answers; refer back to them in a phrase when it helps.",
+        "- If an earlier answer was wrong or incomplete, say so and correct it.",
+      ]
+    : [
+        "Suggested answer shape (adapt freely):",
+        "1) Grounding — what the selection is saying (brief).",
+        "2) For you — why it might matter given profile/memories (omit if none applies).",
+        "3) Facts vs inference — only when useful; for verify, list claims + what web evidence supports/refutes.",
+        "4) Optional: one concrete next question or check.",
+      ];
+
   return [
     "You are WDIMTM (What Does It Mean To Me?) — a browser-native explainer.",
     "The user selected text on a web page. Your job is NOT a generic encyclopedia summary.",
@@ -128,6 +150,7 @@ export function buildSystemPrompt(ctx) {
     "Input sections you will receive (treat boundaries as hard):",
     "- PAGE FACTS: title, URL, selected text, bounded surrounding context — only these are webpage evidence.",
     "- WEB EVIDENCE (optional): live search snippets with URLs — external evidence, not the page itself.",
+    "- EARLIER IN THIS THREAD (optional): your own earlier answers about this selection — context, not page evidence.",
     "- USER PROFILE: stable self-description (expertise, role, preferences).",
     "- RELEVANT MEMORIES: durable interests / knowledge / goals / preferences — not the full chat history.",
     "- LENS: how to frame the answer (engineering, investing, opportunities, etc.).",
@@ -153,14 +176,11 @@ export function buildSystemPrompt(ctx) {
       ? `Lens “${ctx.lens.id}”: ${ctx.lens.instructions}`
       : `Lens: ${ctx.lens.id}`,
     "",
-    "Suggested answer shape (adapt freely):",
-    "1) Grounding — what the selection is saying (brief).",
-    "2) For you — why it might matter given profile/memories (omit if none applies).",
-    "3) Facts vs inference — only when useful; for verify, list claims + what web evidence supports/refutes.",
-    "4) Optional: one concrete next question or check.",
+    ...answerShape,
     "",
     "After the visible answer, always end with 2–3 content-specific follow-up chip labels",
     "(concrete questions about THIS selection — not generic “Explain more”).",
+    followUp ? "Do not suggest a question that EARLIER IN THIS THREAD already answered." : "",
     "Optional: one durable memory suggestion (interest/preference/knowledge/goal only — never dump the whole answer).",
     "Trailers must appear only at the very end:",
     "<<<WDIMTM_FOLLOWUPS>>>",
@@ -197,6 +217,17 @@ export function buildUserPrompt(ctx) {
     parts.push("### Bounded surrounding context");
     parts.push("(Neighborhood text only — not the full page DOM.)");
     parts.push(ctx.page.context);
+  }
+
+  if (ctx.priorTurns.length) {
+    parts.push("");
+    parts.push("## EARLIER IN THIS THREAD");
+    parts.push("(Your own earlier answers about this selection, oldest first — not page evidence.)");
+    for (const t of ctx.priorTurns) {
+      parts.push("");
+      parts.push(`### Asked: ${t.question || `(${t.mode})`}`);
+      parts.push(t.answer);
+    }
   }
 
   parts.push("");

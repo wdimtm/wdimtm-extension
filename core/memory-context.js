@@ -11,12 +11,18 @@
 export function toExplainMemories(profileText, memories) {
   /** @type {Array<{ type: string, content: string }>} */
   const out = [];
-  if (profileText?.trim()) {
-    out.push({ type: "profile", content: profileText.trim() });
-  }
-  for (const m of memories) {
-    out.push({ type: m.type, content: m.text });
-  }
+  // The profile text is often also stored as a profile memory; page chat
+  // listed it twice.
+  const seen = new Set();
+  const push = (type, content) => {
+    const text = String(content || "").trim();
+    const key = text.toLowerCase().replace(/\s+/g, " ");
+    if (!text || seen.has(key)) return;
+    seen.add(key);
+    out.push({ type, content: text });
+  };
+  push("profile", profileText);
+  for (const m of memories) push(m.type, m.text);
   return out;
 }
 

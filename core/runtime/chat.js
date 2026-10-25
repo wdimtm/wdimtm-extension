@@ -9,6 +9,7 @@
  */
 
 import { buildChatSystemPrompt } from "../chat-prompt.js";
+import { chatTurnsForModel } from "../followup-context.js";
 import { attachmentsWithData, hasImageAttachments } from "../images.js";
 import { runtimeForExecution } from "./registry.js";
 
@@ -40,7 +41,7 @@ import { runtimeForExecution } from "./registry.js";
  * }} config settings-shaped: the same keys the registry reads off settings
  */
 export async function runChat(request, config) {
-  const messages = Array.isArray(request.messages) ? request.messages : [];
+  const messages = chatTurnsForModel(request.messages);
   if (!messages.length) {
     throw new Error("Chat requires at least one user message.");
   }

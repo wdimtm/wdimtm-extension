@@ -72,6 +72,7 @@ const STRINGS = {
     errBudgetExhausted:
       "WDIMTM Cloud is paused for now: the service budget is used up. Try again later, or use your own API key.",
     chatSuggestSummarize: "Summarize selection",
+    chatSeedQuestion: "Explain this selection.",
     chatSuggestPage: "Summarize page (bounded)",
     chatSuggestWhy: "Why does this matter?",
     chatSuggestSanity: "Does this hold up?",
@@ -163,6 +164,7 @@ const STRINGS = {
     errInsufficientCredits: "WDIMTM 额度不足以完成这次请求。购买额度包，或改用自己的 API Key。",
     errBudgetExhausted: "WDIMTM Cloud 暂时停用：服务预算已用完。请稍后再试，或改用自己的 API Key。",
     chatSuggestSummarize: "总结选区",
+    chatSeedQuestion: "解释这段选区。",
     chatSuggestPage: "总结本页（有界）",
     chatSuggestWhy: "这为什么重要？",
     chatSuggestSanity: "这有没有道理？",

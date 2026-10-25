@@ -11,6 +11,11 @@ import * as WdimtmSuggestLens from "../../core/suggest-lens.js";
 import * as WdimtmImages from "./images.js";
 import * as WdimtmSiteScope from "../../core/site-scope.js";
 import { hideStreamingTrailers } from "../../core/followups.js";
+import {
+  appendTrailTurn,
+  priorTurnsFromTrail,
+  seedMessagesFor,
+} from "../../core/followup-context.js";
 import { consumePortStream } from "../lib/port-client.js";
 import { MSG, createSender } from "../../core/messages.js";
 import { CONTENT_CSS } from "./styles.inline.js";
@@ -86,6 +91,13 @@ import { CONTENT_CSS } from "./styles.inline.js";
   let activePort = null;
   let lastRequest = null;
   let lastExplanation = "";
+  /**
+   * Popover answers for one selection, oldest first. A follow-up chip sends
+   * them along so the model builds on what it said; page chat is seeded from
+   * them, question and answer both.
+   * @type {{ selection: string, turns: import('../../core/followup-context.js').TrailTurn[] }}
+   */
+  let popoverTrail = { selection: "", turns: [] };
   /** @type {Array<{id:string,label:string,intent:string}>} */
   let lastFollowUps = [];
   /** @type {{ content: string, type: string, reason?: string } | null} */
@@ -1577,33 +1589,36 @@ import { CONTENT_CSS } from "./styles.inline.js";
       escalateToChat({ seedFromExplain: true });
       return;
     }
+    // Every chip is a follow-up on the answer it sits under.
+    const followUp = { followUp: true, label: label || "" };
     if (i === "summarize") {
-      runExplain("summarize");
+      runExplain("summarize", followUp);
       return;
     }
     if (i === "opportunities") {
       sessionLensPick = "opportunities";
       activeLensId = "opportunities";
-      runExplain("explain");
+      runExplain("explain", followUp);
       return;
     }
     if (i === "simplify") {
-      runExplain("simplify");
+      runExplain("simplify", followUp);
       return;
     }
     if (i === "research") {
-      runExplain("more");
+      runExplain("more", followUp);
       return;
     }
     if (i === "probe" || i === "ask") {
       runExplain("probe", {
+        ...followUp,
         followUpQuestion: question || label || "",
       });
       return;
     }
     if (i === "more" || i === "why" || i === "verify" || i === "research" || i === "opportunity") {
       // normalizeMode maps why → why_it_matters in the adapter
-      runExplain(i === "why" ? "why_it_matters" : i);
+      runExplain(i === "why" ? "why_it_matters" : i, followUp);
     }
   }
 
@@ -1954,9 +1969,39 @@ import { CONTENT_CSS } from "./styles.inline.js";
     // so resuming is safe whenever one exists and the caller didn't force a reset.
     const resumeSession = Boolean(session?.messages?.length) && !opts.forceNew;
 
+    // Seed from the popover trail: every answer after the question that
+    // produced it. A resumed thread takes the turns it does not hold yet, so a
+    // chip answered in the popover after chat was last open is not lost.
+    const baseMessages = resumeSession ? session.messages : [];
+    const seedQuestion = tr("chatSeedQuestion", "Explain this selection.");
+    /** @type {Array<{role:string, content:string, seedTurnId?:string}>} */
+    let seedMessages = [];
+    if (seedFromExplain) {
+      seedMessages =
+        popoverTrail.selection === selection
+          ? seedMessagesFor(baseMessages, popoverTrail.turns, { seedQuestion })
+          : [];
+      // An answer that never reached the trail (a research result) still
+      // seeds, once.
+      if (
+        !seedMessages.length &&
+        !baseMessages.some((m) => m.role === "assistant" && m.content === seedFromExplain)
+      ) {
+        seedMessages = [
+          { role: "user", content: seedQuestion },
+          { role: "assistant", content: seedFromExplain },
+        ];
+      }
+    } else if (!resumeSession && seedExplanation) {
+      seedMessages = [
+        { role: "user", content: seedQuestion },
+        { role: "assistant", content: seedExplanation },
+      ];
+    }
+
     if (resumeSession) {
       chatState = {
-        messages: session.messages,
+        messages: [...session.messages, ...seedMessages],
         selection: session.selection || selection,
         page: {
           url: page.url,
@@ -1969,16 +2014,8 @@ import { CONTENT_CSS } from "./styles.inline.js";
         threads,
       };
     } else {
-      /** @type {Array<{role:string, content:string}>} */
-      const messages = [];
-      if (seedExplanation) {
-        messages.push({
-          role: "assistant",
-          content: seedExplanation,
-        });
-      }
       chatState = {
-        messages,
+        messages: seedMessages,
         selection: selection || session?.selection || "",
         page,
         lensId: activeLensId,
@@ -2402,12 +2439,21 @@ import { CONTENT_CSS } from "./styles.inline.js";
         if (!item || !chatState) return;
         // Keep the thread we are leaving before rebinding to another selection.
         await persistChat();
+        // The entry's own context: keeping the previous selection's would
+        // answer this one against the wrong neighbourhood.
         chatState = {
           ...chatState,
           selection: item.selection || chatState.selection,
+          page: { ...chatState.page, context: item.context || undefined },
           lensId: item.lensId || chatState.lensId,
           seedExplanation: item.explanation || "",
-          messages: [{ role: "assistant", content: item.explanation || "" }],
+          messages: [
+            {
+              role: "user",
+              content: item.question || tr("chatSeedQuestion", "Explain this selection."),
+            },
+            { role: "assistant", content: item.explanation || "" },
+          ],
         };
         renderChatPanel();
         focusChatInput();
@@ -2505,14 +2551,16 @@ import { CONTENT_CSS } from "./styles.inline.js";
   async function summarizeBoundedPageIntoChat() {
     if (!chatState || chatBusy) return;
     const pageText = extractBoundedPageText();
-    const prevSelection = chatState.selection;
-    const prevContext = chatState.page?.context;
-    chatState.selection = pageText.slice(0, 800) || prevSelection;
-    if (chatState.page) chatState.page.context = pageText;
-    await sendChatMessage(tr("chatSuggestPage", "Summarize page (bounded)"));
-    // Restore primary selection focus for later turns (keep page context).
-    if (prevSelection) chatState.selection = prevSelection;
-    if (chatState.page && prevContext) chatState.page.context = prevContext;
+    // Only this turn asks about the page. Swapping chatState.selection for it
+    // used to persist the thread under the page text — a second, duplicate
+    // thread in the page's list.
+    const override = {
+      selection: pageText.slice(0, 800) || chatState.selection,
+      context: pageText,
+    };
+    // A thread with no context of its own keeps the page text for later turns.
+    if (chatState.page && !chatState.page.context) chatState.page.context = pageText;
+    await sendChatMessage(tr("chatSuggestPage", "Summarize page (bounded)"), undefined, override);
   }
 
   function extractBoundedPageText() {
@@ -2541,8 +2589,9 @@ import { CONTENT_CSS } from "./styles.inline.js";
   /**
    * @param {string} userText
    * @param {Array<object>} [attachments]
+   * @param {{ selection?: string, context?: string }} [override] this turn only
    */
-  async function sendChatMessage(userText, attachments) {
+  async function sendChatMessage(userText, attachments, override) {
     if (!chatState || chatBusy) return;
     chatState.messages.push({
       role: "user",
@@ -2560,13 +2609,14 @@ import { CONTENT_CSS } from "./styles.inline.js";
     await persistChat();
 
     if (streamEnabled) {
-      sendChatStreaming();
+      sendChatStreaming(override);
     } else {
-      await sendChatOnce();
+      await sendChatOnce(override);
     }
   }
 
-  function chatPayload() {
+  /** @param {{ selection?: string, context?: string }} [override] */
+  function chatPayload(override) {
     // Exclude empty trailing assistant placeholder from the model request.
     const msgs = (chatState?.messages || []).filter(
       (m, i, arr) =>
@@ -2577,8 +2627,10 @@ import { CONTENT_CSS } from "./styles.inline.js";
         )
     );
     return {
-      selection: chatState?.selection || "",
-      page: chatState?.page,
+      selection: override?.selection || chatState?.selection || "",
+      page: override?.context
+        ? { ...chatState?.page, context: override.context }
+        : chatState?.page,
       lens: { id: chatState?.lensId || activeLensId },
       // Attachments ride along on every turn that has them; the background
       // trims older images to a thread-wide budget before the request goes out.
@@ -2596,6 +2648,7 @@ import { CONTENT_CSS } from "./styles.inline.js";
     const last = chatState.messages[chatState.messages.length - 1];
     if (last?.role === "assistant") {
       last.content = text;
+      delete last.error;
       if (webSearch !== undefined) last.webSearch = webSearch;
       if (truncated) last.truncated = true;
       else delete last.truncated;
@@ -2607,6 +2660,17 @@ import { CONTENT_CSS } from "./styles.inline.js";
         ...(truncated ? { truncated: true } : {}),
       });
     }
+  }
+
+  /**
+   * Show a failed turn in its bubble, marked so the model is never sent the
+   * error text as something it said.
+   * @param {unknown} err
+   */
+  function setLastAssistantError(err) {
+    setLastAssistantContent(formatChatError(err));
+    const last = chatState?.messages?.[chatState.messages.length - 1];
+    if (last?.role === "assistant") last.error = true;
   }
 
   /** @param {object | undefined} meta */
@@ -2672,14 +2736,15 @@ import { CONTENT_CSS } from "./styles.inline.js";
     return msg.startsWith("Error:") ? msg : `Error: ${msg}`;
   }
 
-  async function sendChatOnce() {
+  /** @param {{ selection?: string, context?: string }} [override] */
+  async function sendChatOnce(override) {
     try {
       if (isExtensionContextDead()) {
         throw new Error("Extension context invalidated.");
       }
       const res = await sendToWorker({
         type: MSG.CHAT,
-        payload: chatPayload(),
+        payload: chatPayload(override),
       });
       if (!res?.ok) {
         const err = new Error(res?.error || "Chat failed.");
@@ -2694,17 +2759,18 @@ import { CONTENT_CSS } from "./styles.inline.js";
       );
       await persistChat();
     } catch (err) {
-      setLastAssistantContent(formatChatError(err));
+      setLastAssistantError(err);
     } finally {
       chatBusy = false;
       renderChatPanel();
     }
   }
 
-  function sendChatStreaming() {
+  /** @param {{ selection?: string, context?: string }} [override] */
+  function sendChatStreaming(override) {
     abortChatStream();
     if (isExtensionContextDead()) {
-      setLastAssistantContent(formatChatError(new Error("Extension context invalidated.")));
+      setLastAssistantError(new Error("Extension context invalidated."));
       chatBusy = false;
       renderChatPanel();
       return;
@@ -2715,13 +2781,13 @@ import { CONTENT_CSS } from "./styles.inline.js";
     } catch (err) {
       // Context dead: don't fall through to sendMessage (same failure, worse UX).
       if (isExtensionContextDead(err)) {
-        setLastAssistantContent(formatChatError(err));
+        setLastAssistantError(err);
         chatBusy = false;
         renderChatPanel();
         return;
       }
       // Port unavailable for other reasons — one-shot still works.
-      sendChatOnce();
+      sendChatOnce(override);
       return;
     }
     activeChatPort = port;
@@ -2736,14 +2802,14 @@ import { CONTENT_CSS } from "./styles.inline.js";
     };
 
     consumePortStream(port, {
-      request: { type: MSG.CHAT, payload: chatPayload() },
+      request: { type: MSG.CHAT, payload: chatPayload(override) },
       onChunk: (acc) => patchChatStreamingBubble(acc),
       onDone: (data, acc) =>
         settle(data?.reply || data?.explanation || acc, data?.webSearch, data?.truncated === true),
       onPartial: (acc) => settle(acc),
       onError: (err) => {
         activeChatPort = null;
-        setLastAssistantContent(formatChatError(err));
+        setLastAssistantError(err);
         chatBusy = false;
         renderChatPanel();
       },
@@ -2978,7 +3044,7 @@ import { CONTENT_CSS } from "./styles.inline.js";
 
   /**
    * @param {string} [mode]
-   * @param {{ followUpQuestion?: string }} [opts]
+   * @param {{ followUpQuestion?: string, followUp?: boolean, label?: string }} [opts]
    */
   function buildRequest(mode, opts = {}) {
     // Refresh selection if still available; else reuse pending.
@@ -3002,11 +3068,35 @@ import { CONTENT_CSS } from "./styles.inline.js";
     if (opts.followUpQuestion) {
       req.followUpQuestion = String(opts.followUpQuestion).slice(0, 400);
     }
+    // A fresh explain starts the trail over; a chip on the same selection
+    // carries the answers before it.
+    if (opts.followUp && popoverTrail.selection === selection) {
+      const priorTurns = priorTurnsFromTrail(popoverTrail.turns);
+      if (priorTurns.length) req.priorTurns = priorTurns;
+    } else {
+      popoverTrail = { selection, turns: [] };
+    }
+    // What the trail and history record this answer as having been asked.
+    req._question = String(opts.followUpQuestion || opts.label || "").slice(0, 400);
     return req;
+  }
+
+  /** Keep a finished popover answer on the trail of the selection it answered. */
+  function recordPopoverTurn(request, explanation) {
+    if (!request?.selection || popoverTrail.selection !== request.selection) return;
+    popoverTrail = {
+      selection: popoverTrail.selection,
+      turns: appendTrailTurn(popoverTrail.turns, {
+        mode: request.mode,
+        question: request._question,
+        answer: explanation,
+      }),
+    };
   }
 
   function recordExplainHistory(request, explanation) {
     if (!request?.selection || !explanation) return;
+    recordPopoverTurn(request, explanation);
     sendToWorker({
       type: MSG.HISTORY_APPEND,
       payload: {
@@ -3016,6 +3106,10 @@ import { CONTENT_CSS } from "./styles.inline.js";
           explanation,
           lensId: request.lens?.id || activeLensId,
           mode: request.mode || "explain",
+          // Reopening this entry in chat needs the context it was answered
+          // with and what was asked, not just the answer.
+          context: request.page?.context,
+          question: request._question,
         },
       },
     }).catch(() => {});
@@ -3023,7 +3117,7 @@ import { CONTENT_CSS } from "./styles.inline.js";
 
   /**
    * @param {string} [mode]
-   * @param {{ followUpQuestion?: string }} [opts]
+   * @param {{ followUpQuestion?: string, followUp?: boolean, label?: string }} [opts]
    */
   function runExplain(mode, opts = {}) {
     // Backstop. Every caller today is reached through UI that already checked,
@@ -3070,6 +3164,7 @@ import { CONTENT_CSS } from "./styles.inline.js";
         payload: {
           selection: request.selection,
           followUpQuestion: request.followUpQuestion,
+          priorTurns: request.priorTurns,
           page: request.page,
           lens: request.lens,
           mode: request.mode,
@@ -3161,6 +3256,7 @@ import { CONTENT_CSS } from "./styles.inline.js";
           lens: request.lens,
           mode: request.mode,
           followUpQuestion: request.followUpQuestion,
+          priorTurns: request.priorTurns,
         },
       },
       onChunk: (acc) => {
@@ -3174,7 +3270,7 @@ import { CONTENT_CSS } from "./styles.inline.js";
         });
         positionPopover(rect);
       },
-      onDone: (data, acc) => settle(data?.explanation || acc, data),
+      onDone: (data, acc) => settle(data?.explanation || hideStreamingTrailers(acc), data),
       // A half-streamed explanation is worth keeping, exactly as a half-streamed
       // chat reply always was.
       onPartial: (acc) => settle(hideStreamingTrailers(acc)),

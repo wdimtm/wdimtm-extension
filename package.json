@@ -19,6 +19,7 @@
     "store:assets": "node scripts/make-store-assets.mjs",
     "demo": "node scripts/serve-demo.mjs",
     "landing": "node scripts/serve-landing.mjs",
+    "check:capabilities": "npm --prefix cloud run check:capabilities",
     "build:css": "node scripts/build-inline-css.mjs",
     "deploy:landing": "wrangler deploy --config landing/wrangler.jsonc",
     "icons": "node scripts/make-icons.mjs"

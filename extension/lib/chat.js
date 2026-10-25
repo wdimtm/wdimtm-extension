@@ -3,6 +3,7 @@
  * Chat is an escalation from the explain popover — not the default surface.
  */
 
+import { MAX_CONTEXT, MAX_SELECTION } from "../../core/context-bounds.js";
 import { stripAttachmentPayloads } from "../../core/images.js";
 
 const PREFIX = "wdimtm.chat.v1:";
@@ -175,6 +176,8 @@ export async function clearThread(url, selection) {
  *   explanation: string,
  *   lensId?: string,
  *   mode?: string,
+ *   context?: string,
+ *   question?: string,
  * }>>}
  */
 export async function loadPageHistory(url) {
@@ -185,7 +188,7 @@ export async function loadPageHistory(url) {
 
 /**
  * @param {string} url
- * @param {{ selection: string, explanation: string, lensId?: string, mode?: string }} entry
+ * @param {{ selection: string, explanation: string, lensId?: string, mode?: string, context?: string, question?: string }} entry
  */
 export async function appendPageHistory(url, entry) {
   const key = historyKeyForUrl(url);
@@ -194,10 +197,14 @@ export async function appendPageHistory(url, entry) {
     {
       id: `h_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
       at: new Date().toISOString(),
-      selection: String(entry.selection || "").slice(0, 500),
+      // The whole selection: a clipped one hashes to a different thread id, so
+      // reopening it in chat missed the thread it already had.
+      selection: String(entry.selection || "").slice(0, MAX_SELECTION),
       explanation: String(entry.explanation || "").slice(0, 4000),
       lensId: entry.lensId,
       mode: entry.mode,
+      ...(entry.context ? { context: String(entry.context).slice(0, MAX_CONTEXT) } : {}),
+      ...(entry.question ? { question: String(entry.question).slice(0, 400) } : {}),
     },
     ...prev,
   ].slice(0, MAX_HISTORY);

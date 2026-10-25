@@ -133,4 +133,20 @@ describe("page chat threads", () => {
     assert.ok(await chat.loadThread(URL_A, "keep"));
     assert.equal(await chat.loadThread(URL_A, "drop"), null);
   });
+
+  it("history keeps the whole selection, its context and question, so reopening finds its thread", async () => {
+    const selection = "s".repeat(1200);
+    await chat.saveThread(URL_A, { selection, messages: [{ role: "user", content: "q" }] });
+    const [entry] = await chat.appendPageHistory(URL_A, {
+      selection,
+      explanation: "answer",
+      mode: "probe",
+      context: "the neighbourhood",
+      question: "What is X?",
+    });
+    assert.equal(entry.selection, selection);
+    assert.equal(entry.context, "the neighbourhood");
+    assert.equal(entry.question, "What is X?");
+    assert.ok(await chat.loadThread(URL_A, entry.selection));
+  });
 });
