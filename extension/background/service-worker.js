@@ -5,6 +5,8 @@
 import { MSG, createMessageRouter } from "../../core/messages.js";
 import { hasDomainRule, setDomainLens } from "../../core/domain-lenses.js";
 import { browserLocale } from "../lib/host-locale.js";
+import { pickImportableSettings } from "../../core/settings-defaults.js";
+import { mergeSnapshots, snapshotToLocalChanges } from "../../core/auth/snapshot-merge.js";
 import { getMemoryProvider } from "../lib/memory.js";
 import { safePortPost, servePortStream } from "../lib/port-server.js";
 import {
@@ -501,15 +503,9 @@ const handlers = {
     if (!incoming || typeof incoming !== "object") {
       return { ok: false, error: "Invalid settings payload." };
     }
-    /** @type {Record<string, unknown>} */
-    const patch = {};
-    for (const key of Object.keys(DEFAULT_SETTINGS)) {
-      if (key === "apiKey" || key === "cloudAccessToken") {
-        continue;
-      }
-      if (key in incoming) patch[key] = incoming[key];
-    }
-    await saveSettings(patch);
+    // A settings file is outside data. It may set preferences, but never a
+    // secret and never anything that decides where a secret is sent.
+    await saveSettings(pickImportableSettings(incoming));
     return { ok: true };
   },
 
@@ -677,12 +673,21 @@ const handlers = {
     const memories = await provider.list();
     const snapshot = buildUserDataSnapshot(settings, memories);
     const sync = await getSyncProvider();
-    // Pull-merge-push when remote exists
+    // Pull, merge, write the merged result back here, then push it. Without the
+    // write-back a second device never received anything.
     const remote = await sync.pull();
-    const merged = remote ? sync.merge(snapshot, remote) : snapshot;
+    const merged = remote ? mergeSnapshots(snapshot, remote) : snapshot;
+    if (remote) {
+      const changes = snapshotToLocalChanges(merged, {
+        syncPreferences: settings.syncPreferences !== false,
+      });
+      if (Object.keys(changes.settings).length) await saveSettings(changes.settings);
+      await provider.replaceAll(changes.memories);
+    }
     await sync.push(merged);
-    await saveSettings({ lastSyncedAt: new Date().toISOString() });
-    return { ok: true, data: { lastSyncedAt: new Date().toISOString() } };
+    const lastSyncedAt = new Date().toISOString();
+    await saveSettings({ lastSyncedAt });
+    return { ok: true, data: { lastSyncedAt } };
   },
 
   [MSG.TEST_RUNTIME]: async (payload) => {

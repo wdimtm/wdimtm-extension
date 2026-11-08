@@ -7,6 +7,7 @@ import { browserLocale } from "./host-locale.js";
 import { applyOverride, BUILTIN_LENSES } from "../../core/lenses.js";
 import { normalizeRuntimeId } from "../../core/runtime/registry.js";
 import { DEFAULT_SETTINGS, SECRET_KEYS } from "../../core/settings-defaults.js";
+import { SYNCED_FIELD_KEYS } from "../../core/auth/snapshot-merge.js";
 import { resolveCloudConfig } from "../../core/cloud.js";
 import { isHostDenied } from "../../core/site-scope.js";
 
@@ -119,6 +120,14 @@ export async function getSettings() {
  * @param {Partial<typeof DEFAULT_SETTINGS>} patch
  */
 export async function saveSettings(patch) {
+  // A change to anything cloud sync carries makes this device's copy the newer
+  // one. Sync applying a remote snapshot passes its own stamp, which wins.
+  if (
+    !("syncedFieldsUpdatedAt" in patch) &&
+    SYNCED_FIELD_KEYS.some((key) => key in patch)
+  ) {
+    patch = { ...patch, syncedFieldsUpdatedAt: new Date().toISOString() };
+  }
   const { secrets, rest } = splitSecrets(patch);
   await Promise.all([
     Object.keys(rest).length ? chrome.storage.sync.set(rest) : Promise.resolve(),

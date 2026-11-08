@@ -32,7 +32,10 @@
  * @property {(id: string, patch: Partial<Pick<Memory, 'type' | 'text'>>) => Promise<Memory | null>} update
  * @property {(id: string) => Promise<boolean>} remove
  * @property {() => Promise<void>} clear
+ * @property {(list: Memory[]) => Promise<void>} replaceAll Overwrite the whole store (cloud sync writes its merged list back).
  */
+
+import { queryTokens } from "../../core/memory-tokens.js";
 
 const STORAGE_KEY = "wdimtm.memories";
 
@@ -71,6 +74,7 @@ export function createNoneMemoryProvider() {
       return false;
     },
     async clear() {},
+    async replaceAll() {},
   };
 }
 
@@ -96,7 +100,7 @@ export function createLocalMemoryProvider() {
           .sort((a, b) => (rank[a.type] ?? 9) - (rank[b.type] ?? 9))
           .slice(0, limit);
       }
-      const tokens = q.split(/\W+/).filter((t) => t.length > 2);
+      const tokens = queryTokens(q);
       const scored = all.map((m) => {
         const text = m.text.toLowerCase();
         let score = 0;
@@ -163,6 +167,10 @@ export function createLocalMemoryProvider() {
 
     async clear() {
       await saveAll([]);
+    },
+
+    async replaceAll(list) {
+      await saveAll((Array.isArray(list) ? list : []).slice(0, MEMORY_LIMIT));
     },
   };
 }

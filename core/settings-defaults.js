@@ -91,6 +91,12 @@ export const DEFAULT_SETTINGS = {
   /** ISO timestamp of last successful cloud sync */
   lastSyncedAt: "",
   /**
+   * When profile, lenses or synced preferences last changed on this device.
+   * Cloud sync uses it to decide which side's settings are newer; the snapshot
+   * itself is rebuilt on every sync, so its own timestamp says nothing.
+   */
+  syncedFieldsUpdatedAt: "",
+  /**
    * Web search for verify / research (optional).
    * @type {boolean}
    */
@@ -115,3 +121,48 @@ export const SECRET_KEYS = /** @type {const} */ ([
   "webSearchApiKey",
   "cloudAccessToken",
 ]);
+
+/**
+ * Settings whose value decides where a credential is sent (or whether it is
+ * uploaded). A settings file is data from outside: if it could rewrite these,
+ * the user's Cloud session token or own API key would go to whatever host the
+ * file named on the next request. They are only ever changed by hand in the
+ * options page.
+ */
+export const CREDENTIAL_DESTINATION_KEYS = /** @type {const} */ ([
+  "apiBaseUrl",
+  "anthropicBaseUrl",
+  "cloudBaseUrl",
+  "cloudSignUpUrl",
+  "syncSecrets",
+]);
+
+/** Per-device state that a settings file has no business carrying over. */
+const DEVICE_STATE_KEYS = [
+  "accountMode",
+  "lastSyncedAt",
+  "syncedFieldsUpdatedAt",
+  "lastRuntimeTestAt",
+  "lastRuntimeTestOk",
+  "devMockRuntime",
+];
+
+const NOT_IMPORTABLE = new Set([...SECRET_KEYS, ...CREDENTIAL_DESTINATION_KEYS, ...DEVICE_STATE_KEYS]);
+
+/**
+ * The part of an imported settings file that may be applied. Allow-by-default
+ * over DEFAULT_SETTINGS minus a named deny-set, so a new secret added to
+ * SECRET_KEYS is excluded without anyone remembering to update the importer.
+ * @param {Record<string, unknown>} incoming
+ * @returns {Record<string, unknown>}
+ */
+export function pickImportableSettings(incoming) {
+  /** @type {Record<string, unknown>} */
+  const patch = {};
+  if (!incoming || typeof incoming !== "object") return patch;
+  for (const key of Object.keys(DEFAULT_SETTINGS)) {
+    if (NOT_IMPORTABLE.has(key)) continue;
+    if (key in incoming) patch[key] = incoming[key];
+  }
+  return patch;
+}

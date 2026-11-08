@@ -17,6 +17,7 @@
  * @typedef {Object} UserDataSnapshot
  * @property {number} version
  * @property {string} updatedAt
+ * @property {string} [fieldsUpdatedAt] When profile/lenses/preferences last changed on the device that built it.
  * @property {string} [profileText]
  * @property {unknown[]} [customLenses]
  * @property {unknown[]} [memories]

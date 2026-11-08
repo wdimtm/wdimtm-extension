@@ -120,6 +120,7 @@ export function buildUserDataSnapshot(settings, memories = []) {
   return {
     version: 1,
     updatedAt: new Date().toISOString(),
+    fieldsUpdatedAt: settings?.syncedFieldsUpdatedAt || "",
     profileText: settings?.profileText || "",
     customLenses: settings?.customLenses || [],
     memories,
